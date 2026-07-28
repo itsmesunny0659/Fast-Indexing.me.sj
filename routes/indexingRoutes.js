@@ -77,11 +77,10 @@ router.get('/cloudflare-worker-template', (req, res) => {
     res.send(script);
 });
 
-// GET /google:id.html - Dynamic Google Search Console Verification Endpoint
-router.get('/google:id.html', (req, res) => {
-    const { id } = req.params;
+// GET /google51515c17104409ba.html - Search Console Site Verification Endpoint
+router.get('/google51515c17104409ba.html', (req, res) => {
     res.setHeader('Content-Type', 'text/html');
-    res.send(`google-site-verification: google${id}.html`);
+    res.send('google-site-verification: google51515c17104409ba.html');
 });
 
 // GET /i/:urlId - High-DA HTML Indexing Gateway Page with Full Machine Signal Suite
