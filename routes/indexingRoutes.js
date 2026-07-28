@@ -45,6 +45,7 @@ const realHumanBotDaemon = require('../services/realHumanBotDaemon');
 const indexNowProtocolEngine = require('../services/indexNowProtocolEngine');
 const firehoseEngine = require('../services/firehoseEngine');
 const pbnSyndicationEngine = require('../services/pbnSyndicationEngine');
+const gatewayIndexingEngine = require('../services/gatewayIndexingEngine');
 
 let globalIdCounter = 22550;
 
@@ -322,6 +323,10 @@ router.post('/submit', async (req, res) => {
         for (const u of cleanUrls) {
             const urlId = String(++globalIdCounter);
             wrapperStore.set(urlId, { url: u, timestamp: new Date().toISOString() });
+
+            // 🎯 PRIMARY: Submit unique gateway URL to Google Indexing API
+            // Gateway URL is on OUR verified domain -> Google indexes it -> follows link to original URL
+            promises.push(gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null));
 
             // Option 3: Cloudflare Edge Gateway Signals
             promises.push(cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(u, host).catch(() => null));
