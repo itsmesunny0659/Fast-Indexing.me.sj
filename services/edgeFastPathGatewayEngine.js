@@ -14,10 +14,41 @@ class EdgeFastPathGatewayEngine {
             domain = new URL(targetUrl).hostname;
         } catch (e) {}
 
-        const title = `Technical Analysis & Optimization Report for ${domain}`;
+        const isPdf = targetUrl.toLowerCase().split('?')[0].endsWith('.pdf');
+        const filename = targetUrl.split('/').pop().split('?')[0];
+        const title = isPdf 
+            ? `Document Resource Archive: ${filename}`
+            : `Technical Analysis & Optimization Report for ${domain}`;
+
+        // Schema selection: Article for normal sites, DigitalDocument for PDFs
+        const schemaType = isPdf ? 'DigitalDocument' : 'WebPage';
+        
+        let pdfPreviewSection = '';
+        if (isPdf) {
+            // Emits a clean PDF viewer iframe + Google Document Viewer wrapper
+            pdfPreviewSection = `
+            <div style="margin: 25px 0; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; overflow: hidden; background: #161821;">
+                <div style="background: rgba(255,255,255,0.05); padding: 10px 15px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #38bdf8;">📄 Embedded Document Viewer</span>
+                    <a href="${escapeHtml(targetUrl)}" download style="color: #a78bfa; text-decoration: none; font-weight: 600;" target="_blank">Download PDF Original</a>
+                </div>
+                <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(targetUrl)}&embedded=true" width="100%" height="550px" style="border: none;"></iframe>
+            </div>`;
+        }
+
+        const customSchema = isPdf ? {
+            "@context": "https://schema.org",
+            "@type": "DigitalDocument",
+            "name": title,
+            "url": targetUrl,
+            "datePublished": now,
+            "dateModified": now,
+            "encodingFormat": "application/pdf",
+            "description": `Public PDF document resource catalogued on ${host}.`
+        } : newsArticleJson;
 
         return `<!DOCTYPE html>
-<html lang="en" itemscope itemtype="http://schema.org/WebPage">
+<html lang="en" itemscope itemtype="http://schema.org/${schemaType}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -30,7 +61,7 @@ class EdgeFastPathGatewayEngine {
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 
     <!-- OpenGraph Tags -->
-    <meta property="og:type" content="article">
+    <meta property="og:type" content="${isPdf ? 'book' : 'article'}">
     <meta property="og:title" content="${escapeHtml(title)}">
     <meta property="og:url" content="${escapeHtml(targetUrl)}">
     <meta property="og:description" content="Technical audit report outlining crawl budget, sitemaps, and rendering compliance.">
@@ -40,9 +71,9 @@ class EdgeFastPathGatewayEngine {
     <meta itemprop="datePublished" content="${now}">
     <meta itemprop="dateModified" content="${now}">
 
-    <!-- High-Priority News Schema JSON-LD -->
+    <!-- High-Priority News / Doc Schema JSON-LD -->
     <script type="application/ld+json">
-    ${JSON.stringify(newsArticleJson, null, 2)}
+    ${JSON.stringify(customSchema, null, 2)}
     </script>
 
     <style>
@@ -145,21 +176,24 @@ class EdgeFastPathGatewayEngine {
 <body>
     <div class="container">
         <main>
-            <article itemscope itemtype="http://schema.org/Article">
+            <article>
                 <header>
-                    <span class="tag">SEO Audit</span>
-                    <span class="tag">Technical Analysis</span>
-                    <h1 itemprop="headline">${escapeHtml(title)}</h1>
+                    <span class="tag">${isPdf ? 'PDF Document' : 'SEO Audit'}</span>
+                    <span class="tag">${isPdf ? 'Google Docs Resource' : 'Technical Analysis'}</span>
+                    <h1 itemprop="name">${escapeHtml(title)}</h1>
                     <div class="meta">
                         Published on <time itemprop="datePublished" datetime="${now}">${new Date(now).toLocaleDateString()}</time> | 
                         By <span itemprop="author" itemscope itemtype="http://schema.org/Person"><span itemprop="name">Fast Indexing Core Team</span></span>
                     </div>
                 </header>
                 
-                <section itemprop="articleBody">
+                <section>
                     <p>
                         This assessment examines the indexing profiles, rendering performance, and search visibility guidelines of the target domain <strong>${escapeHtml(domain)}</strong>. A technical inspection confirms that the domain features active content nodes ready to be indexed.
                     </p>
+                    
+                    ${pdfPreviewSection}
+                    
                     <p>
                         Our crawling engine has run a full 15-stage diagnostic analysis to verify that the target asset satisfies standard mobile-friendly and Schema.org semantic data directives. By broadcasting real-time XML news signals and syndicating links to high-DA networks, search engine spiders are guided to crawl these nodes immediately.
                     </p>
