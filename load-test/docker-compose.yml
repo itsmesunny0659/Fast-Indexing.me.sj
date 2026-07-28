@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  k6-load-worker:
+    image: grafana/k6:latest
+    container_name: k6-load-worker
+    environment:
+      - TARGET_URL=${TARGET_URL:-https://ai-fast-indexing-engine.vercel.app/fui-api/api/indexing/analytics}
+      - VUS=${VUS:-50}
+      - DURATION=${DURATION:-30s}
+      - HEADERS=${HEADERS:-{}}
+    volumes:
+      - ./scripts:/scripts
+    entrypoint: ["k6", "run", "/scripts/load.js"]
+    network_mode: "host"
+    restart: "no"

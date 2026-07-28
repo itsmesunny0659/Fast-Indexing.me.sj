@@ -1,0 +1,16 @@
+{
+  "name": "AI Fast Indexing Engine",
+  "short_name": "Fast Indexer",
+  "description": "Instant Google Search Console & Indexing API Dashboard Engine",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0b10",
+  "theme_color": "#7c3aed",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/1162/1162499.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
