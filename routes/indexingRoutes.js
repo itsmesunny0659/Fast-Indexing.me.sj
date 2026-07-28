@@ -475,25 +475,37 @@ router.post('/submit', async (req, res) => {
 
         const results = [];
         let submittedCount = cleanUrls.length;
-
-        // === HUB ARCHITECTURE ===
-        // Create ONE hub page for this entire batch submission
-        const hubId = String(++hubCounter);
         const jobId = `job_${Date.now()}`;
-        const hubUrl = `https://${host}/hub/${hubId}`;
 
-        // Store hub data (all URLs in this batch)
-        hubStore.set(hubId, {
-            urls: cleanUrls,
-            submittedAt: new Date().toISOString(),
-            jobId
-        });
+        let targetSubmitUrl = '';
+        let hubId = null;
+        let hubUrl = null;
 
-        // === STEP 1: Submit HUB URL to Google Indexing API (= Request Indexing in GSC) ===
+        const isBulk = cleanUrls.length > 1;
+
+        if (isBulk) {
+            // === HUB ARCHITECTURE (2 or more URLs) ===
+            hubId = String(++hubCounter);
+            hubUrl = `https://${host}/hub/${hubId}`;
+            targetSubmitUrl = hubUrl;
+
+            // Store hub data
+            hubStore.set(hubId, {
+                urls: cleanUrls,
+                submittedAt: new Date().toISOString(),
+                jobId
+            });
+        } else {
+            // === SINGLE URL ARCHITECTURE ===
+            const urlId = String(globalIdCounter + 1);
+            targetSubmitUrl = `https://${host}/i/${urlId}`;
+        }
+
+        // === STEP 1: Submit Target URL (Hub or Single Gateway) to Google Indexing API ===
         let gscSubmitResult = { indexingApiSubmitted: false, gscStatus: '📤 Indexing request queued' };
         try {
             gscSubmitResult = await Promise.race([
-                gscInspectionEngine.processUrl(hubUrl, cleanUrls[0], host),
+                gscInspectionEngine.processUrl(targetSubmitUrl, cleanUrls[0], host),
                 new Promise(r => setTimeout(() => r({ indexingApiSubmitted: true, gscStatus: '📤 Request Indexing submitted to Google ✓' }), 8000))
             ]);
         } catch (e) {
@@ -504,13 +516,15 @@ router.post('/submit', async (req, res) => {
         for (const url of cleanUrls) {
             globalIdCounter++;
             const urlId = String(globalIdCounter);
-            wrapperStore.set(urlId, { url, title: `Hub ${hubId} - ${url.substring(0, 40)}` });
+            const gatewayUrl = `https://${host}/i/${urlId}`;
+            wrapperStore.set(urlId, { url, title: isBulk ? `Hub ${hubId} - ${url.substring(0, 40)}` : `Single - ${url.substring(0, 40)}` });
 
             const resultObj = {
                 id: globalIdCounter,
                 url: url,
-                hubUrl: hubUrl,          // THE ONE hub page for this batch
-                hubId: hubId,
+                hubUrl: isBulk ? hubUrl : null,
+                hubId: isBulk ? hubId : null,
+                gatewayUrl: gatewayUrl,
                 status: gscSubmitResult.indexingApiSubmitted ? 'success' : 'submitted',
                 gscStatus: gscSubmitResult.gscStatus,
                 message: gscSubmitResult.indexingApiSubmitted
