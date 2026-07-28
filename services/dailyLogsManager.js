@@ -1,7 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const LOG_FILE_PATH = path.join(process.cwd(), 'data', 'daily_urls.json');
+const os = require('os');
+
+// Use the OS temp directory (usually /tmp on Vercel) which is writable
+const LOG_FILE_PATH = path.join(os.tmpdir(), 'daily_urls.json');
 
 class DailyLogsManager {
     constructor() {
