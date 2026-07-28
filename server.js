@@ -3,7 +3,6 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const cookieParser = require('cookie-parser');
-const session = require('express-session');
 const indexingRoutes = require('./routes/indexingRoutes');
 
 const app = express();
@@ -13,16 +12,11 @@ const PORT = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
 
-app.use(session({
-    secret: 'ai-fast-indexer-super-secret-12345',
-    resave: false,
-    saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 } // 1 day session duration
-}));
+// Cookie parser with a secret sign key to secure cookies
+app.use(cookieParser('ai-fast-indexer-cookie-secret-999'));
 
-// Hardcoded user credentials provided by user
+// Hardcoded user credentials
 const TARGET_USER = {
     email: "sj7835860705@gmail.com",
     password: "@Support9267"
@@ -32,8 +26,9 @@ const TARGET_USER = {
 app.post('/api/auth/login', (req, res) => {
     const { email, password } = req.body;
     if (email === TARGET_USER.email && password === TARGET_USER.password) {
-        req.session.authenticated = true;
-        req.session.userEmail = email;
+        // Set secure signed cookies
+        res.cookie('auth_user', email, { signed: true, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
+        res.cookie('last_active', Date.now().toString(), { signed: true, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
         return res.json({ success: true, message: 'Authentication successful' });
     }
     return res.status(401).json({ success: false, error: 'Invalid email or password' });
@@ -41,7 +36,8 @@ app.post('/api/auth/login', (req, res) => {
 
 // API Endpoint: Log out user session
 app.get('/api/auth/logout', (req, res) => {
-    req.session.destroy();
+    res.clearCookie('auth_user');
+    res.clearCookie('last_active');
     res.redirect('/login.html');
 });
 
@@ -69,25 +65,44 @@ function checkAuth(req, res, next) {
         return next();
     }
 
-    // 3. Reject if not logged in
-    if (!req.session.authenticated) {
+    const authUser = req.signedCookies.auth_user;
+    const lastActiveStr = req.signedCookies.last_active;
+
+    // 3. Reject if cookie missing
+    if (!authUser || !lastActiveStr) {
+        res.clearCookie('auth_user');
+        res.clearCookie('last_active');
         if (req.xhr || url.startsWith('/fui-api/')) {
             return res.status(401).json({ error: 'Unauthorized. Please login first.' });
         }
         return res.redirect('/login.html');
     }
-    
+
+    // 4. Inactivity Check (5 minutes limit = 300,000 milliseconds)
+    const lastActive = parseInt(lastActiveStr) || 0;
+    const now = Date.now();
+    if (now - lastActive > 5 * 60 * 1000) {
+        res.clearCookie('auth_user');
+        res.clearCookie('last_active');
+        if (req.xhr || url.startsWith('/fui-api/')) {
+            return res.status(401).json({ error: 'Session expired due to 5 minutes of inactivity.' });
+        }
+        return res.redirect('/login.html');
+    }
+
+    // Update active timestamp cookie to sliding window
+    res.cookie('last_active', now.toString(), { signed: true, httpOnly: true, maxAge: 24 * 60 * 60 * 1000 });
     next();
 }
 
 app.use(checkAuth);
 
-// Serve static login page explicitly before index dashboard is protected
+// Serve static login page
 app.get('/login.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// Serve static frontend files (now authenticated)
+// Serve static frontend files
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Rate Limiter: Unlimited / Enterprise High-Volume Limit
