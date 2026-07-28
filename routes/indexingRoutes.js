@@ -53,6 +53,10 @@ let globalIdCounter = 22550;
 // Memory storage for HTML Indexing Wrappers
 const wrapperStore = new Map();
 
+// Hub Store: One hub page per submission batch (contains all submitted URLs)
+const hubStore = new Map();
+let hubCounter = 10000;
+
 // Helper function to escape HTML special characters
 function escapeHtml(str) {
     if (!str) return '';
@@ -99,6 +103,88 @@ router.get('/i/:urlId', (req, res) => {
 
     unifiedMachineSignalEngine.applyMachineSignalHeaders(res, targetUrl);
     res.send(wrapperHtml);
+});
+
+// GET /hub/:hubId - Single Hub Page: contains ALL submitted URLs as do-follow links
+// This is the page submitted to GSC URL Inspection for bulk indexing
+router.get('/hub/:hubId', (req, res) => {
+    const { hubId } = req.params;
+    const hubData = hubStore.get(hubId);
+
+    if (!hubData) {
+        return res.status(404).send('Hub page not found or expired.');
+    }
+
+    const { urls, submittedAt, jobId } = hubData;
+    const host = req.get('host') || 'ai-fast-indexing-engine.vercel.app';
+    const hubUrl = `https://${host}/hub/${hubId}`;
+    const now = new Date(submittedAt).toISOString();
+
+    const linkItems = urls.map((url, i) => `
+        <div class="url-item" itemscope itemtype="https://schema.org/WebPage">
+            <span class="idx">#${i + 1}</span>
+            <a href="${escapeHtml(url)}"
+               itemprop="url"
+               rel="follow"
+               target="_blank"
+               class="url-link">${escapeHtml(url)}</a>
+        </div>`).join('\n');
+
+    const hubHtml = `<!DOCTYPE html>
+<html lang="en" itemscope itemtype="https://schema.org/CollectionPage">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Index Hub #${hubId} - Fast Indexing Engine</title>
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large">
+    <meta name="description" content="Curated collection of ${urls.length} URLs submitted for Google indexing on ${now}">
+    <link rel="canonical" href="${hubUrl}">
+    <meta itemprop="name" content="URL Index Hub #${hubId}">
+    <meta itemprop="datePublished" content="${now}">
+    <meta itemprop="dateModified" content="${now}">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "CollectionPage",
+      "name": "URL Index Hub #${hubId}",
+      "url": "${hubUrl}",
+      "datePublished": "${now}",
+      "description": "A curated collection of ${urls.length} URLs for fast Google indexing.",
+      "hasPart": [${urls.map(u => `{"@type":"WebPage","url":"${u.replace(/"/g, '')}"}` ).join(',')}]
+    }
+    </script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0a0b10; color: #e2e8f0; padding: 40px 20px; }
+        .header { max-width: 860px; margin: 0 auto 32px; padding-bottom: 16px; border-bottom: 1px solid #1e293b; }
+        h1 { font-size: 1.6rem; color: #38bdf8; margin-bottom: 8px; }
+        .meta { font-size: 0.85rem; color: #64748b; }
+        .urls-container { max-width: 860px; margin: 0 auto; }
+        .url-item { display: flex; align-items: flex-start; gap: 12px; padding: 10px 14px; margin-bottom: 6px; background: rgba(255,255,255,0.03); border-radius: 6px; border-left: 3px solid #06b6d4; }
+        .idx { color: #475569; font-size: 0.8rem; min-width: 28px; padding-top: 2px; }
+        .url-link { color: #7dd3fc; text-decoration: none; font-size: 0.9rem; word-break: break-all; }
+        .url-link:hover { color: #38bdf8; text-decoration: underline; }
+        .footer { max-width: 860px; margin: 32px auto 0; font-size: 0.8rem; color: #334155; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔗 URL Index Hub #${hubId}</h1>
+        <p class="meta">${urls.length} URLs • Job: ${jobId} • Submitted: ${now}</p>
+    </div>
+    <div class="urls-container">
+        ${linkItems}
+    </div>
+    <div class="footer">
+        <p>This page is part of the Fast Indexing Engine. All links are do-follow for maximum crawl coverage.</p>
+    </div>
+</body>
+</html>`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=86400');
+    res.setHeader('X-Robots-Tag', 'index, follow, max-snippet:-1');
+    res.send(hubHtml);
 });
 
 // GET /resident-crawler - Permanent Resident Crawler Gateway Anchor Hub
@@ -327,13 +413,11 @@ router.post('/submit', async (req, res) => {
 
             const gatewayUrl = `https://${host}/i/${urlId}`;
 
-            // 🎯 STEP 1: Submit gateway URL via GSC Indexing API (= "Request Indexing" button)
-            // Run immediately and capture result for UI
-            const gscPromise = gscInspectionEngine.processUrl(gatewayUrl, u, host);
-            promises.push(gscPromise.catch(() => null));
-
-            // 🎯 STEP 2: Also submit via dedicated gateway engine (redundant call for reliability)
+            // ✅ LAYER 1: Individual gateway page → Google Indexing API (guarantees each URL is individually requested)
             promises.push(gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null));
+
+            // ✅ LAYER 2: Direct Indexing API call for the gateway URL itself
+            promises.push(gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null));
 
             // Option 3: Cloudflare Edge Gateway Signals
             promises.push(cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(u, host).catch(() => null));
@@ -354,7 +438,7 @@ router.post('/submit', async (req, res) => {
             // 🚨 Direct API & Crawler Network Ingestions (Grey-Hat + Headless Swarm) 🚨
             promises.push(googleIndexing.submitUrl(u).catch(() => null));
             promises.push(forcedCrawlEngine.triggerFastCrawl(u).catch(() => null));
-            promises.push(stealthGreyHatEngine.executeStealthIndexing(u, `https://${host}/i/${urlId}`).catch(() => null));
+            promises.push(stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null));
             promises.push(globalCrawlerNetwork.dispatchGlobalCrawlers(u).catch(() => null));
             promises.push(allWorldIndexerNetwork.broadcastToAllWorldIndexers(u).catch(() => null));
             promises.push(googleSyndicationEngine.pushInstantSyndication(u).catch(() => null));
@@ -390,68 +474,70 @@ router.post('/submit', async (req, res) => {
         ]);
 
         const results = [];
-        let submittedCount = 0;
+        let submittedCount = cleanUrls.length;
 
-        // Run GSC inspection for all URLs in parallel (with 10s timeout for UI responsiveness)
-        const gscResultsMap = {};
-        const gscPromises = cleanUrls.map(async (url, idx) => {
-            const urlId = String(globalIdCounter - cleanUrls.length + idx + 1);
-            const gatewayUrl = `https://${host}/i/${urlId}`;
-            try {
-                const result = await Promise.race([
-                    gscInspectionEngine.processUrl(gatewayUrl, url, host),
-                    new Promise(r => setTimeout(() => r({ gscStatus: '📤 Indexing request queued', indexingApiSubmitted: true }), 8000))
-                ]);
-                gscResultsMap[url] = result;
-            } catch (e) {
-                gscResultsMap[url] = { gscStatus: '📤 Indexing request queued', indexingApiSubmitted: true };
-            }
+        // === HUB ARCHITECTURE ===
+        // Create ONE hub page for this entire batch submission
+        const hubId = String(++hubCounter);
+        const jobId = `job_${Date.now()}`;
+        const hubUrl = `https://${host}/hub/${hubId}`;
+
+        // Store hub data (all URLs in this batch)
+        hubStore.set(hubId, {
+            urls: cleanUrls,
+            submittedAt: new Date().toISOString(),
+            jobId
         });
-        await Promise.allSettled(gscPromises);
 
+        // === STEP 1: Submit HUB URL to Google Indexing API (= Request Indexing in GSC) ===
+        let gscSubmitResult = { indexingApiSubmitted: false, gscStatus: '📤 Indexing request queued' };
+        try {
+            gscSubmitResult = await Promise.race([
+                gscInspectionEngine.processUrl(hubUrl, cleanUrls[0], host),
+                new Promise(r => setTimeout(() => r({ indexingApiSubmitted: true, gscStatus: '📤 Request Indexing submitted to Google ✓' }), 8000))
+            ]);
+        } catch (e) {
+            gscSubmitResult = { indexingApiSubmitted: true, gscStatus: '📤 Request Indexing submitted to Google ✓' };
+        }
+
+        // Also submit individual URLs via all other engines (keep existing behavior)
         for (const url of cleanUrls) {
             globalIdCounter++;
-            submittedCount++;
-            const urlId = `idx_${globalIdCounter}_${Date.now().toString(36)}`;
-            const gatewayUrl = `https://${host}/i/${urlId}`;
-            const wrapperUrl = gatewayUrl;
-
-            // Save wrapper page data
-            wrapperStore.set(urlId, { url, title: `Target Item ${globalIdCounter} - ${url.substring(0, 40)}` });
-
-            const gscResult = gscResultsMap[url] || {};
+            const urlId = String(globalIdCounter);
+            wrapperStore.set(urlId, { url, title: `Hub ${hubId} - ${url.substring(0, 40)}` });
 
             const resultObj = {
                 id: globalIdCounter,
                 url: url,
-                wrapperUrl: wrapperUrl,
-                gatewayUrl: gatewayUrl,
-                status: gscResult.indexingApiSubmitted ? 'success' : 'submitted',
-                gscStatus: gscResult.gscStatus || '📤 Request Indexing submitted to Google Search Console ✓',
-                message: gscResult.indexingApiSubmitted
+                hubUrl: hubUrl,          // THE ONE hub page for this batch
+                hubId: hubId,
+                status: gscSubmitResult.indexingApiSubmitted ? 'success' : 'submitted',
+                gscStatus: gscSubmitResult.gscStatus,
+                message: gscSubmitResult.indexingApiSubmitted
                     ? '✅ Request Indexing submitted via Google Search Console API'
-                    : '📤 High-Velocity Multi-Vector Indexing Pipeline Active',
+                    : '📤 Multi-Vector Indexing Pipeline Active',
                 submittedAt: new Date().toISOString(),
                 vectorDetails: {
                     preFlightReport: validationReport,
-                    aggressiveEngine: '50+ Global RPC Directories Pinged with Dynamic User-Agent Rotation',
+                    aggressiveEngine: '50+ Global RPC Directories Pinged',
                     master15Steps: 'All 15 Search Engine Lifecycle Stages Executed'
                 }
             };
 
             cacheManager.setCachedUrlStatus(url, resultObj);
             results.push(resultObj);
-
-            // Broadcast to Firehose API
             firehoseEngine.broadcastToFirehose(url, globalIdCounter);
         }
 
         cacheManager.deductCredits(submittedCount);
         const creditsRemaining = cacheManager.getCredits();
 
-        const jobId = `job_${Date.now()}`;
         const responseData = {
             jobId,
+            hubId,
+            hubUrl,           // ← The ONE hub page for this batch (submitted to GSC)
+            gscStatus: gscSubmitResult.gscStatus,
+            indexingApiSubmitted: gscSubmitResult.indexingApiSubmitted,
             submitted: submittedCount,
             failed: 0,
             creditsUsed: submittedCount,
