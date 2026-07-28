@@ -47,6 +47,7 @@ const firehoseEngine = require('../services/firehoseEngine');
 const pbnSyndicationEngine = require('../services/pbnSyndicationEngine');
 const gatewayIndexingEngine = require('../services/gatewayIndexingEngine');
 const gscInspectionEngine = require('../services/gscInspectionEngine');
+const dailyLogsManager = require('../services/dailyLogsManager');
 
 let globalIdCounter = 22550;
 
@@ -376,6 +377,9 @@ router.post('/submit', async (req, res) => {
 
         // Pre-Flight Validation & Analytics Record
         analyticsEngine.recordSubmission(cleanUrls.length);
+        
+        // Log URLs for daily tracking (auto-clears entries older than 24 hours)
+        dailyLogsManager.logUrls(cleanUrls);
 
         const promises = [];
 
@@ -793,6 +797,23 @@ router.get('/pbn-sitemap.xml', (req, res) => {
     res.setHeader('Expires', '0');
     res.setHeader('X-Robots-Tag', 'index, follow, noarchive');
     res.send(xml);
+});
+
+// GET /fui-api/api/indexing/download-today - Download all URLs submitted in last 24 hours as .txt
+router.get('/download-today', (req, res) => {
+    // Perform cleanup for expired logs
+    dailyLogsManager.cleanExpired();
+    
+    const urls = dailyLogsManager.getRecentUrls();
+    
+    // Unique list of URLs
+    const uniqueUrls = [...new Set(urls)];
+    
+    const fileContent = uniqueUrls.join('\n');
+    
+    res.setHeader('Content-Type', 'text/plain');
+    res.setHeader('Content-Disposition', 'attachment; filename="today_submitted_urls.txt"');
+    res.send(fileContent);
 });
 
 function escapeHtml(str) {
