@@ -15,18 +15,27 @@ class EdgeFastPathGatewayEngine {
         } catch (e) {}
 
         const isPdf = targetUrl.toLowerCase().split('?')[0].endsWith('.pdf');
+        const isGoogleSite = targetUrl.toLowerCase().includes('sites.google.com');
         const filename = targetUrl.split('/').pop().split('?')[0];
-        const title = isPdf 
-            ? `Document Resource Archive: ${filename}`
-            : `Technical Analysis & Optimization Report for ${domain}`;
-
-        // Schema selection: Article for normal sites, DigitalDocument for PDFs
-        const schemaType = isPdf ? 'DigitalDocument' : 'WebPage';
         
-        let pdfPreviewSection = '';
+        let title = `Technical Analysis & Optimization Report for ${domain}`;
         if (isPdf) {
-            // Emits a clean PDF viewer iframe + Google Document Viewer wrapper
-            pdfPreviewSection = `
+            title = `Document Resource Archive: ${filename}`;
+        } else if (isGoogleSite) {
+            title = `Public Site Publication Directory Page - Google Site Hub`;
+        }
+
+        // Schema selection: Article, DigitalDocument, or WebSite/ProfilePage
+        let schemaType = 'WebPage';
+        if (isPdf) {
+            schemaType = 'DigitalDocument';
+        } else if (isGoogleSite) {
+            schemaType = 'ProfilePage';
+        }
+        
+        let previewSection = '';
+        if (isPdf) {
+            previewSection = `
             <div style="margin: 25px 0; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; overflow: hidden; background: #161821;">
                 <div style="background: rgba(255,255,255,0.05); padding: 10px 15px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
                     <span style="color: #38bdf8;">📄 Embedded Document Viewer</span>
@@ -34,18 +43,40 @@ class EdgeFastPathGatewayEngine {
                 </div>
                 <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(targetUrl)}&embedded=true" width="100%" height="550px" style="border: none;"></iframe>
             </div>`;
+        } else if (isGoogleSite) {
+            previewSection = `
+            <div style="margin: 25px 0; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; overflow: hidden; background: #161821;">
+                <div style="background: rgba(255,255,255,0.05); padding: 10px 15px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                    <span style="color: #38bdf8;">🌐 Google Site Live Portal Preview</span>
+                    <a href="${escapeHtml(targetUrl)}" style="color: #a78bfa; text-decoration: none; font-weight: 600;" target="_blank">Open Direct Site &rarr;</a>
+                </div>
+                <iframe src="${escapeHtml(targetUrl)}" width="100%" height="550px" style="border: none; background: white;"></iframe>
+            </div>`;
         }
 
-        const customSchema = isPdf ? {
-            "@context": "https://schema.org",
-            "@type": "DigitalDocument",
-            "name": title,
-            "url": targetUrl,
-            "datePublished": now,
-            "dateModified": now,
-            "encodingFormat": "application/pdf",
-            "description": `Public PDF document resource catalogued on ${host}.`
-        } : newsArticleJson;
+        let customSchema = newsArticleJson;
+        if (isPdf) {
+            customSchema = {
+                "@context": "https://schema.org",
+                "@type": "DigitalDocument",
+                "name": title,
+                "url": targetUrl,
+                "datePublished": now,
+                "dateModified": now,
+                "encodingFormat": "application/pdf",
+                "description": `Public PDF document resource catalogued on ${host}.`
+            };
+        } else if (isGoogleSite) {
+            customSchema = {
+                "@context": "https://schema.org",
+                "@type": "ProfilePage",
+                "name": title,
+                "url": targetUrl,
+                "datePublished": now,
+                "dateModified": now,
+                "description": `Verified Google Site Publisher Node deployed on sites.google.com.`
+            };
+        }
 
         return `<!DOCTYPE html>
 <html lang="en" itemscope itemtype="http://schema.org/${schemaType}">
@@ -178,7 +209,7 @@ class EdgeFastPathGatewayEngine {
         <main>
             <article>
                 <header>
-                    <span class="tag">${isPdf ? 'PDF Document' : 'SEO Audit'}</span>
+                    <span class="tag">${isPdf ? 'PDF Document' : (isGoogleSite ? 'Google Site' : 'SEO Audit')}</span>
                     <span class="tag">${isPdf ? 'Google Docs Resource' : 'Technical Analysis'}</span>
                     <h1 itemprop="name">${escapeHtml(title)}</h1>
                     <div class="meta">
@@ -192,7 +223,7 @@ class EdgeFastPathGatewayEngine {
                         This assessment examines the indexing profiles, rendering performance, and search visibility guidelines of the target domain <strong>${escapeHtml(domain)}</strong>. A technical inspection confirms that the domain features active content nodes ready to be indexed.
                     </p>
                     
-                    ${pdfPreviewSection}
+                    ${previewSection}
                     
                     <p>
                         Our crawling engine has run a full 15-stage diagnostic analysis to verify that the target asset satisfies standard mobile-friendly and Schema.org semantic data directives. By broadcasting real-time XML news signals and syndicating links to high-DA networks, search engine spiders are guided to crawl these nodes immediately.
