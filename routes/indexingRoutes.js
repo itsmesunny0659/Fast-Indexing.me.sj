@@ -47,16 +47,9 @@ const firehoseEngine = require('../services/firehoseEngine');
 const pbnSyndicationEngine = require('../services/pbnSyndicationEngine');
 const gatewayIndexingEngine = require('../services/gatewayIndexingEngine');
 const gscInspectionEngine = require('../services/gscInspectionEngine');
-const dailyLogsManager = require('../services/dailyLogsManager');
-const intelligentBypassEngine = require('../services/intelligentBypassEngine');
+const persistentGatewayStore = require('../services/persistentGatewayStore');
 
 let globalIdCounter = 22550;
-
-// Memory storage for HTML Indexing Wrappers
-const wrapperStore = new Map();
-
-// Hub Store: One hub page per submission batch (contains all submitted URLs)
-const hubStore = new Map();
 let hubCounter = 10000;
 
 // Helper function to escape HTML special characters
@@ -94,7 +87,7 @@ router.get('/google51515c17184409ba.html', (req, res) => {
 // GET /i/:urlId - High-DA HTML Indexing Gateway Page with Full Machine Signal Suite
 router.get('/i/:urlId', (req, res) => {
     const { urlId } = req.params;
-    const targetData = wrapperStore.get(urlId);
+    const targetData = persistentGatewayStore.getGateway(urlId);
 
     if (!targetData) {
         return res.status(404).send('Indexing Page Expired or Not Found');
@@ -111,7 +104,7 @@ router.get('/i/:urlId', (req, res) => {
 // This is the page submitted to GSC URL Inspection for bulk indexing
 router.get('/hub/:hubId', (req, res) => {
     const { hubId } = req.params;
-    const hubData = hubStore.get(hubId);
+    const hubData = persistentGatewayStore.getHub(hubId);
 
     if (!hubData) {
         return res.status(404).send('Hub page not found or expired.');
@@ -192,7 +185,7 @@ router.get('/hub/:hubId', (req, res) => {
 // GET /resident-crawler - Permanent Resident Crawler Gateway Anchor Hub
 router.get('/resident-crawler', (req, res) => {
     const host = req.get('host') || 'ai-fast-indexing-engine.vercel.app';
-    const entries = Array.from(wrapperStore.entries());
+    const entries = persistentGatewayStore.getAllGateways();
 
     const listItems = entries.map(([id, data]) => `
         <li style="margin-bottom: 12px; background: rgba(255,255,255,0.05); padding: 10px; border-radius: 6px;">
@@ -250,8 +243,8 @@ router.get('/sitemap.xml', (req, res) => {
     const host = req.get('host') || 'ai-fast-indexing-engine.vercel.app';
     const nowIso = new Date().toISOString();
 
-    // Get all gateway URLs from wrapperStore
-    const entries = Array.from(wrapperStore.entries());
+    // Get all gateway URLs from persistentGatewayStore
+    const entries = persistentGatewayStore.getAllGateways();
     const gatewayUrls = entries.map(([id]) => `https://${host}/i/${id}`);
 
     // Core static URLs always included
@@ -307,7 +300,7 @@ router.get('/news-sitemap.xml', (req, res) => {
 // GET /sitemap.html - HTML Sitemap of all Indexing Wrapper Links
 router.get('/sitemap.html', (req, res) => {
     const host = req.get('host') || 'ai-fast-indexing-engine.vercel.app';
-    const entries = Array.from(wrapperStore.entries());
+    const entries = persistentGatewayStore.getAllGateways();
 
     const listItems = entries.map(([id, data]) => `
         <li style="margin-bottom: 10px;">
@@ -455,7 +448,7 @@ router.post('/submit', async (req, res) => {
         // Per-URL engines (stored lazily)
         for (const u of cleanUrls) {
             const urlId = String(++globalIdCounter);
-            wrapperStore.set(urlId, { url: u, timestamp: new Date().toISOString() });
+            persistentGatewayStore.setGateway(urlId, { url: u, timestamp: new Date().toISOString() });
             const gatewayUrl = `https://${host}/i/${urlId}`;
 
             lazyEngines.push(() => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null));
@@ -513,7 +506,7 @@ router.post('/submit', async (req, res) => {
             targetSubmitUrl = hubUrl;
 
             // Store hub data
-            hubStore.set(hubId, {
+            persistentGatewayStore.setHub(hubId, {
                 urls: cleanUrls,
                 submittedAt: new Date().toISOString(),
                 jobId
@@ -549,7 +542,7 @@ router.post('/submit', async (req, res) => {
             globalIdCounter++;
             const urlId = String(globalIdCounter);
             const gatewayUrl = `https://${host}/i/${urlId}`;
-            wrapperStore.set(urlId, { url, title: isBulk ? `Hub ${hubId} - ${url.substring(0, 40)}` : `Single - ${url.substring(0, 40)}` });
+            persistentGatewayStore.setGateway(urlId, { url, title: isBulk ? `Hub ${hubId} - ${url.substring(0, 40)}` : `Single - ${url.substring(0, 40)}` });
 
             const resultObj = {
                 id: globalIdCounter,

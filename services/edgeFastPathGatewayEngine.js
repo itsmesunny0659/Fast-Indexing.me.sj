@@ -56,34 +56,58 @@ class EdgeFastPathGatewayEngine {
             </div>`;
         }
 
-        let customSchema = newsArticleJson;
-        if (isPdf) {
-            customSchema = {
-                "@context": "https://schema.org",
-                "@type": "DigitalDocument",
-                "name": title,
-                "url": targetUrl,
-                "datePublished": now,
-                "dateModified": now,
-                "encodingFormat": "application/pdf",
-                "description": `Public PDF document resource catalogued on ${host}.`
-            };
-        } else if (isGoogleSite) {
-            customSchema = {
-                "@context": "https://schema.org",
-                "@type": "ProfilePage",
-                "name": title,
-                "url": targetUrl,
-                "datePublished": now,
-                "dateModified": now,
-                "description": `Verified Google Site Publisher Node deployed on sites.google.com.`
-            };
-        }
-
-        // EXPERT APPROACH: For blocked resources (PDFs, Google Sites), use self-canonical pointing to our own High-DA gateway link!
-        // This forces Googlebot to index this gateway page, bypassing target site 403 blocks completely.
         const selfCanonicalUrl = `https://${host}/i/${urlId}`;
-        const canonicalUrl = (isPdf || isGoogleSite) ? selfCanonicalUrl : targetUrl;
+
+        const isProduct = targetUrl.toLowerCase().includes('/product/') || targetUrl.toLowerCase().includes('/item/') || targetUrl.toLowerCase().includes('/shop/');
+
+        // UNIVERSAL MASTER SCHEMA GRAPH — Applies to ANY XYZ link (Blog, Product, PDF, Landing Page, Forum, etc.)
+        // This guarantees Googlebot receives full multi-type Schema validation regardless of URL structure.
+        const universalSchema = {
+            "@context": "https://schema.org",
+            "@graph": [
+                {
+                    "@type": "WebPage",
+                    "@id": `${targetUrl}#webpage`,
+                    "url": targetUrl,
+                    "name": title,
+                    "description": `Verified indexation node for ${domain}. Semantic crawl budget priority pass.`,
+                    "datePublished": now,
+                    "dateModified": now,
+                    "isPartOf": {
+                        "@type": "WebSite",
+                        "name": domain,
+                        "url": `https://${domain}`
+                    }
+                },
+                {
+                    "@type": "Article",
+                    "@id": `${targetUrl}#article`,
+                    "isPartOf": { "@id": `${targetUrl}#webpage` },
+                    "headline": title,
+                    "datePublished": now,
+                    "dateModified": now,
+                    "author": {
+                        "@type": "Organization",
+                        "name": "Global Indexing Network Core",
+                        "url": `https://${host}`
+                    },
+                    "publisher": {
+                        "@type": "Organization",
+                        "name": domain,
+                        "logo": {
+                            "@type": "ImageObject",
+                            "url": "https://www.google.com/favicon.ico"
+                        }
+                    },
+                    "mainEntityOfPage": targetUrl
+                }
+            ]
+        };
+
+        const customSchema = universalSchema;
+
+        // Clean 29 July Morning Setup: Canonical points directly to targetUrl
+        const canonicalUrl = targetUrl;
 
         return `<!DOCTYPE html>
 <html lang="en" itemscope itemtype="http://schema.org/${schemaType}">
@@ -113,24 +137,6 @@ class EdgeFastPathGatewayEngine {
     <script type="application/ld+json">
     ${JSON.stringify(customSchema, null, 2)}
     </script>
-
-    <!-- SMART PROGRESSIVE REDIRECTION BYPASS LAYER -->
-    <script>
-        // Check if the current agent is a search bot
-        const botPattern = /bot|google|baidu|bing|msn|duckduckgo|teoma|slurp|yandex|semrush|ahrefs|crawler|spider/i;
-        const isSearchBot = botPattern.test(navigator.userAgent);
-        
-        if (!isSearchBot) {
-            // Human user detected - seamlessly redirect to the original target destination
-            setTimeout(function() {
-                window.location.replace("${escapeHtml(targetUrl)}");
-            }, 1800); // 1.8 seconds delay so Googlebot still has time to inspect DOM if JS is enabled
-        }
-    </script>
-    <!-- Fallback Meta Refresh for human browsers that block inline scripts -->
-    <noscript>
-        <meta http-equiv="refresh" content="2;url=${escapeHtml(targetUrl)}">
-    </noscript>
 
     <style>
         body {
