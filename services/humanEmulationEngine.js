@@ -10,7 +10,23 @@ class HumanEmulationEngine {
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15',
             'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.105 Mobile Safari/537.36',
             'Mozilla/5.0 (iPhone; CPU iPhone OS 17_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3.1 Mobile/15E148 Safari/604.1',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0'
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
+            // 🚨 ADDING 15 HIGH-AUTHORITY WORLDWIDE CRAWLER BOT USER AGENTS FOR 1000-NODE HANDSHAKE SWARM 🚨
+            'Mozilla/5.0 (compatible; SemrushBot/7~bl; +http://www.semrush.com/bot.html)', // Semrush SEO Auditor
+            'Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)', // Ahrefs SEO Crawler
+            'Mozilla/5.0 (compatible; Applebot/0.1; +http://www.apple.com/go/applebot)', // Applebot Web Indexer
+            'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)', // Facebook Social Embed
+            'Mozilla/5.0 (compatible; Pinterestbot/1.0; +http://www.pinterest.com/bot.html)', // Pinterest Social Bot
+            'Slackbot 1.0 (+https://api.slack.com/robots)', // Slack Messaging bot
+            'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)', // Discord Rich Embed bot
+            'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)', // Googlebot Web Core
+            'Mozilla/5.0 (compatible; Google-News; +http://support.google.com/news/answer/176017)', // Google News Core
+            'Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)', // Yandex Search Core
+            'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)', // Bing Search Core
+            'Mozilla/5.0 (compatible; DuckDuckGo-Favicons-Bot/1.0; +http://duckduckgo.com)', // DuckDuckGo Favicon Bot
+            'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)', // Baidu Search Core
+            'Mozilla/5.0 (compatible; DotBot/1.2; +https://opensiteexplorer.org/dotbot; help@moz.com)', // Moz DotBot
+            'Mozilla/5.0 (compatible; MJ12bot/v1.4.8; http://mj12bot.com/)' // Majestic Link indexer
         ];
 
         this.referrers = [
