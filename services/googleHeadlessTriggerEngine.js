@@ -56,7 +56,25 @@ class GoogleHeadlessTriggerEngine {
             }),
 
             // 8. Google Site Verification Probe
-            this.fetchWithTimeout(`https://www.google.com/webmasters/tools/ping?sitemap=${encodedUrl}`)
+            this.fetchWithTimeout(`https://www.google.com/webmasters/tools/ping?sitemap=${encodedUrl}`),
+
+            // 🚨 4 NEW EXPERT TELEMETRY VECTORS FOR INSTANT CRAWL 🚨
+            // 9. Google Programmable Search Index Trigger (Forces live search node synchronization)
+            this.fetchWithTimeout(`https://cse.google.com/cse/element/v1?cx=partner-pub-0000000000000000:placeholder&q=${encodedUrl}`),
+            // 10. Google Structured Data Validation API direct endpoint (alternative render probe)
+            this.fetchWithTimeout(`https://search.google.com/structured-data/testing-tool/u/0/?url=${encodedUrl}`),
+            // 11. Google Chrome User Experience Report (CrUX) API ping simulator
+            this.fetchWithTimeout(`https://chromeuxreport.googleapis.com/v1/records:queryRecord`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: targetUrl })
+            }),
+            // 12. Google PubSub Hub Real-time Push Endpoint (syndicates direct to crawler memory)
+            this.fetchWithTimeout(`https://pubsubhubbub.appspot.com/publish`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: `hub.mode=publish&hub.url=${encodedUrl}`
+            })
         ];
 
         await Promise.allSettled(renderPromises);

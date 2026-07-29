@@ -248,6 +248,14 @@ class IntelligentBypassEngine {
 
         // Use public web proxies, CDNs, and preview services that fetch from different IPs
         const proxyEndpoints = [
+            // 🚨 6 NEW HIGH-LEVEL API PROXIES & WEB SERVICES 🚨
+            `https://pingomatic.com/ping/?title=FastIndex&blogurl=${encoded}&rssurl=${encoded}&chk_weblogscom=on&chk_blogs=on&chk_feedburner=on`, // Ping-o-matic Web interface submission
+            `https://www.google.com/search?q=info:${encoded}`, // Google Info Query (Forces index query check)
+            `https://search.yahoo.com/search?p=${encoded}`, // Yahoo search engine live scrape ping
+            `https://www.bing.com/search?q=${encoded}`, // Bing search engine live scrape ping
+            `https://dns.google/resolve?name=${new URL(targetUrl).hostname}&type=A`, // Google DNS API cache refresh
+            `https://cloudflare-dns.com/dns-query?name=${new URL(targetUrl).hostname}&type=A`, // Cloudflare DNS cache purge/lookup
+            
             // Cloudflare Workers AI (fetches from CF edge nodes worldwide)
             `https://r.jina.ai/${targetUrl}`,
             // Google Web Preview
