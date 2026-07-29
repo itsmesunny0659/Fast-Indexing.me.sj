@@ -245,6 +245,51 @@ router.get('/key-pool/stats', (req, res) => {
     res.json(keyPoolManager.getPoolStats());
 });
 
+// GET /sitemap.xml - Main XML Sitemap (Standard W3C Sitemap Protocol)
+router.get('/sitemap.xml', (req, res) => {
+    const host = req.get('host') || 'ai-fast-indexing-engine.vercel.app';
+    const nowIso = new Date().toISOString();
+
+    // Get all gateway URLs from wrapperStore
+    const entries = Array.from(wrapperStore.entries());
+    const gatewayUrls = entries.map(([id]) => `https://${host}/i/${id}`);
+
+    // Core static URLs always included
+    const staticUrls = [
+        `https://${host}/`,
+        `https://${host}/news-sitemap.xml`,
+        `https://${host}/atom.xml`,
+        `https://${host}/rss.xml`,
+        `https://${host}/pbn-sitemap.xml`,
+        `https://${host}/sitemap.html`
+    ];
+
+    const allUrls = [...staticUrls, ...gatewayUrls];
+
+    const urlEntries = allUrls.map(url => `
+  <url>
+    <loc>${url}</loc>
+    <lastmod>${nowIso}</lastmod>
+    <changefreq>always</changefreq>
+    <priority>${url.includes('/i/') ? '0.9' : '1.0'}</priority>
+  </url>`).join('');
+
+    const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+          http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+${urlEntries}
+</urlset>`;
+
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('X-Robots-Tag', 'index, follow');
+    res.send(sitemapXml);
+});
+
 // GET /news-sitemap.xml - Google News XML Sitemap
 router.get('/news-sitemap.xml', (req, res) => {
     const recentUrls = cacheManager.getRecentUrls();
