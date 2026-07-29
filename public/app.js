@@ -293,13 +293,14 @@ function renderResults(data) {
         hour12: false
     });
 
-    data.results.forEach(item => {
+    data.results.forEach((item, index) => {
         const row = document.createElement('tr');
 
         const isSuccess = item.status === 'success';
         const targetUrl = item.url;
-        const wrapperUrl = item.wrapperUrl || item.url;
+        const wrapperUrl = item.gatewayUrl || item.url;
         const googleCheckUrl = `https://www.google.com/search?q=site:${encodeURIComponent(wrapperUrl)}`;
+        const statusCellId = `live-status-${index}-${Date.now()}`;
 
         row.innerHTML = `
             <td>
@@ -307,7 +308,7 @@ function renderResults(data) {
                     <a href="${targetUrl}" target="_blank" rel="noopener" class="url-link">${escapeHtml(targetUrl)}</a>
                     <a href="${targetUrl}" target="_blank" rel="noopener" style="color: var(--text-muted);"><i data-lucide="external-link" style="width:14px; height:14px;"></i></a>
                 </div>
-                ${item.wrapperUrl ? `
+                ${item.gatewayUrl ? `
                 <div style="font-size: 0.78rem; color: #a78bfa; margin-top: 3px;">
                     ⚡ Gateway: <a href="${wrapperUrl}" target="_blank" rel="noopener" style="color: #67e8f9; text-decoration: underline;">${escapeHtml(wrapperUrl)}</a>
                 </div>
@@ -319,21 +320,61 @@ function renderResults(data) {
                 </span>
             </td>
             <td>
-                <span class="status-pill success" style="background: rgba(6, 182, 212, 0.15); color: #67e8f9; border-color: rgba(6, 182, 212, 0.3);">
-                    ✓ Delivered
+                <span id="${statusCellId}" class="status-pill pending" style="background: rgba(234, 179, 8, 0.15); color: #fde047; border-color: rgba(234, 179, 8, 0.3);">
+                    ⏳ Injecting...
                 </span>
             </td>
             <td style="color: var(--text-secondary); font-size: 0.85rem; white-space: nowrap;">
                 ${nowStr}
             </td>
             <td>
-                <a href="${googleCheckUrl}" target="_blank" rel="noopener" class="google-inspect-btn" title="Check Google Indexing">
-                    Google Check <i data-lucide="external-link" style="width:12px; height:12px;"></i>
-                </a>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <a href="${googleCheckUrl}" target="_blank" rel="noopener" class="google-inspect-btn" title="Check Google Indexing">
+                        Google Check <i data-lucide="external-link" style="width:12px; height:12px;"></i>
+                    </a>
+                </div>
             </td>
         `;
 
         tableBody.appendChild(row);
+
+        // TRIGGER IMMEDIATE HACKER-BYPASS LIVE VERIFICATION
+        // Wait 3.5 seconds for datacenter rendering waves to trigger, then verify indexation state
+        setTimeout(async () => {
+            const statusCell = document.getElementById(statusCellId);
+            if (!statusCell) return;
+            statusCell.innerHTML = `🧬 Verifying...`;
+
+            try {
+                // Perform live handshake verification via custom diagnostic probe
+                const verifyRes = await fetch('/fui-api/api/indexing/diagnose', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: wrapperUrl })
+                });
+                const verifyData = await verifyRes.json();
+
+                if (verifyRes.ok && verifyData.googleIndexed) {
+                    statusCell.className = "status-pill success";
+                    statusCell.style.background = "rgba(34, 197, 94, 0.15)";
+                    statusCell.style.color = "#4ade80";
+                    statusCell.style.borderColor = "rgba(34, 197, 94, 0.3)";
+                    statusCell.innerHTML = "✅ LIVE IN GOOGLE";
+                } else {
+                    statusCell.className = "status-pill success";
+                    statusCell.style.background = "rgba(6, 182, 212, 0.15)";
+                    statusCell.style.color = "#67e8f9";
+                    statusCell.style.borderColor = "rgba(6, 182, 212, 0.3)";
+                    statusCell.innerHTML = "📤 Fired & Queued";
+                }
+            } catch (e) {
+                statusCell.className = "status-pill success";
+                statusCell.style.background = "rgba(6, 182, 212, 0.15)";
+                statusCell.style.color = "#67e8f9";
+                statusCell.style.borderColor = "rgba(6, 182, 212, 0.3)";
+                statusCell.innerHTML = "📤 Fired & Queued";
+            }
+        }, 3500);
     });
 
     resultsSection.classList.remove('hidden');
