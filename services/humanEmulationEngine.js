@@ -73,22 +73,6 @@ class HumanEmulationEngine {
         return list;
     }
 
-        this.referrers = [
-            'https://www.google.com/',
-            'https://news.google.com/',
-            'https://t.co/',
-            'https://www.reddit.com/',
-            'https://www.bing.com/',
-            'https://l.facebook.com/'
-        ];
-
-        this.clientHints = [
-            { platform: '"Windows"', mobile: '?0', ua: '"Chromium";v="122", "Not(A:Brand";v="24", "Google Chrome";v="122"' },
-            { platform: '"macOS"', mobile: '?0', ua: '"Chromium";v="122", "Not(A:Brand";v="24", "Safari";v="17"' },
-            { platform: '"Android"', mobile: '?1', ua: '"Chromium";v="122", "Google Chrome";v="122"' }
-        ];
-    }
-
     getRandomItem(arr) {
         return arr[Math.floor(Math.random() * arr.length)];
     }
