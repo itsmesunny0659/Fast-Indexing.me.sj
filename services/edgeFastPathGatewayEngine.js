@@ -80,6 +80,11 @@ class EdgeFastPathGatewayEngine {
             };
         }
 
+        // EXPERT APPROACH: For blocked resources (PDFs, Google Sites), use self-canonical pointing to our own High-DA gateway link!
+        // This forces Googlebot to index this gateway page, bypassing target site 403 blocks completely.
+        const selfCanonicalUrl = `https://${host}/i/${urlId}`;
+        const canonicalUrl = (isPdf || isGoogleSite) ? selfCanonicalUrl : targetUrl;
+
         return `<!DOCTYPE html>
 <html lang="en" itemscope itemtype="http://schema.org/${schemaType}">
 <head>
@@ -88,7 +93,7 @@ class EdgeFastPathGatewayEngine {
     <title>${escapeHtml(title)}</title>
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
     <meta name="description" content="Detailed optimization assessment and crawling analysis report for ${escapeHtml(targetUrl)}">
-    <link rel="canonical" href="${escapeHtml(targetUrl)}">
+    <link rel="canonical" href="${escapeHtml(canonicalUrl)}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
