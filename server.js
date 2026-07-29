@@ -50,7 +50,13 @@ function checkAuth(req, res, next) {
                             url.startsWith('/hub/') || 
                             url.includes('google51515c17184409ba.html') || 
                             url.endsWith('.txt') ||
-                            url.endsWith('.xml');
+                            url.endsWith('.xml') ||
+                            url === '/sitemap.xml' ||
+                            url === '/news-sitemap.xml' ||
+                            url === '/pbn-sitemap.xml' ||
+                            url === '/atom.xml' ||
+                            url === '/rss.xml' ||
+                            url === '/sitemap.html';
     
     if (isPublicGateway) {
         return next();
@@ -131,7 +137,8 @@ app.use('/fui-api/', (req, res, next) => {
 // Mount fui-api indexing routes
 app.use('/fui-api/api/indexing', apiRateLimiter, indexingRoutes);
 
-// High-DA HTML Indexing Wrapper Gateway, RSS/Sitemap & PBN Routes (checked for auth dynamically)
+// High-DA HTML Indexing Wrapper Gateway, RSS/Sitemap & PBN Routes
+// IMPORTANT: Must be mounted BEFORE express.static so XML/sitemap routes take priority
 app.use('/', indexingRoutes);
 
 // Fallback route for SPA - serving index.html safely only after checkAuth validates cookies
@@ -144,6 +151,7 @@ app.get('/index.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
+// NOTE: express.static is placed LAST so dynamic routes (sitemap.xml, rss.xml etc.) always take priority
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('*', (req, res) => {

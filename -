@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Fast Indexing Engine | Instant Google Search Indexer</title>
+
+    <!-- PWA Manifest & Meta -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#7c3aed">
+
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <div class="brand-icon">
+                    <i data-lucide="zap"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">AI FAST INDEXING</span>
+                    <span class="brand-badge">ENGINE v1.0</span>
+                </div>
+            </div>
+
+            <div class="nav-actions">
+                <!-- Service Account Indicator -->
+                <div id="saStatusBadge" class="sa-badge offline" onclick="openModal('keyModal')">
+                    <span class="dot"></span>
+                    <span id="saStatusText">Key: Simulation Mode</span>
+                    <i data-lucide="settings" class="mini-icon"></i>
+                </div>
+
+                <!-- Credit Counter Badge -->
+                <div class="credit-badge">
+                    <i data-lucide="coins" class="credit-icon"></i>
+                    <span id="creditBalance">100</span> <span class="unit">cr</span>
+                    <button class="add-cr-btn" onclick="addMoreCredits()" title="Add 50 Free Credits">+</button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- Hero Title Section -->
+        <section class="hero-section">
+            <h1 class="hero-title">Submit URLs for Fast Indexing</h1>
+            <p class="hero-subtitle">Instant Google Search Console & Indexing API Engine. 1 credit per URL.</p>
+        </section>
+
+        <!-- Stats Counter Grid -->
+        <section class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon-wrapper purple">
+                    <i data-lucide="send"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Total Submitted</span>
+                    <h3 id="statSubmitted">0</h3>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrapper green">
+                    <i data-lucide="check-circle-2"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Successfully Indexed</span>
+                    <h3 id="statSuccess">0</h3>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrapper red">
+                    <i data-lucide="alert-circle"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Failed / Retried</span>
+                    <h3 id="statFailed">0</h3>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon-wrapper blue">
+                    <i data-lucide="sparkles"></i>
+                </div>
+                <div class="stat-info">
+                    <span class="stat-label">Credits Remaining</span>
+                    <h3 id="statCredits">100</h3>
+                </div>
+            </div>
+        </section>
+
+        <!-- Main Workspace Input Box -->
+        <section class="workspace-card">
+            <!-- Tabs Header -->
+            <div class="tab-header">
+                <button class="tab-btn active" onclick="switchTab('pasteTab')">
+                    <i data-lucide="file-text"></i> Paste URLs
+                </button>
+                <button class="tab-btn" onclick="switchTab('sitemapTab')">
+                    <i data-lucide="globe"></i> Sitemap XML Extractor
+                </button>
+                <button class="tab-btn" onclick="openModal('keyModal')">
+                    <i data-lucide="key"></i> Google Key Config
+                </button>
+            </div>
+
+            <!-- Tab Content 1: Paste URLs -->
+            <div id="pasteTab" class="tab-content active">
+                <div class="textarea-wrapper">
+                    <textarea id="urlInput" placeholder="https://yourdomain.com/page-1&#10;https://yourdomain.com/page-2&#10;https://yourdomain.com/page-3" rows="7" oninput="updateUrlCount()"></textarea>
+                </div>
+
+                <div class="input-footer">
+                    <div class="url-counter">
+                        <span id="detectedCount">0</span> URLs detected
+                        <span class="rule-tip">• One URL per line • Absolute URLs only • ⚡ Unlimited URLs Supported</span>
+                    </div>
+                    <button class="btn-clear" onclick="clearUrls()">Clear</button>
+                </div>
+            </div>
+
+            <!-- Tab Content 2: Sitemap XML Extractor -->
+            <div id="sitemapTab" class="tab-content">
+                <div class="sitemap-input-group">
+                    <input type="url" id="sitemapUrlInput" placeholder="https://yourdomain.com/sitemap.xml">
+                    <button class="btn-secondary" onclick="fetchSitemap()">
+                        <i data-lucide="download"></i> Extract URLs
+                    </button>
+                </div>
+                <div id="sitemapStatus" class="sitemap-status"></div>
+            </div>
+
+            <!-- Submit Button Footer -->
+            <div class="submit-footer">
+                <button id="submitBtn" class="btn-primary" onclick="submitUrlsForIndexing()">
+                    <span id="btnText">🚀 Submit URLs for Fast Indexing</span>
+                    <span id="btnSpinner" class="spinner hidden"></span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Results & Batch Section -->
+        <section id="resultsSection" class="results-card hidden">
+            <div class="results-header">
+                <div class="status-title">
+                    <div class="pulse-indicator"></div>
+                    <h2>Batch Processing Complete</h2>
+                </div>
+                <div class="batch-metrics">
+                    <div class="metric">Submitted: <strong id="batchSubmitted">0</strong></div>
+                    <div class="metric">Failed: <strong id="batchFailed">0</strong></div>
+                    <div class="metric">Credits Used: <strong id="batchCreditsUsed">0</strong></div>
+                </div>
+            </div>
+
+            <!-- Table of Results -->
+            <div class="table-responsive">
+                <table class="results-table">
+                    <thead>
+                        <tr>
+                            <th>URL</th>
+                            <th>STATUS</th>
+                            <th>INDEX STATUS</th>
+                            <th>SUBMITTED</th>
+                            <th>MESSAGE</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsTableBody">
+                        <!-- Dynamic Rows Injection -->
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Google Key Config Modal -->
+    <div id="keyModal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3><i data-lucide="key"></i> Google Indexing Service Account JSON Key</h3>
+                <button class="modal-close" onclick="closeModal('keyModal')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div style="background: rgba(6, 182, 212, 0.1); border: 1px solid rgba(6, 182, 212, 0.3); padding: 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 16px; color: #a5f3fc;">
+                    💡 <strong>Quick 1-Minute Key Setup:</strong><br>
+                    1. Open <a href="https://console.cloud.google.com/" target="_blank" style="color: #67e8f9; text-decoration: underline;">Google Cloud Console</a> & Enable <strong>Indexing API</strong>.<br>
+                    2. Go to <strong>Credentials</strong> &rarr; <strong>Create Service Account</strong> &rarr; Download <strong>JSON Key</strong>.<br>
+                    3. Copy & paste the JSON content below and click <strong>Test & Save Key</strong>.
+                </div>
+                <label style="display: block; margin-bottom: 8px; font-weight: 500; font-size: 0.9rem;">
+                    Service Account JSON Key Content
+                </label>
+                <textarea id="serviceAccountJsonInput" rows="8" class="url-textarea" placeholder='{"type": "service_account", "project_id": "...", "private_key": "..."}'></textarea>
+                <div id="keyTestResult" style="margin-top: 10px; font-size: 0.85rem; display: none;"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-clear" onclick="closeKeyModal()">Cancel</button>
+                <button class="btn-primary" onclick="saveServiceAccountKey()">
+                    <i data-lucide="key" style="width:16px; height:16px;"></i> Test & Save Key
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
