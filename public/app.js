@@ -83,6 +83,10 @@ function closeModal(modalId) {
 async function refreshStatus() {
     try {
         const res = await fetch('/fui-api/api/indexing/refresh-status');
+        if (res.status === 401) {
+            window.location.href = '/login.html';
+            return;
+        }
         if (!res.ok) return;
 
         const data = await res.json();
@@ -231,6 +235,11 @@ async function submitUrlsForIndexing() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ urls })
         });
+
+        if (res.status === 401) {
+            window.location.href = '/login.html';
+            return;
+        }
 
         const data = await res.json();
 
