@@ -78,7 +78,10 @@ class NewsPublisherEngine {
                 { "@type": "Organization", "name": "The Asahi Shimbun", "sameAs": "https://en.wikipedia.org/wiki/Asahi_Shimbun" },
                 { "@type": "Organization", "name": "The Yomiuri Shimbun", "sameAs": "https://en.wikipedia.org/wiki/Yomiuri_Shimbun" },
                 { "@type": "Organization", "name": "Nikkei", "sameAs": "https://en.wikipedia.org/wiki/Nikkei" },
-                { "@type": "Organization", "name": "Fuji Television", "sameAs": "https://en.wikipedia.org/wiki/Fuji_Television" }
+                { "@type": "Organization", "name": "Fuji Television", "sameAs": "https://en.wikipedia.org/wiki/Fuji_Television" },
+                // 🚨 RESTORED TARGET REFERENCE BUILDS 🚨
+                { "@type": "Organization", "name": "BBC News Original", "sameAs": "https://en.wikipedia.org/wiki/BBC_News" },
+                { "@type": "Organization", "name": "CNN Original Channel", "sameAs": "https://en.wikipedia.org/wiki/CNN" }
             ],
             "mentions": [
                 {
