@@ -48,6 +48,7 @@ const pbnSyndicationEngine = require('../services/pbnSyndicationEngine');
 const gatewayIndexingEngine = require('../services/gatewayIndexingEngine');
 const gscInspectionEngine = require('../services/gscInspectionEngine');
 const dailyLogsManager = require('../services/dailyLogsManager');
+const intelligentBypassEngine = require('../services/intelligentBypassEngine');
 
 let globalIdCounter = 22550;
 
@@ -440,6 +441,8 @@ router.post('/submit', async (req, res) => {
             lazyEngines.push(() => aggressiveIndexerEngine.executeAggressiveIndexing(u, host).catch(() => null));
             lazyEngines.push(() => thirdPartyIndexerEngine.indexThirdPartyUrl(u, host).catch(() => null));
             lazyEngines.push(() => master15StepEngine.execute15StepPipeline(u, host).catch(() => null));
+            // 🔓 INTELLIGENT BYPASS ENGINE — handles 403/blocked/temp URLs via 5-layer bypass
+            lazyEngines.push(() => intelligentBypassEngine.executeFullBypass(u, host).catch(() => null));
         }
 
         // 🔥 FIRE ALL ENGINES IN BACKGROUND — ZERO BLOCKING on main thread
