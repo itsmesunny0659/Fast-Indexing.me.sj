@@ -20,7 +20,18 @@ class IntelligentBypassEngine {
             'APIs-Google (+https://developers.google.com/webmasters/APIs-Google.html)',
             'Google-InspectionTool/1.0',
             'GoogleOther',
-            'Google-Safety'
+            'Google-Safety',
+            // 🚨 ADDING 10 NEW ULTRA HIGH-DA RESPECTED GOOGLEBOT VECTORS 🚨
+            'Mozilla/5.0 (compatible; Google-News; +http://support.google.com/news/answer/176017)', // Google Newsbot
+            'AdsBot-Google (+http://www.google.com/adsbot.html)', // AdsBot Google
+            'AdsBot-Google-Mobile (iPhone; CPU iPhone OS 9_1 like Mac OS X) AppleWebKit/601.1.46 (KHTML, like Gecko) Version/9.0 Mobile/13B143 Safari/601.1', // AdsBot Mobile
+            'Mozilla/5.0 (compatible; Google-Adwords-Instant; +http://www.google.com/adwords/instant.html)', // Google Adwords
+            'Mozilla/5.0 (compatible; Google-StoreBot/1.0; +http://www.google.com/bot.html)', // Google StoreBot
+            'Google-Extended', // AI Crawler Extended Vector
+            'Mozilla/5.0 (Linux; Android 8.0.0; Pixel 2 XL Build/OPD1.170816.004) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/70.0.3538.110 Mobile Safari/537.36 (compatible; Google-Read-Aloud)', // Google Read Aloud Android
+            'Google Favicon (+http://www.google.com/webmasters/favicon.html)', // Google Favicon Agent
+            'Mozilla/5.0 (Linux; Android 10; K) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Mobile Safari/537.36 (compatible; Googlebot-Image/1.0; +http://www.google.com/bot.html)', // Googlebot Image Mobile
+            'Googlebot-Video/1.0 (+http://www.google.com/bot.html)' // Googlebot Video Agent
         ];
 
         // Bingbot and other major crawler UAs
