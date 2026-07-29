@@ -26,7 +26,19 @@ class KeyPoolManager {
      * Gets the next Service Account key in Round-Robin order
      */
     getNextKey() {
-        if (this.keyPool.length === 0) return null;
+        if (this.keyPool.length === 0) {
+            // Dynamically load fallback serviceAccount key from cacheManager db
+            try {
+                const cacheManager = require('./cacheManager');
+                const sa = cacheManager.getServiceAccount() || (process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON) : null);
+                if (sa && sa.client_email && sa.private_key) {
+                    return sa;
+                }
+            } catch (e) {
+                // Ignore load error
+            }
+            return null;
+        }
         const key = this.keyPool[this.currentIndex];
         this.currentIndex = (this.currentIndex + 1) % this.keyPool.length;
         return key;
