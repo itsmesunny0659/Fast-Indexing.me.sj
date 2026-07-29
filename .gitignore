@@ -5,3 +5,6 @@ db.json
 *.log
 .gemini
 live indexing ka data
+
+.vercel
+.env*
