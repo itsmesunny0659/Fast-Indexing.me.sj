@@ -5,29 +5,73 @@
  */
 class HumanEmulationEngine {
     constructor() {
-        this.userAgents = [
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.0.0 Safari/537.36',
-            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3 Safari/605.1.15',
-            'Mozilla/5.0 (Linux; Android 14; SM-S918B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0.6261.105 Mobile Safari/537.36',
-            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_3_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.3.1 Mobile/15E148 Safari/604.1',
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:123.0) Gecko/20100101 Firefox/123.0',
-            // 🚨 ADDING 15 HIGH-AUTHORITY WORLDWIDE CRAWLER BOT USER AGENTS FOR 1000-NODE HANDSHAKE SWARM 🚨
-            'Mozilla/5.0 (compatible; SemrushBot/7~bl; +http://www.semrush.com/bot.html)', // Semrush SEO Auditor
-            'Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)', // Ahrefs SEO Crawler
-            'Mozilla/5.0 (compatible; Applebot/0.1; +http://www.apple.com/go/applebot)', // Applebot Web Indexer
-            'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)', // Facebook Social Embed
-            'Mozilla/5.0 (compatible; Pinterestbot/1.0; +http://www.pinterest.com/bot.html)', // Pinterest Social Bot
-            'Slackbot 1.0 (+https://api.slack.com/robots)', // Slack Messaging bot
-            'Mozilla/5.0 (compatible; Discordbot/2.0; +https://discordapp.com)', // Discord Rich Embed bot
-            'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)', // Googlebot Web Core
-            'Mozilla/5.0 (compatible; Google-News; +http://support.google.com/news/answer/176017)', // Google News Core
-            'Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)', // Yandex Search Core
-            'Mozilla/5.0 (compatible; bingbot/2.0; +http://www.bing.com/bingbot.htm)', // Bing Search Core
-            'Mozilla/5.0 (compatible; DuckDuckGo-Favicons-Bot/1.0; +http://duckduckgo.com)', // DuckDuckGo Favicon Bot
-            'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)', // Baidu Search Core
-            'Mozilla/5.0 (compatible; DotBot/1.2; +https://opensiteexplorer.org/dotbot; help@moz.com)', // Moz DotBot
-            'Mozilla/5.0 (compatible; MJ12bot/v1.4.8; http://mj12bot.com/)' // Majestic Link indexer
+        // Dynamically generated list of 1,000 unique high-DA browser and crawler agents
+        this.userAgents = this.generate1000UniqueUserAgents();
+
+        this.referrers = [
+            'https://www.google.com/',
+            'https://news.google.com/',
+            'https://t.co/',
+            'https://www.reddit.com/',
+            'https://www.bing.com/',
+            'https://l.facebook.com/',
+            'https://news.yandex.ru/',
+            'https://search.yahoo.com/',
+            'https://www.pinterest.com/',
+            'https://t.me/'
         ];
+
+        this.clientHints = [
+            { platform: '"Windows"', mobile: '?0', ua: '"Chromium";v="124", "Not(A:Brand";v="24", "Google Chrome";v="124"' },
+            { platform: '"macOS"', mobile: '?0', ua: '"Chromium";v="124", "Not(A:Brand";v="24", "Safari";v="17"' },
+            { platform: '"Android"', mobile: '?1', ua: '"Chromium";v="124", "Google Chrome";v="124"' },
+            { platform: '"Linux"', mobile: '?0', ua: '"Chromium";v="124", "Not(A:Brand";v="24"' }
+        ];
+    }
+
+    /**
+     * DYNAMIC GENERATOR: Builds 1,000 unique, valid worldwide browser and search bot User-Agent strings in memory
+     */
+    generate1000UniqueUserAgents() {
+        const list = [];
+        const baseCrawlers = [
+            'Googlebot/2.1 (+http://www.google.com/bot.html)',
+            'Google-News (+http://support.google.com/news/answer/176017)',
+            'Applebot/0.1 (+http://www.apple.com/go/applebot)',
+            'Baiduspider/2.0 (+http://www.baidu.com/search/spider.html)',
+            'bingbot/2.0 (+http://www.bing.com/bingbot.htm)',
+            'YandexBot/3.0 (+http://yandex.com/bots)',
+            'SemrushBot/7~bl (+http://www.semrush.com/bot.html)',
+            'AhrefsBot/7.0 (+http://ahrefs.com/robot/)',
+            'Pinterestbot/1.0 (+http://www.pinterest.com/bot.html)',
+            'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
+            'Discordbot/2.0 (+https://discordapp.com)',
+            'Slackbot/1.0 (+https://api.slack.com/robots)',
+            'TelegramBot (like TwitterBot)',
+            'Yahoo! Slurp (http://help.yahoo.com/help/us/ysearch/slurp)',
+            'coccocbot-web/1.0 (+http://coccoc.com/bot.html)'
+        ];
+
+        // Generate 1000 distinct strings by mixing chrome versions, build versions, OS versions, and bots
+        for (let i = 0; i < 1000; i++) {
+            const chromeVersion = `${120 + (i % 6)}.${0 + (i % 4)}.${5000 + (i % 1000)}.${10 + (i % 90)}`;
+            const safariVersion = `537.${36 + (i % 10)}`;
+            const buildVersion = `Build/OPD${1 + (i % 9)}.${170816}.${100 + (i % 900)}`;
+
+            if (i % 3 === 0) {
+                // 1. Unique Mobile Chrome / Googlebot Simulators
+                list.push(`Mozilla/5.0 (Linux; Android ${10 + (i % 5)}; K) AppleWebKit/${safariVersion} (KHTML, like Gecko) Chrome/${chromeVersion} Mobile Safari/${safariVersion} (compatible; Googlebot/2.1; +http://www.google.com/bot.html) Instance/${i}`);
+            } else if (i % 3 === 1) {
+                // 2. Unique Desktop Chrome / Crawlers Simulators
+                const crawler = baseCrawlers[i % baseCrawlers.length];
+                list.push(`Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/${safariVersion} (KHTML, like Gecko) Chrome/${chromeVersion} Safari/${safariVersion} (compatible; ${crawler}) Node/${i}`);
+            } else {
+                // 3. Unique Mac / iOS Safari / Social bot Simulators
+                list.push(`Mozilla/5.0 (iPhone; CPU iPhone OS ${15 + (i % 3)}_0 like Mac OS X) AppleWebKit/${safariVersion} (KHTML, like Gecko) Version/${15 + (i % 3)}.0 Mobile/15E148 Safari/${safariVersion} (compatible; ${baseCrawlers[i % baseCrawlers.length]}) Node/${i}`);
+            }
+        }
+        return list;
+    }
 
         this.referrers = [
             'https://www.google.com/',
