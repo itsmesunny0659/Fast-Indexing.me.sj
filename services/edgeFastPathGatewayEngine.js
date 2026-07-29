@@ -38,10 +38,11 @@ class EdgeFastPathGatewayEngine {
             previewSection = `
             <div style="margin: 25px 0; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; overflow: hidden; background: #161821;">
                 <div style="background: rgba(255,255,255,0.05); padding: 10px 15px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
-                    <span style="color: #38bdf8;">📄 Embedded Document Viewer</span>
+                    <span style="color: #38bdf8;">📄 Secure Embedded PDF Resource Viewer (Gov/Edu Bypass Mode)</span>
                     <a href="${escapeHtml(targetUrl)}" download style="color: #a78bfa; text-decoration: none; font-weight: 600;" target="_blank">Download PDF Original</a>
                 </div>
-                <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(targetUrl)}&embedded=true" width="100%" height="550px" style="border: none;"></iframe>
+                <!-- Layer 1: Secure viewer instance from Google's high DA network -->
+                <iframe src="https://docs.google.com/viewer?url=${encodeURIComponent(targetUrl)}&embedded=true" width="100%" height="580px" style="border: none; background: #1a1d29;" onerror="this.src='https://docs.google.com/gview?embedded=true&url=${encodeURIComponent(targetUrl)}'"></iframe>
             </div>`;
         } else if (isGoogleSite) {
             previewSection = `
@@ -50,7 +51,8 @@ class EdgeFastPathGatewayEngine {
                     <span style="color: #38bdf8;">🌐 Google Site Live Portal Preview</span>
                     <a href="${escapeHtml(targetUrl)}" style="color: #a78bfa; text-decoration: none; font-weight: 600;" target="_blank">Open Direct Site &rarr;</a>
                 </div>
-                <iframe src="${escapeHtml(targetUrl)}" width="100%" height="550px" style="border: none; background: white;"></iframe>
+                <!-- Frame loading with Google Sites sandbox bypass rules -->
+                <iframe src="${escapeHtml(targetUrl)}" width="100%" height="580px" style="border: none; background: white;" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
             </div>`;
         }
 
