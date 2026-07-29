@@ -43,16 +43,42 @@ class NewsPublisherEngine {
             },
             "description": "High-priority instant news indexing payload item",
             "about": [
-                {
-                    "@type": "Organization",
-                    "name": "BBC News",
-                    "sameAs": "https://en.wikipedia.org/wiki/BBC_News"
-                },
-                {
-                    "@type": "Organization",
-                    "name": "CNN",
-                    "sameAs": "https://en.wikipedia.org/wiki/CNN"
-                }
+                // 🇺🇸 USA Top 5 News Channels
+                { "@type": "Organization", "name": "CNN", "sameAs": "https://en.wikipedia.org/wiki/CNN" },
+                { "@type": "Organization", "name": "The New York Times", "sameAs": "https://en.wikipedia.org/wiki/The_New_York_Times" },
+                { "@type": "Organization", "name": "Fox News", "sameAs": "https://en.wikipedia.org/wiki/Fox_News" },
+                { "@type": "Organization", "name": "NBC News", "sameAs": "https://en.wikipedia.org/wiki/NBC_News" },
+                { "@type": "Organization", "name": "The Washington Post", "sameAs": "https://en.wikipedia.org/wiki/The_Washington_Post" },
+                // 🇬🇧 UK Top 5 News Channels
+                { "@type": "Organization", "name": "BBC News", "sameAs": "https://en.wikipedia.org/wiki/BBC_News" },
+                { "@type": "Organization", "name": "The Guardian", "sameAs": "https://en.wikipedia.org/wiki/The_Guardian" },
+                { "@type": "Organization", "name": "Reuters", "sameAs": "https://en.wikipedia.org/wiki/Reuters" },
+                { "@type": "Organization", "name": "Sky News", "sameAs": "https://en.wikipedia.org/wiki/Sky_News" },
+                { "@type": "Organization", "name": "The Times", "sameAs": "https://en.wikipedia.org/wiki/The_Times" },
+                // 🇮🇳 India Top 5 News Channels
+                { "@type": "Organization", "name": "The Times of India", "sameAs": "https://en.wikipedia.org/wiki/The_Times_of_India" },
+                { "@type": "Organization", "name": "NDTV", "sameAs": "https://en.wikipedia.org/wiki/NDTV" },
+                { "@type": "Organization", "name": "Republic TV", "sameAs": "https://en.wikipedia.org/wiki/Republic_World" },
+                { "@type": "Organization", "name": "Zee News", "sameAs": "https://en.wikipedia.org/wiki/Zee_News" },
+                { "@type": "Organization", "name": "The Hindu", "sameAs": "https://en.wikipedia.org/wiki/The_Hindu" },
+                // 🇩🇪 Germany Top 5 News Channels
+                { "@type": "Organization", "name": "Der Spiegel", "sameAs": "https://en.wikipedia.org/wiki/Der_Spiegel" },
+                { "@type": "Organization", "name": "Deutsche Welle", "sameAs": "https://en.wikipedia.org/wiki/Deutsche_Welle" },
+                { "@type": "Organization", "name": "Bild", "sameAs": "https://en.wikipedia.org/wiki/Bild" },
+                { "@type": "Organization", "name": "Die Welt", "sameAs": "https://en.wikipedia.org/wiki/Die_Welt" },
+                { "@type": "Organization", "name": "Tagesschau", "sameAs": "https://en.wikipedia.org/wiki/Tagesschau" },
+                // 🇫🇷 France Top 5 News Channels
+                { "@type": "Organization", "name": "Le Monde", "sameAs": "https://en.wikipedia.org/wiki/Le_Monde" },
+                { "@type": "Organization", "name": "France 24", "sameAs": "https://en.wikipedia.org/wiki/France_24" },
+                { "@type": "Organization", "name": "Le Figaro", "sameAs": "https://en.wikipedia.org/wiki/Le_Figaro" },
+                { "@type": "Organization", "name": "BFM TV", "sameAs": "https://en.wikipedia.org/wiki/BFM_TV" },
+                { "@type": "Organization", "name": "Liberation", "sameAs": "https://en.wikipedia.org/wiki/Lib%C3%A9ration" },
+                // 🇯🇵 Japan Top 5 News Channels
+                { "@type": "Organization", "name": "NHK", "sameAs": "https://en.wikipedia.org/wiki/NHK" },
+                { "@type": "Organization", "name": "The Asahi Shimbun", "sameAs": "https://en.wikipedia.org/wiki/Asahi_Shimbun" },
+                { "@type": "Organization", "name": "The Yomiuri Shimbun", "sameAs": "https://en.wikipedia.org/wiki/Yomiuri_Shimbun" },
+                { "@type": "Organization", "name": "Nikkei", "sameAs": "https://en.wikipedia.org/wiki/Nikkei" },
+                { "@type": "Organization", "name": "Fuji Television", "sameAs": "https://en.wikipedia.org/wiki/Fuji_Television" }
             ],
             "mentions": [
                 {
