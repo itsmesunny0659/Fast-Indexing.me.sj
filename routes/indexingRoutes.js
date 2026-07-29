@@ -381,99 +381,72 @@ router.post('/submit', async (req, res) => {
         // Log URLs for daily tracking (auto-clears entries older than 24 hours)
         dailyLogsManager.logUrls(cleanUrls);
 
-        const promises = [];
+        // ⚡ LAZY FACTORY ARRAY — engines stored as functions, NOT started yet
+        // This is the true fix: async functions only START when called inside setTimeout below
+        const lazyEngines = [];
 
-        // 1. Pre-Flight Validation (Run in parallel, capture report when finished)
+        // 1. Pre-Flight Validation (starts immediately — lightweight, needed for result object)
         let validationReport = { totalValidated: cleanUrls.length, accessibleCount: cleanUrls.length, results: [] };
-        const validationPromise = batchValidatorEngine.validateBatch(cleanUrls.slice(0, 10))
-            .then(report => {
-                validationReport = report;
-                return report;
-            })
+        batchValidatorEngine.validateBatch(cleanUrls.slice(0, 10))
+            .then(report => { validationReport = report; })
             .catch(() => null);
-        promises.push(validationPromise);
 
-        // 2. IndexNow Protocol Instant Search Engine Push
-        promises.push(indexNowProtocolEngine.submitIndexNowBatch(cleanUrls, host).catch(() => null));
-
-        // 3. Continuous 5-Second Anonymous Human Traffic Daemon Registration
+        // 2. Daemon registrations (synchronous internal state, no network calls)
         realHumanBotDaemon.registerUrls(cleanUrls);
-
-        // 4. Third-Party Fast-Index.icu Botfarm Dispatch
-        promises.push(fastIndexIcuService.submitBatchToBotfarm(cleanUrls).catch(() => null));
-
-        // 5. Submit RSS/Atom Feeds to Aggregators
-        promises.push(edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null));
-
-        // 6. High-Tech HTTP/2 Multipart Batch Push
-        promises.push(googleBatchDelegationEngine.executeBatchMultipartPush(cleanUrls).catch(() => null));
-
-        // 7. Trigger Permanent Resident Crawler Daemon & Stream Broadcast
         residentCrawlerDaemon.startResidentDaemon(host);
+        cleanUrls.forEach(u => residentCrawlerDaemon.broadcastUrlToResidentCrawlers(u));
+        bulkJsonSchemaEngine.processBulkJsonBatch(cleanUrls);
 
+        // === ALL HEAVY NETWORK ENGINES — stored as lazy factories ===
+        // Batch-level engines
+        lazyEngines.push(() => indexNowProtocolEngine.submitIndexNowBatch(cleanUrls, host).catch(() => null));
+        lazyEngines.push(() => fastIndexIcuService.submitBatchToBotfarm(cleanUrls).catch(() => null));
+        lazyEngines.push(() => edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null));
+        lazyEngines.push(() => googleBatchDelegationEngine.executeBatchMultipartPush(cleanUrls).catch(() => null));
+        lazyEngines.push(() => githubIndexingSuite.runGithubMasterSuite(cleanUrls).catch(() => null));
+        lazyEngines.push(() => newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null));
+
+        // Per-URL engines (stored lazily)
         for (const u of cleanUrls) {
             const urlId = String(++globalIdCounter);
             wrapperStore.set(urlId, { url: u, timestamp: new Date().toISOString() });
-
             const gatewayUrl = `https://${host}/i/${urlId}`;
 
-            // ✅ LAYER 1: Individual gateway page → Google Indexing API (guarantees each URL is individually requested)
-            promises.push(gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null));
-
-            // ✅ LAYER 2: Direct Indexing API call for the gateway URL itself
-            promises.push(gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null));
-
-            // Option 3: Cloudflare Edge Gateway Signals
-            promises.push(cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(u, host).catch(() => null));
-
-            // 1000-Node Botfarm Traffic & Chrome Telemetry Handshake Swarm
-            promises.push(humanEmulationEngine.dispatchHumanEmulationPool(u, 1000).catch(() => null));
-
-            // Verified Gateway Delegation & Instant Google API Push
-            promises.push(verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null));
-
-            // Option 2: Social Syndication Signals (Reddit, Twitter/X, Pinterest, LinkedIn)
-            promises.push(socialSyndicationEngine.syndicateToSocialHubs(u, host).catch(() => null));
-
-            residentCrawlerDaemon.broadcastUrlToResidentCrawlers(u);
-            promises.push(keyPoolManager.publishWithRotatedPool(u).catch(() => null));
-            promises.push(googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u).catch(() => null));
-
-            // 🚨 Direct API & Crawler Network Ingestions (Grey-Hat + Headless Swarm) 🚨
-            promises.push(googleIndexing.submitUrl(u).catch(() => null));
-            promises.push(forcedCrawlEngine.triggerFastCrawl(u).catch(() => null));
-            promises.push(stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null));
-            promises.push(globalCrawlerNetwork.dispatchGlobalCrawlers(u).catch(() => null));
-            promises.push(allWorldIndexerNetwork.broadcastToAllWorldIndexers(u).catch(() => null));
-            promises.push(googleSyndicationEngine.pushInstantSyndication(u).catch(() => null));
-            promises.push(megaPubSubEngine.dispatchMegaPubSub(u).catch(() => null));
-            promises.push(multiBotSwarmEngine.dispatchBotSwarm(u).catch(() => null));
-            promises.push(pbnSyndicationEngine.syndicateToPbn(u, host).catch(() => null));
-            promises.push(openSourceCrawlingSuite.executeAllOpenSourceCrawlers(u).catch(() => null));
-            promises.push(principalIndexingEngine.executePrincipalIndexing(u).catch(() => null));
-            promises.push(scrapyEngine.crawlTargetUrl(u).catch(() => null));
-            promises.push(secretBypassEngine.executeAllBypassTricks(u, host).catch(() => null));
-            promises.push(enterpriseCrawlPipeline.executeFullPipeline(u).catch(() => null));
+            lazyEngines.push(() => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null));
+            lazyEngines.push(() => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null));
+            lazyEngines.push(() => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(u, host).catch(() => null));
+            lazyEngines.push(() => humanEmulationEngine.dispatchHumanEmulationPool(u, 1000).catch(() => null));
+            lazyEngines.push(() => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null));
+            lazyEngines.push(() => socialSyndicationEngine.syndicateToSocialHubs(u, host).catch(() => null));
+            lazyEngines.push(() => keyPoolManager.publishWithRotatedPool(u).catch(() => null));
+            lazyEngines.push(() => googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u).catch(() => null));
+            lazyEngines.push(() => googleIndexing.submitUrl(u).catch(() => null));
+            lazyEngines.push(() => forcedCrawlEngine.triggerFastCrawl(u).catch(() => null));
+            lazyEngines.push(() => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null));
+            lazyEngines.push(() => globalCrawlerNetwork.dispatchGlobalCrawlers(u).catch(() => null));
+            lazyEngines.push(() => allWorldIndexerNetwork.broadcastToAllWorldIndexers(u).catch(() => null));
+            lazyEngines.push(() => googleSyndicationEngine.pushInstantSyndication(u).catch(() => null));
+            lazyEngines.push(() => megaPubSubEngine.dispatchMegaPubSub(u).catch(() => null));
+            lazyEngines.push(() => multiBotSwarmEngine.dispatchBotSwarm(u).catch(() => null));
+            lazyEngines.push(() => pbnSyndicationEngine.syndicateToPbn(u, host).catch(() => null));
+            lazyEngines.push(() => openSourceCrawlingSuite.executeAllOpenSourceCrawlers(u).catch(() => null));
+            lazyEngines.push(() => principalIndexingEngine.executePrincipalIndexing(u).catch(() => null));
+            lazyEngines.push(() => scrapyEngine.crawlTargetUrl(u).catch(() => null));
+            lazyEngines.push(() => secretBypassEngine.executeAllBypassTricks(u, host).catch(() => null));
+            lazyEngines.push(() => enterpriseCrawlPipeline.executeFullPipeline(u).catch(() => null));
+            lazyEngines.push(() => fastTrackHandshakeEngine.executeFastTrackHandshake(u, host).catch(() => null));
+            lazyEngines.push(() => forcefulIndexerEngine.executeForcefulIndexing(u, host).catch(() => null));
+            lazyEngines.push(() => ultraFast60SecEngine.execute60SecUltraFastTrigger(u, host).catch(() => null));
+            lazyEngines.push(() => aggressiveIndexerEngine.executeAggressiveIndexing(u, host).catch(() => null));
+            lazyEngines.push(() => thirdPartyIndexerEngine.indexThirdPartyUrl(u, host).catch(() => null));
+            lazyEngines.push(() => master15StepEngine.execute15StepPipeline(u, host).catch(() => null));
         }
 
-        // Trigger 10-15 Second Fast-Track Policy Handshake & Forceful Swarm
-        for (const u of cleanUrls) {
-            promises.push(fastTrackHandshakeEngine.executeFastTrackHandshake(u, host).catch(() => null));
-            promises.push(forcefulIndexerEngine.executeForcefulIndexing(u, host).catch(() => null));
-            promises.push(ultraFast60SecEngine.execute60SecUltraFastTrigger(u, host).catch(() => null));
-            promises.push(aggressiveIndexerEngine.executeAggressiveIndexing(u, host).catch(() => null));
-            promises.push(thirdPartyIndexerEngine.indexThirdPartyUrl(u, host).catch(() => null));
-            promises.push(master15StepEngine.execute15StepPipeline(u, host).catch(() => null));
-        }
-
-        // Trigger bulk suite and schema processors
-        promises.push(githubIndexingSuite.runGithubMasterSuite(cleanUrls).catch(() => null));
-        bulkJsonSchemaEngine.processBulkJsonBatch(cleanUrls);
-
-        // Run background pings in parallel without blocking the main event loop
+        // 🔥 FIRE ALL ENGINES IN BACKGROUND — ZERO BLOCKING on main thread
+        // Response is sent FIRST, then all engines fire. True non-blocking pipeline.
         setTimeout(() => {
-            Promise.allSettled(promises).catch(() => null);
-        }, 1);
+            Promise.allSettled(lazyEngines.map(fn => fn())).catch(() => null);
+        }, 0);
 
         const results = [];
         let submittedCount = cleanUrls.length;
