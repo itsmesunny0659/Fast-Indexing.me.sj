@@ -102,8 +102,6 @@ app.get('/login.html', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'login.html'));
 });
 
-// Serve static frontend files
-app.use(express.static(path.join(__dirname, 'public')));
 
 // Rate Limiter: Unlimited / Enterprise High-Volume Limit
 const apiRateLimiter = rateLimit({
@@ -136,12 +134,20 @@ app.use('/fui-api/api/indexing', apiRateLimiter, indexingRoutes);
 // High-DA HTML Indexing Wrapper Gateway, RSS/Sitemap & PBN Routes (checked for auth dynamically)
 app.use('/', indexingRoutes);
 
-// Fallback route for SPA
-app.get('*', (req, res) => {
-    if (!req.session.authenticated) {
-        return res.redirect('/login.html');
-    }
+// Fallback route for SPA - serving index.html safely only after checkAuth validates cookies
+app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+// Serve other static assets dynamically while maintaining authentication security
+app.get('/index.html', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
+
+app.get('*', (req, res) => {
+    res.redirect('/login.html');
 });
 
 app.listen(PORT, () => {
