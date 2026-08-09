@@ -260,6 +260,15 @@ async function submitUrlsForIndexing() {
                 refreshStatus();
                 updateTotalStats(data.submitted, data.failed);
                 successCount += chunkUrls.length;
+
+                // 🛑 ANTI-SPAM HANDSHAKE JUGAAD: Wait 30-40 seconds before next URL to bypass Google Rate Limit
+                if (i + chunkSize < allUrls.length) {
+                    const waitTimeSeconds = Math.floor(Math.random() * (40 - 30 + 1) + 30);
+                    for (let sec = waitTimeSeconds; sec > 0; sec--) {
+                        btnText.innerHTML = `🛡️ Anti-Spam Handshake... (Next in ${sec}s)`;
+                        await new Promise(r => setTimeout(r, 1000));
+                    }
+                }
             } else {
                 alert(`Submission Error (${res.status}): ${data.error || 'Failed to submit chunk'}`);
                 break; // Stop on API error
