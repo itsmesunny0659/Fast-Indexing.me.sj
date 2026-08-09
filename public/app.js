@@ -214,9 +214,9 @@ async function saveServiceAccountKey() {
 // Submit URLs for Indexing
 async function submitUrlsForIndexing() {
     const text = document.getElementById('urlInput').value;
-    const urls = parseUrlsFromText(text);
+    const allUrls = parseUrlsFromText(text);
 
-    if (urls.length === 0) {
+    if (allUrls.length === 0) {
         alert('Please enter at least 1 valid absolute URL (starting with http:// or https://)');
         return;
     }
@@ -226,35 +226,56 @@ async function submitUrlsForIndexing() {
     const btnSpinner = document.getElementById('btnSpinner');
 
     btn.disabled = true;
-    btnText.innerText = `Indexing ${urls.length} URLs...`;
     btnSpinner.classList.remove('hidden');
 
+    const chunkSize = 5;
+    let successCount = 0;
+    let currentChunk = 0;
+    const totalChunks = Math.ceil(allUrls.length / chunkSize);
+
     try {
-        const res = await fetch('/fui-api/api/indexing/submit', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ urls })
-        });
+        for (let i = 0; i < allUrls.length; i += chunkSize) {
+            const chunkUrls = allUrls.slice(i, i + chunkSize);
+            currentChunk++;
+            btnText.innerText = `Indexing chunk ${currentChunk} of ${totalChunks}...`;
 
-        if (res.status === 401) {
-            window.location.href = '/login.html';
-            return;
+            const res = await fetch('/fui-api/api/indexing/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ urls: chunkUrls })
+            });
+
+            if (res.status === 401) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            const data = await res.json();
+
+            if (res.ok) {
+                renderResults(data);
+                refreshStatus();
+                updateTotalStats(data.submitted, data.failed);
+                successCount += chunkUrls.length;
+            } else {
+                alert(`Submission Error (${res.status}): ${data.error || 'Failed to submit chunk'}`);
+                break; // Stop on API error
+            }
         }
-
-        const data = await res.json();
-
-        if (res.ok) {
-            renderResults(data);
-            refreshStatus();
-            updateTotalStats(data.submitted, data.failed);
-        } else {
-            alert(`Submission Error (${res.status}): ${data.error || 'Failed to submit'}`);
+        
+        if (successCount === allUrls.length) {
+            btnText.innerText = `✅ Indexed ${successCount} URLs!`;
+            setTimeout(() => {
+                btnText.innerText = '🚀 Submit URLs for Fast Indexing';
+            }, 3000);
         }
     } catch (error) {
-        alert('Network Error: Unable to connect to Indexing Server API.');
+        alert('Network Error: Process stopped due to connection issue.');
     } finally {
         btn.disabled = false;
-        btnText.innerText = '🚀 Submit URLs for Fast Indexing';
+        if (btnText.innerText.indexOf('✅') === -1) {
+            btnText.innerText = '🚀 Submit URLs for Fast Indexing';
+        }
         btnSpinner.classList.add('hidden');
     }
 }

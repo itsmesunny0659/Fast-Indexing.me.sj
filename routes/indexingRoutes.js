@@ -502,7 +502,10 @@ router.post('/submit', async (req, res) => {
         // 🔥 FIRE ALL ENGINES CONCURRENTLY AND AWAIT THEM
         // Since Vercel kills background tasks immediately after the HTTP response is sent,
         // we MUST await these promises so the data actually reaches Google's backend.
-        await Promise.allSettled(lazyEngines.map(fn => fn())).catch(() => null);
+        // FIX: Wrap in a Promise.race to enforce an 8.5-second absolute timeout so Vercel doesn't 504 error.
+        const allEnginesPromise = Promise.allSettled(lazyEngines.map(fn => fn()));
+        const timeoutPromise = new Promise(r => setTimeout(r, 8500));
+        await Promise.race([allEnginesPromise, timeoutPromise]).catch(() => null);
 
         const results = [];
         let submittedCount = cleanUrls.length;
