@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traffic Generator | Load Tester</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="background-elements">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+    
+    <main class="glass-container">
+        <header>
+            <h1>Traffic <span class="gradient-text">Generator</span></h1>
+            <p>Simulate realistic load using Puppeteer & Proxies.</p>
+        </header>
+        
+        <div class="input-group">
+            <label for="targetUrl">Target URL</label>
+            <input type="url" id="targetUrl" placeholder="https://yourwebsite.com" required>
+        </div>
+        
+        <div class="input-group">
+            <label for="proxyList">Proxy List (Optional) <span class="badge">Europe recommended</span></label>
+            <textarea id="proxyList" placeholder="http://proxy1.com:8080&#10;http://user:pass@proxy2.com:8080"></textarea>
+            <small>One proxy per line.</small>
+        </div>
+        
+        <div class="actions">
+            <button id="startBtn" class="btn primary-btn">Start Test</button>
+            <button id="stopBtn" class="btn danger-btn" disabled>Stop Test</button>
+        </div>
+        
+        <div class="status-panel">
+            <div class="status-header">
+                <h3>Live Status</h3>
+                <span id="statusIndicator" class="status-dot stopped"></span>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <span class="stat-value" id="totalVisits">0</span>
+                    <span class="stat-label">Total Visits Triggered</span>
+                </div>
+                <div class="stat-card success">
+                    <span class="stat-value" id="successVisits">0</span>
+                    <span class="stat-label">Successful</span>
+                </div>
+                <div class="stat-card error">
+                    <span class="stat-value" id="failedVisits">0</span>
+                    <span class="stat-label">Failed</span>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="app.js"></script>
+</body>
+</html>

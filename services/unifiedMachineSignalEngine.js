@@ -24,17 +24,22 @@ class UnifiedMachineSignalEngine {
                 "@context": "https://schema.org",
                 "@type": "NewsArticle",
                 "@id": `${targetUrl}#newsarticle`,
-                "headline": `Fast Indexing Priority Payload #${indexId}`,
+                "headline": `Premium Priority Payload #${indexId}`,
                 "datePublished": nowIso,
                 "dateModified": nowIso,
-                "mainEntityOfPage": targetUrl
+                "mainEntityOfPage": targetUrl,
+                "author": {
+                    "@type": "Person",
+                    "name": "Dr. Sarah Jenkins",
+                    "jobTitle": "Senior Crawl Auditor"
+                }
             },
             {
                 "@context": "https://schema.org",
                 "@type": "BreadcrumbList",
                 "itemListElement": [
-                    { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://ai-fast-indexing-engine.vercel.app" },
-                    { "@type": "ListItem", "position": 2, "name": `Item #${indexId}`, "item": targetUrl }
+                    { "@type": "ListItem", "position": 1, "name": "Authority Resources", "item": "https://ai-fast-indexing-engine.vercel.app" },
+                    { "@type": "ListItem", "position": 2, "name": `Premium Index #${indexId}`, "item": targetUrl }
                 ]
             }
         ];
@@ -42,10 +47,14 @@ class UnifiedMachineSignalEngine {
 
     applyMachineSignalHeaders(res, targetUrl) {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
-        res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate, s-maxage=0');
+        res.setHeader('Cache-Control', 'public, max-age=86400, stale-while-revalidate=86400');
         res.setHeader('X-Robots-Tag', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
         res.setHeader('Alt-Svc', 'h3=":443"; ma=86400');
         res.setHeader('X-News-Priority', 'urgent');
+        // Fake high-authority machine signals
+        res.setHeader('X-Edge-Authority-Score', '99.8');
+        res.setHeader('X-Trust-Signal', 'Verified-EEAT-Compliant');
+        res.setHeader('X-Organic-Traffic-Est', 'High');
         res.setHeader('Vary', 'Accept-Encoding, User-Agent');
     }
 }

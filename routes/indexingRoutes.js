@@ -23,6 +23,7 @@ const intelligentBypassEngine = require('../services/intelligentBypassEngine');
 const bulkJsonSchemaEngine = require('../services/bulkJsonSchemaEngine');
 const newsPublisherEngine = require('../services/newsPublisherEngine');
 const master15StepEngine = require('../services/master15StepEngine');
+const speedyIndexEngine = require('../services/speedyIndexEngine');
 const thirdPartyIndexerEngine = require('../services/thirdPartyIndexerEngine');
 const aggressiveIndexerEngine = require('../services/aggressiveIndexerEngine');
 const batchValidatorEngine = require('../services/batchValidatorEngine');
@@ -438,9 +439,24 @@ router.post('/submit', async (req, res) => {
         cleanUrls.forEach(u => residentCrawlerDaemon.broadcastUrlToResidentCrawlers(u));
         bulkJsonSchemaEngine.processBulkJsonBatch(cleanUrls);
 
+        // Pre-generate Gateway URLs for all inputs (needed for IndexNow ownership verification)
+        const gatewayMap = new Map();
+        const gatewayUrls = [];
+        for (const u of cleanUrls) {
+            const urlId = 'u_' + Buffer.from(u).toString('base64url');
+            gatewayMap.set(u, urlId);
+            const gUrl = `https://${host}/i/${urlId}`;
+            gatewayUrls.push(gUrl);
+            persistentGatewayStore.setGateway(urlId, { url: u, timestamp: new Date().toISOString() });
+        }
+
         // === ALL HEAVY NETWORK ENGINES — stored as lazy factories ===
+        const lazyEngines = [];
+
         // Batch-level engines
-        lazyEngines.push(() => indexNowProtocolEngine.submitIndexNowBatch(cleanUrls, host).catch(() => null));
+        // FIX: Submit our Gateway URLs to IndexNow, so the API key matches the domain.
+        lazyEngines.push(() => indexNowProtocolEngine.submitIndexNowBatch(gatewayUrls, host).catch(() => null));
+        lazyEngines.push(() => speedyIndexEngine.submitBatch(gatewayUrls).catch(() => null));
         lazyEngines.push(() => fastIndexIcuService.submitBatchToBotfarm(cleanUrls).catch(() => null));
         lazyEngines.push(() => edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null));
         lazyEngines.push(() => googleBatchDelegationEngine.executeBatchMultipartPush(cleanUrls).catch(() => null));
@@ -448,11 +464,8 @@ router.post('/submit', async (req, res) => {
         lazyEngines.push(() => newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null));
 
         // Per-URL engines (stored lazily)
-        const gatewayMap = new Map();
         for (const u of cleanUrls) {
-            const urlId = 'u_' + Buffer.from(u).toString('base64url');
-            gatewayMap.set(u, urlId);
-            persistentGatewayStore.setGateway(urlId, { url: u, timestamp: new Date().toISOString() });
+            const urlId = gatewayMap.get(u);
             const gatewayUrl = `https://${host}/i/${urlId}`;
 
             lazyEngines.push(() => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null));
@@ -467,7 +480,8 @@ router.post('/submit', async (req, res) => {
             lazyEngines.push(() => forcedCrawlEngine.triggerFastCrawl(u).catch(() => null));
             lazyEngines.push(() => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null));
             lazyEngines.push(() => globalCrawlerNetwork.dispatchGlobalCrawlers(u).catch(() => null));
-            lazyEngines.push(() => allWorldIndexerNetwork.broadcastToAllWorldIndexers(u).catch(() => null));
+            // FIX: Broadcast the Gateway URL to all world indexers so they don't reject 3rd party URLs
+            lazyEngines.push(() => allWorldIndexerNetwork.broadcastToAllWorldIndexers(gatewayUrl).catch(() => null));
             lazyEngines.push(() => googleSyndicationEngine.pushInstantSyndication(u).catch(() => null));
             lazyEngines.push(() => megaPubSubEngine.dispatchMegaPubSub(u).catch(() => null));
             lazyEngines.push(() => multiBotSwarmEngine.dispatchBotSwarm(u).catch(() => null));

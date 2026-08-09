@@ -62,9 +62,11 @@ class AllWorldIndexerNetwork {
             `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodedUrl}&strategy=mobile`,
             `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodedUrl}&strategy=desktop`,
             `https://translate.google.com/translate?sl=auto&tl=en&u=${encodedUrl}`,
-            `https://www.google.com/ping?sitemap=${encodedUrl}`,
+            // FIX: Ping search engines with OUR sitemap, which contains the target URL gateways
+            `https://www.google.com/ping?sitemap=https://ai-fast-indexing-engine.vercel.app/sitemap.xml`,
             `https://feedburner.google.com/fb/a/pingSubmit?bloglink=${encodedUrl}`,
-            `https://www.bing.com/ping?sitemap=${encodedUrl}`,
+            `https://www.bing.com/ping?sitemap=https://ai-fast-indexing-engine.vercel.app/sitemap.xml`,
+            // IndexNow API works because encodedUrl will now be the Gateway URL on our verified domain
             `https://api.indexnow.org/indexnow?url=${encodedUrl}&key=8a7b9c0d1e2f3a4b5c6d7e8f9a0b1c2d`,
             `https://www.bing.com/indexnow?url=${encodedUrl}&key=8a7b9c0d1e2f3a4b5c6d7e8f9a0b1c2d`,
             `https://search.seznam.cz/indexnow?url=${encodedUrl}&key=8a7b9c0d1e2f3a4b5c6d7e8f9a0b1c2d`,
