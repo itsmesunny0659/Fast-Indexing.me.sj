@@ -19,6 +19,7 @@ const proGoogleEngine = require('../services/proGoogleEngine');
 const principalIndexingEngine = require('../services/principalIndexingEngine');
 const autonomousEngine = require('../services/autonomousEngine');
 const secretBypassEngine = require('../services/secretBypassEngine');
+const intelligentBypassEngine = require('../services/intelligentBypassEngine');
 const bulkJsonSchemaEngine = require('../services/bulkJsonSchemaEngine');
 const newsPublisherEngine = require('../services/newsPublisherEngine');
 const master15StepEngine = require('../services/master15StepEngine');
@@ -48,6 +49,7 @@ const pbnSyndicationEngine = require('../services/pbnSyndicationEngine');
 const gatewayIndexingEngine = require('../services/gatewayIndexingEngine');
 const gscInspectionEngine = require('../services/gscInspectionEngine');
 const persistentGatewayStore = require('../services/persistentGatewayStore');
+const dailyLogsManager = require('../services/dailyLogsManager');
 
 let globalIdCounter = 22550;
 let hubCounter = 10000;
@@ -446,8 +448,10 @@ router.post('/submit', async (req, res) => {
         lazyEngines.push(() => newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null));
 
         // Per-URL engines (stored lazily)
+        const gatewayMap = new Map();
         for (const u of cleanUrls) {
-            const urlId = String(++globalIdCounter);
+            const urlId = 'u_' + Buffer.from(u).toString('base64url');
+            gatewayMap.set(u, urlId);
             persistentGatewayStore.setGateway(urlId, { url: u, timestamp: new Date().toISOString() });
             const gatewayUrl = `https://${host}/i/${urlId}`;
 
@@ -458,7 +462,7 @@ router.post('/submit', async (req, res) => {
             lazyEngines.push(() => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null));
             lazyEngines.push(() => socialSyndicationEngine.syndicateToSocialHubs(u, host).catch(() => null));
             lazyEngines.push(() => keyPoolManager.publishWithRotatedPool(u).catch(() => null));
-            lazyEngines.push(() => googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u).catch(() => null));
+            lazyEngines.push(() => googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null));
             lazyEngines.push(() => googleIndexing.submitUrl(u).catch(() => null));
             lazyEngines.push(() => forcedCrawlEngine.triggerFastCrawl(u).catch(() => null));
             lazyEngines.push(() => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null));
@@ -475,7 +479,7 @@ router.post('/submit', async (req, res) => {
             lazyEngines.push(() => enterpriseCrawlPipeline.executeFullPipeline(u).catch(() => null));
             lazyEngines.push(() => fastTrackHandshakeEngine.executeFastTrackHandshake(u, host).catch(() => null));
             lazyEngines.push(() => forcefulIndexerEngine.executeForcefulIndexing(u, host).catch(() => null));
-            lazyEngines.push(() => ultraFast60SecEngine.execute60SecUltraFastTrigger(u, host).catch(() => null));
+            lazyEngines.push(() => ultraFast60SecEngine.execute60SecUltraFastTrigger(u, host, gatewayUrl).catch(() => null));
             lazyEngines.push(() => aggressiveIndexerEngine.executeAggressiveIndexing(u, host).catch(() => null));
             lazyEngines.push(() => thirdPartyIndexerEngine.indexThirdPartyUrl(u, host).catch(() => null));
             lazyEngines.push(() => master15StepEngine.execute15StepPipeline(u, host).catch(() => null));
@@ -483,11 +487,10 @@ router.post('/submit', async (req, res) => {
             lazyEngines.push(() => intelligentBypassEngine.executeFullBypass(u, host).catch(() => null));
         }
 
-        // 🔥 FIRE ALL ENGINES IN BACKGROUND — ZERO BLOCKING on main thread
-        // Response is sent FIRST, then all engines fire. True non-blocking pipeline.
-        setTimeout(() => {
-            Promise.allSettled(lazyEngines.map(fn => fn())).catch(() => null);
-        }, 0);
+        // 🔥 FIRE ALL ENGINES CONCURRENTLY AND AWAIT THEM
+        // Since Vercel kills background tasks immediately after the HTTP response is sent,
+        // we MUST await these promises so the data actually reaches Google's backend.
+        await Promise.allSettled(lazyEngines.map(fn => fn())).catch(() => null);
 
         const results = [];
         let submittedCount = cleanUrls.length;
@@ -501,20 +504,18 @@ router.post('/submit', async (req, res) => {
 
         if (isBulk) {
             // === HUB ARCHITECTURE (2 or more URLs) ===
-            hubId = String(++hubCounter);
+            const hubPayload = { urls: cleanUrls, submittedAt: new Date().toISOString(), jobId };
+            hubId = 'h_' + Buffer.from(JSON.stringify(hubPayload)).toString('base64url');
             hubUrl = `https://${host}/hub/${hubId}`;
             targetSubmitUrl = hubUrl;
 
             // Store hub data
-            persistentGatewayStore.setHub(hubId, {
-                urls: cleanUrls,
-                submittedAt: new Date().toISOString(),
-                jobId
-            });
+            persistentGatewayStore.setHub(hubId, hubPayload);
         } else {
             // === SINGLE URL ARCHITECTURE ===
-            const urlId = String(globalIdCounter + 1);
-            targetSubmitUrl = `https://${host}/i/${urlId}`;
+            const firstUrl = cleanUrls[0];
+            const firstUrlId = gatewayMap.get(firstUrl);
+            targetSubmitUrl = `https://${host}/i/${firstUrlId}`;
         }
 
         // === STEP 1: Submit Target URL (Hub or Single Gateway) to Google Indexing API ===
@@ -540,9 +541,9 @@ router.post('/submit', async (req, res) => {
         // Also submit individual URLs via all other engines (keep existing behavior)
         for (const url of cleanUrls) {
             globalIdCounter++;
-            const urlId = String(globalIdCounter);
+            const urlId = gatewayMap.get(url);
             const gatewayUrl = `https://${host}/i/${urlId}`;
-            persistentGatewayStore.setGateway(urlId, { url, title: isBulk ? `Hub ${hubId} - ${url.substring(0, 40)}` : `Single - ${url.substring(0, 40)}` });
+            persistentGatewayStore.setGateway(urlId, { url, title: isBulk ? `Hub - ${url.substring(0, 40)}` : `Single - ${url.substring(0, 40)}` });
 
             const resultObj = {
                 id: globalIdCounter,

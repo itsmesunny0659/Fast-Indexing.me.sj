@@ -14,8 +14,10 @@
 
 const fs = require('fs');
 const path = require('path');
+const os = require('os');
 
 const DATA_FILE = path.join(__dirname, '../data/db.json');
+const TMP_DATA_FILE = path.join(os.tmpdir(), 'fast_indexing_db.json');
 
 class PersistentGatewayStore {
     constructor() {
@@ -24,49 +26,52 @@ class PersistentGatewayStore {
         this._loaded = false;
     }
 
-    /** Lazy-load from disk on first access */
+    /** Helper to load JSON safely */
+    _loadFromFile(filepath) {
+        try {
+            if (fs.existsSync(filepath)) {
+                const raw = fs.readFileSync(filepath, 'utf-8');
+                return JSON.parse(raw);
+            }
+        } catch (e) {}
+        return null;
+    }
+
+    /** Lazy-load from disk & /tmp on first access */
     _ensureLoaded() {
         if (this._loaded) return;
         this._loaded = true;
-        try {
-            if (fs.existsSync(DATA_FILE)) {
-                const raw = fs.readFileSync(DATA_FILE, 'utf-8');
-                const data = JSON.parse(raw);
-
-                // Restore gateway pages
-                if (data.gatewayPages && typeof data.gatewayPages === 'object') {
-                    for (const [id, entry] of Object.entries(data.gatewayPages)) {
-                        this._store.set(id, entry);
-                    }
-                    console.log(`✅ [PersistentGatewayStore] Restored ${this._store.size} gateway pages from disk.`);
-                }
-
-                // Restore hub pages
-                if (data.hubPages && typeof data.hubPages === 'object') {
-                    for (const [id, entry] of Object.entries(data.hubPages)) {
-                        this._hubStore.set(id, entry);
-                    }
-                    console.log(`✅ [PersistentGatewayStore] Restored ${this._hubStore.size} hub pages from disk.`);
+        
+        const data = this._loadFromFile(DATA_FILE) || this._loadFromFile(TMP_DATA_FILE);
+        if (data) {
+            if (data.gatewayPages && typeof data.gatewayPages === 'object') {
+                for (const [id, entry] of Object.entries(data.gatewayPages)) {
+                    this._store.set(id, entry);
                 }
             }
-        } catch (e) {
-            console.warn('[PersistentGatewayStore] Could not load from disk:', e.message);
+            if (data.hubPages && typeof data.hubPages === 'object') {
+                for (const [id, entry] of Object.entries(data.hubPages)) {
+                    this._hubStore.set(id, entry);
+                }
+            }
         }
     }
 
-    /** Save current state to disk */
+    /** Save current state to disk & /tmp */
     _persist() {
+        const payload = {
+            gatewayPages: Object.fromEntries(this._store),
+            hubPages: Object.fromEntries(this._hubStore)
+        };
+        const str = JSON.stringify(payload, null, 2);
+        
         try {
-            let data = {};
-            if (fs.existsSync(DATA_FILE)) {
-                data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
-            }
-            data.gatewayPages = Object.fromEntries(this._store);
-            data.hubPages = Object.fromEntries(this._hubStore);
-            fs.writeFileSync(DATA_FILE, JSON.stringify(data, null, 2));
-        } catch (e) {
-            // Vercel read-only filesystem - memory mode only
-        }
+            fs.writeFileSync(TMP_DATA_FILE, str);
+        } catch (e) {}
+
+        try {
+            fs.writeFileSync(DATA_FILE, str);
+        } catch (e) {}
     }
 
     // ========== GATEWAY STORE METHODS ==========
@@ -79,12 +84,34 @@ class PersistentGatewayStore {
 
     getGateway(urlId) {
         this._ensureLoaded();
-        return this._store.get(urlId);
+        if (this._store.has(urlId)) {
+            return this._store.get(urlId);
+        }
+
+        // Fallback 1: Deterministic Base64 Decoding (Guarantees zero 404s on Vercel cold starts)
+        try {
+            let encodedStr = urlId;
+            if (urlId.startsWith('u_')) {
+                encodedStr = urlId.slice(2);
+            } else if (urlId.startsWith('idx_')) {
+                // E.g. idx_22556_ms7dnh7b or custom urlId formats
+                encodedStr = urlId.split('_').pop();
+            }
+
+            const decodedUrl = Buffer.from(encodedStr, 'base64url').toString('utf-8');
+            if (decodedUrl.startsWith('http://') || decodedUrl.startsWith('https://')) {
+                const entry = { url: decodedUrl, timestamp: new Date().toISOString() };
+                this._store.set(urlId, entry);
+                return entry;
+            }
+        } catch (e) {}
+
+        return null;
     }
 
     hasGateway(urlId) {
         this._ensureLoaded();
-        return this._store.has(urlId);
+        return this.getGateway(urlId) !== null;
     }
 
     getAllGateways() {
@@ -107,12 +134,30 @@ class PersistentGatewayStore {
 
     getHub(hubId) {
         this._ensureLoaded();
-        return this._hubStore.get(hubId);
+        if (this._hubStore.has(hubId)) {
+            return this._hubStore.get(hubId);
+        }
+
+        // Fallback 1: Deterministic Base64 JSON decoding for Hubs
+        try {
+            let encodedStr = hubId;
+            if (hubId.startsWith('h_')) {
+                encodedStr = hubId.slice(2);
+            }
+            const decodedJson = Buffer.from(encodedStr, 'base64url').toString('utf-8');
+            const hubObj = JSON.parse(decodedJson);
+            if (hubObj && Array.isArray(hubObj.urls)) {
+                this._hubStore.set(hubId, hubObj);
+                return hubObj;
+            }
+        } catch (e) {}
+
+        return null;
     }
 
     hasHub(hubId) {
         this._ensureLoaded();
-        return this._hubStore.has(hubId);
+        return this.getHub(hubId) !== null;
     }
 
     getAllHubs() {

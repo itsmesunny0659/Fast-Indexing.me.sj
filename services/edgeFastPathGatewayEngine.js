@@ -106,8 +106,8 @@ class EdgeFastPathGatewayEngine {
 
         const customSchema = universalSchema;
 
-        // Clean 29 July Morning Setup: Canonical points directly to targetUrl
-        const canonicalUrl = targetUrl;
+        // Self-canonical setup ensures Googlebot INDEXES the High-DA gateway node instantly instead of marking it 'Crawled - currently not indexed'
+        const canonicalUrl = selfCanonicalUrl;
 
         return `<!DOCTYPE html>
 <html lang="en" itemscope itemtype="http://schema.org/${schemaType}">

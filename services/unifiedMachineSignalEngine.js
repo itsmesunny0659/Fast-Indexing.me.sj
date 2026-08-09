@@ -44,7 +44,6 @@ class UnifiedMachineSignalEngine {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.setHeader('Cache-Control', 'public, max-age=0, must-revalidate, s-maxage=0');
         res.setHeader('X-Robots-Tag', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
-        res.setHeader('Link', `<${targetUrl}>; rel="canonical"`);
         res.setHeader('Alt-Svc', 'h3=":443"; ma=86400');
         res.setHeader('X-News-Priority', 'urgent');
         res.setHeader('Vary', 'Accept-Encoding, User-Agent');
