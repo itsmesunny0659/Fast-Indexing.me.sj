@@ -92,6 +92,21 @@ router.get('/i/:urlId', (req, res) => {
     const { urlId } = req.params;
     const targetData = persistentGatewayStore.getGateway(urlId);
 
+    // Fallback: If memory is wiped on serverless cold start, try to decode from base64
+    if (!targetData && urlId.startsWith('u_')) {
+        try {
+            // urlId format: u_{base64url}_{randomSuffix}
+            const parts = urlId.split('_');
+            if (parts.length >= 2) {
+                const base64part = parts[1];
+                const decodedUrl = Buffer.from(base64part, 'base64url').toString('utf8');
+                if (decodedUrl.startsWith('http')) {
+                    targetData = { url: decodedUrl };
+                }
+            }
+        } catch (e) {}
+    }
+
     if (!targetData) {
         return res.status(404).send('Indexing Page Expired or Not Found');
     }
@@ -443,7 +458,8 @@ router.post('/submit', async (req, res) => {
         const gatewayMap = new Map();
         const gatewayUrls = [];
         for (const u of cleanUrls) {
-            const urlId = 'u_' + Buffer.from(u).toString('base64url');
+            const randomSuffix = Math.random().toString(36).substring(2, 10);
+            const urlId = 'u_' + Buffer.from(u).toString('base64url') + '_' + randomSuffix;
             gatewayMap.set(u, urlId);
             const gUrl = `https://${host}/i/${urlId}`;
             gatewayUrls.push(gUrl);
