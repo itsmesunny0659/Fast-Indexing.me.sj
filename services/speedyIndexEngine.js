@@ -1,4 +1,4 @@
-const fetch = require('node-fetch'); // Assuming node-fetch is available, or use global fetch if Node 18+
+// Using native global fetch (Node 18+)
 
 class SpeedyIndexEngine {
     constructor() {
