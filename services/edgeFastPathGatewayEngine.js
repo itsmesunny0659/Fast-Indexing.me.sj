@@ -100,7 +100,13 @@ class EdgeFastPathGatewayEngine {
                             "url": "https://www.google.com/favicon.ico"
                         }
                     },
-                    "mainEntityOfPage": targetUrl,
+                    "mainEntityOfPage": targetUrl
+                },
+                {
+                    "@type": "Product",
+                    "@id": `${targetUrl}#product`,
+                    "name": title,
+                    "description": `Comprehensive SEO Audit and Technical Analysis Report for ${domain}`,
                     "aggregateRating": {
                         "@type": "AggregateRating",
                         "ratingValue": "4.9",
