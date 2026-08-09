@@ -451,8 +451,6 @@ router.post('/submit', async (req, res) => {
         }
 
         // === ALL HEAVY NETWORK ENGINES — stored as lazy factories ===
-        const lazyEngines = [];
-
         // Batch-level engines
         // FIX: Submit our Gateway URLs to IndexNow, so the API key matches the domain.
         lazyEngines.push(() => indexNowProtocolEngine.submitIndexNowBatch(gatewayUrls, host).catch(() => null));
