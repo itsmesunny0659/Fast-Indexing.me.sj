@@ -253,7 +253,7 @@ async function submitUrlsForIndexing() {
             const data = await res.json();
 
             if (res.ok) {
-                renderResults(data);
+                renderResults(data, currentChunk > 1);
                 refreshStatus();
                 updateTotalStats(data.submitted, data.failed);
                 successCount += chunkUrls.length;
@@ -265,6 +265,10 @@ async function submitUrlsForIndexing() {
         
         if (successCount === allUrls.length) {
             btnText.innerText = `✅ Indexed ${successCount} URLs!`;
+            
+            // Auto-clear input box on success
+            clearUrls();
+
             setTimeout(() => {
                 btnText.innerText = '🚀 Submit URLs for Fast Indexing';
             }, 3000);
@@ -294,16 +298,29 @@ function updateTotalStats(submitted, failed) {
     document.getElementById('statFailed').innerText = totalFailedCount;
 }
 
+let totalBatchSubmitted = 0;
+let totalBatchFailed = 0;
+let totalBatchCreditsUsed = 0;
+
 // Render Results Table
-function renderResults(data) {
+function renderResults(data, append = false) {
     const resultsSection = document.getElementById('resultsSection');
     const tableBody = document.getElementById('resultsTableBody');
 
-    document.getElementById('batchSubmitted').innerText = data.submitted;
-    document.getElementById('batchFailed').innerText = data.failed;
-    document.getElementById('batchCreditsUsed').innerText = data.creditsUsed;
+    if (!append) {
+        totalBatchSubmitted = 0;
+        totalBatchFailed = 0;
+        totalBatchCreditsUsed = 0;
+        tableBody.innerHTML = '';
+    }
 
-    tableBody.innerHTML = '';
+    totalBatchSubmitted += data.submitted;
+    totalBatchFailed += data.failed;
+    totalBatchCreditsUsed += data.creditsUsed;
+
+    document.getElementById('batchSubmitted').innerText = totalBatchSubmitted;
+    document.getElementById('batchFailed').innerText = totalBatchFailed;
+    document.getElementById('batchCreditsUsed').innerText = totalBatchCreditsUsed;
 
     const nowStr = new Date().toLocaleString('en-US', {
         month: 'short',
