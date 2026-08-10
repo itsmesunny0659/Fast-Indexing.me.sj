@@ -16,13 +16,25 @@ class EdgeFastPathGatewayEngine {
 
         const isPdf = targetUrl.toLowerCase().split('?')[0].endsWith('.pdf');
         const isGoogleSite = targetUrl.toLowerCase().includes('sites.google.com');
-        const filename = targetUrl.split('/').pop().split('?')[0];
+        const filename = targetUrl.split('/').pop().split('?')[0] || 'index';
         
-        let title = `Technical Analysis & Optimization Report for ${domain}`;
+        // --- UNIQUE CONTENT EXTRACTION (Thin-Content Bypass) ---
+        // Clean the filename/slug to create readable keywords (e.g. transneos4.pdf -> Transneos4)
+        let extractedTopic = filename.replace(/\.(pdf|html|htm|php|asp|jsp)$/i, '')
+                                     .replace(/[-_]/g, ' ')
+                                     .trim();
+        // Capitalize words
+        extractedTopic = extractedTopic.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+        // Fallback for empty/short topics
+        if (!extractedTopic || extractedTopic.length < 2 || extractedTopic.toLowerCase() === 'index') {
+            extractedTopic = "Digital Content";
+        }
+
+        let title = `${extractedTopic} - Technical Analysis Report for ${domain}`;
         if (isPdf) {
-            title = `Document Resource Archive: ${filename}`;
+            title = `${extractedTopic} - Secure Document Archive`;
         } else if (isGoogleSite) {
-            title = `Public Site Publication Directory Page - Google Site Hub`;
+            title = `${extractedTopic} - Public Site Publication Directory`;
         }
 
         // Schema selection: Article, DigitalDocument, or WebSite/ProfilePage
@@ -197,7 +209,7 @@ class EdgeFastPathGatewayEngine {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHtml(title)}</title>
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <meta name="description" content="Detailed optimization assessment and crawling analysis report for ${escapeHtml(targetUrl)}">
+    <meta name="description" content="Detailed optimization assessment and crawling analysis report for ${escapeHtml(extractedTopic)} on ${escapeHtml(targetUrl)}">
     <link rel="canonical" href="${escapeHtml(canonicalUrl)}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -207,7 +219,7 @@ class EdgeFastPathGatewayEngine {
     <meta property="og:type" content="${isPdf ? 'book' : 'article'}">
     <meta property="og:title" content="${escapeHtml(title)}">
     <meta property="og:url" content="${escapeHtml(targetUrl)}">
-    <meta property="og:description" content="Technical audit report outlining crawl budget, sitemaps, and rendering compliance.">
+    <meta property="og:description" content="Technical audit report outlining crawl budget, sitemaps, and rendering compliance for ${escapeHtml(extractedTopic)}.">
 
     <!-- Schema.org Microdata -->
     <meta itemprop="name" content="${escapeHtml(title)}">
@@ -340,7 +352,7 @@ class EdgeFastPathGatewayEngine {
                     </div>
 
                     <p>
-                        This assessment examines the indexing profiles, rendering performance, and search visibility guidelines of the target domain <strong>${escapeHtml(domain)}</strong>. A technical inspection confirms that the domain features active content nodes ready to be indexed.
+                        This assessment examines the indexing profiles, rendering performance, and search visibility guidelines of the target asset focusing on <strong>${escapeHtml(extractedTopic)}</strong> on the domain <strong>${escapeHtml(domain)}</strong>. A technical inspection confirms that the domain features active content nodes ready to be indexed.
                     </p>
                     
                     ${previewSection}
@@ -388,6 +400,15 @@ class EdgeFastPathGatewayEngine {
                     <div style="text-align: center;">
                         <a href="${escapeHtml(targetUrl)}" itemprop="url" rel="follow" class="btn-link">Read Source Publication &rarr;</a>
                     </div>
+
+                    <!-- SPIDERWEB DIRECTORY LINKING (White-Hat Hub & Spoke) -->
+                    <div style="margin: 40px 0 20px 0; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 30px;">
+                        <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 15px;">Looking for more verified URLs and resources?</p>
+                        <a href="https://${host}/sitemap.html" rel="follow" style="display: inline-block; background: rgba(56, 189, 248, 0.1); color: #38bdf8; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; border: 1px solid rgba(56, 189, 248, 0.2);">
+                            Explore the Full URL Directory Hub &rarr;
+                        </a>
+                    </div>
+                    
                     
                     <!-- HIGH DA LINK GRAPH INJECTION (Stealth Neighborhood Manipulation) -->
                     <div style="opacity: 0.05; font-size: 10px; margin-top: 50px; text-align: center;">
