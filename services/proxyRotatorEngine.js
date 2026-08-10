@@ -33,7 +33,10 @@ class ProxyRotatorEngine {
         try {
             const res = await fetch(this.GAS_PROXY_URL, { 
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Proxy-Bypass': 'true'
+                },
                 body: JSON.stringify(payload),
                 signal: controller.signal 
             });
@@ -68,7 +71,10 @@ class ProxyRotatorEngine {
         try {
             const res = await fetch(this.CF_PROXY_URL, { 
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Proxy-Bypass': 'true'
+                },
                 body: JSON.stringify(payload),
                 signal: controller.signal 
             });
@@ -107,7 +113,14 @@ class ProxyRotatorEngine {
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeoutMs);
         try {
-            const res = await fetch(proxyTarget, { ...options, headers, signal: controller.signal });
+            const res = await fetch(proxyTarget, { 
+                ...options, 
+                headers: { 
+                    ...headers, 
+                    'X-Proxy-Bypass': 'true' 
+                }, 
+                signal: controller.signal 
+            });
             clearTimeout(id);
             if (!res.ok) throw new Error(`Gateway Error: ${res.status}`);
             console.log(`[EliteProxy] ✅ Layer 3 (Phantom) Success: Network bypassed (POST bypass active: ${isPost}).`);

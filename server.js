@@ -3,6 +3,43 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+
+// ============================================================
+// GLOBAL OUTBOUND PROXY INTERCEPTOR (Max Powerhouse Mode)
+// Intercepts all native fetch calls globally to force routing
+// through the Elite Proxy Waterfall automatically.
+// ============================================================
+const originalFetch = globalThis.fetch;
+globalThis.fetch = async function(url, options = {}) {
+    const urlString = typeof url === 'string' ? url : (url.url || '');
+    
+    // Bypass condition: Skip proxy rotator if the request is destined to the proxies themselves,
+    // or if the request is explicitly flagged with 'X-Proxy-Bypass' to avoid recursion.
+    const isProxyBypass = 
+        options?.headers?.['X-Proxy-Bypass'] === 'true' ||
+        options?.headers?.['x-proxy-bypass'] === 'true' ||
+        urlString.includes('script.google.com') ||
+        urlString.includes('translate.google.com') ||
+        (process.env.CF_PROXY_URL && urlString.includes(new URL(process.env.CF_PROXY_URL).hostname));
+
+    if (isProxyBypass) {
+        // Safe direct fallback execution
+        const cleanHeaders = { ...(options.headers || {}) };
+        delete cleanHeaders['X-Proxy-Bypass'];
+        delete cleanHeaders['x-proxy-bypass'];
+        return originalFetch(url, { ...options, headers: cleanHeaders });
+    }
+
+    // Automatically route outbound request via Elite Proxy waterfall
+    const proxyRotatorEngine = require('./services/proxyRotatorEngine');
+    const proxyRes = await proxyRotatorEngine.executeSafeRequest(urlString, options);
+    if (proxyRes) return proxyRes;
+
+    // Hard fallback to original fetch if all proxies fail
+    console.log(`[GlobalFetchInterceptor] ⚠️ All proxies failed. Executing direct fallback fetch for: ${urlString}`);
+    return originalFetch(url, options);
+};
+
 const indexingRoutes = require('./routes/indexingRoutes');
 
 const app = express();
