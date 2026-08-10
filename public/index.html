@@ -165,27 +165,14 @@
 
             <!-- Submit Button Footer -->
             <div class="submit-footer">
-                <button id="submitBtn" class="btn-primary" onclick="triggerSubmissionPipeline()">
+                <button id="submitBtn" class="btn-primary" onclick="submitUrlsForIndexing()">
                     <span id="btnText">🚀 Submit URLs for Fast Indexing</span>
                     <span id="btnSpinner" class="spinner hidden"></span>
                 </button>
             </div>
         </section>
 
-        <!-- ⚡ Real-Time Pipeline Tracker Panel -->
-        <section id="pipelinePanel" class="pipeline-panel hidden">
-            <div class="pipeline-header">
-                <div class="pipeline-title-row">
-                    <div class="pipeline-pulse"></div>
-                    <h2 class="pipeline-title">🔄 Live Indexing Pipeline</h2>
-                    <span id="pipelineOverallStatus" class="pipeline-badge processing">Processing...</span>
-                </div>
-                <p class="pipeline-subtitle">Real-time status of all 15+ backend engines dispatched for your URLs</p>
-            </div>
-            <div class="pipeline-grid" id="pipelineGrid">
-                <!-- Pipeline stages injected by JS -->
-            </div>
-        </section>
+
 
         <!-- Results & Batch Section -->
         <section id="resultsSection" class="results-card hidden">
