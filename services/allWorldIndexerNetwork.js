@@ -80,7 +80,6 @@ class AllWorldIndexerNetwork {
             headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FastIndexerGlobalBot/1.0)' }
         }));
 
-        // Add Bright Data Discover API call (runs in parallel, won't block or affect other indexers)
         const brightDataPromise = this.fetchWithTimeout("https://api.brightdata.com/discover", {
             method: 'POST',
             headers: {
@@ -97,6 +96,16 @@ class AllWorldIndexerNetwork {
                 include_content: false,
                 include_images: false
             })
+        }).then(async (res) => {
+            if (res) {
+                const text = await res.text();
+                console.log(`[BrightData] Status: ${res.status}, Body: ${text.substring(0, 200)}`);
+            } else {
+                console.log(`[BrightData] Request timed out or failed`);
+            }
+            return res;
+        }).catch(err => {
+            console.error(`[BrightData] Error:`, err);
         });
 
         fetchPromises.push(brightDataPromise);
