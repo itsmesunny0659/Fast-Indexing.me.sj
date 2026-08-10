@@ -241,10 +241,10 @@ async function submitUrlsForIndexing() {
     btn.disabled = true;
     btnSpinner.classList.remove('hidden');
 
-    // FIX: Set chunk size to 1. This guarantees EVERY single URL gets 100% of the 
-    // Rich Results API Ping, SpeedyIndex, and RPC Pings without hitting Google rate limits 
-    // or Vercel 10s timeouts. (Sequential Isolated Pinging).
-    const chunkSize = 1;
+    // Get selected speed mode from dropdown
+    const speedSelect = document.getElementById('chunkSizeSelect');
+    const chunkSize = speedSelect ? parseInt(speedSelect.value) : 25;
+    
     let successCount = 0;
     let currentChunk = 0;
     const totalChunks = Math.ceil(allUrls.length / chunkSize);

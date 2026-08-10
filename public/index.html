@@ -149,6 +149,20 @@
                 <div id="sitemapStatus" class="sitemap-status"></div>
             </div>
 
+            <!-- Submit Options / Speed Control -->
+            <div class="speed-control" style="padding: 15px 20px; display: flex; align-items: center; justify-content: space-between; background: rgba(255, 255, 255, 0.02); border-top: 1px solid rgba(255,255,255,0.05); border-bottom: 1px solid rgba(255,255,255,0.05);">
+                <div style="font-size: 0.9rem; color: #cbd5e1; display: flex; align-items: center; gap: 8px;">
+                    <i data-lucide="zap" style="width:18px; height:18px; color: #f59e0b;"></i>
+                    <span>Indexing Speed Mode</span>
+                </div>
+                <select id="chunkSizeSelect" style="background: rgba(0,0,0,0.3); color: #f8fafc; border: 1px solid rgba(255,255,255,0.15); padding: 8px 12px; border-radius: 6px; font-size: 0.9rem; outline: none; cursor: pointer;">
+                    <option value="1">Safe Mode (1 URL/batch)</option>
+                    <option value="10">Fast Mode (10 URLs/batch)</option>
+                    <option value="25" selected>Turbo Bulk (25 URLs/batch) - Recommended</option>
+                    <option value="50">Extreme Batch (50 URLs/batch)</option>
+                </select>
+            </div>
+
             <!-- Submit Button Footer -->
             <div class="submit-footer">
                 <button id="submitBtn" class="btn-primary" onclick="submitUrlsForIndexing()">
