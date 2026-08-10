@@ -33,7 +33,10 @@ class AllWorldIndexerNetwork {
             { name: 'Pingomatic Multi-Service Aggregator', type: 'rpc' },
             { name: 'Blo.gs Global Ping Service', type: 'rpc' },
             { name: 'Twingly Global Blog Indexer', type: 'rpc' },
-            { name: 'Superfeedr Realtime PubSub', type: 'pubsub' }
+            { name: 'Superfeedr Realtime PubSub', type: 'pubsub' },
+
+            // 7. Data APIs
+            { name: 'Bright Data Discover API', type: 'api' }
         ];
     }
 
@@ -76,6 +79,27 @@ class AllWorldIndexerNetwork {
         const fetchPromises = endpoints.map(ep => this.fetchWithTimeout(ep, {
             headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FastIndexerGlobalBot/1.0)' }
         }));
+
+        // Add Bright Data Discover API call (runs in parallel, won't block or affect other indexers)
+        const brightDataPromise = this.fetchWithTimeout("https://api.brightdata.com/discover", {
+            method: 'POST',
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": "Bearer 5015d745-2711-45ee-810a-5ed35b09c069"
+            },
+            body: JSON.stringify({
+                query: targetUrl,
+                mode: "standard",
+                language: "en",
+                country: "US",
+                format: "json",
+                remove_duplicates: true,
+                include_content: false,
+                include_images: false
+            })
+        });
+
+        fetchPromises.push(brightDataPromise);
 
         await Promise.allSettled(fetchPromises);
 
