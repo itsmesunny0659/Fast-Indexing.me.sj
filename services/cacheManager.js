@@ -22,6 +22,19 @@ class CacheManager {
                 const raw = fs.readFileSync(DATA_FILE, 'utf-8');
                 this.data = { ...this.data, ...JSON.parse(raw) };
             }
+            
+            // Permanently load hardcoded keys from keys.json if exists (Safe for Vercel)
+            const keysFile = path.join(__dirname, '../data/keys.json');
+            if (fs.existsSync(keysFile)) {
+                const rawKeys = fs.readFileSync(keysFile, 'utf-8');
+                const keysArray = JSON.parse(rawKeys);
+                if (Array.isArray(keysArray)) {
+                    this.data.serviceAccountPool = keysArray;
+                    if (keysArray.length > 0) {
+                        this.data.serviceAccount = keysArray[0];
+                    }
+                }
+            }
         } catch (e) {
             console.warn('Using in-memory cache storage');
         }
