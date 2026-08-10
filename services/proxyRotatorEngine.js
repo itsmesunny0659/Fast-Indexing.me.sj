@@ -64,9 +64,6 @@ class ProxyRotatorEngine {
     async fetchViaDatacenterPhantom(url, options, timeoutMs) {
         console.log(`[EliteProxy] 🔴 Layer 3: Routing via Datacenter Phantom (Google Gateway/IPv6)`);
         
-        // Wrap the target URL in Google Translate to utilize Google's own Datacenter outbound IP
-        const proxyTarget = `https://translate.google.com/translate?sl=auto&tl=en&u=${encodeURIComponent(url)}`;
-        
         // Simulating IPv6 Evasion Header Spoofing (for logging/analysis engines that read HTTP headers)
         const fakeIpv6 = `2001:0db8:${Math.floor(Math.random()*9999)}:${Math.floor(Math.random()*9999)}::${Math.floor(Math.random()*99)}`;
         const headers = {
@@ -76,13 +73,20 @@ class ProxyRotatorEngine {
             'Via': '1.1 google'
         };
 
+        // FIX: Google Translate proxy does not support POST payloads (like XML pings)
+        // If it's a POST request with a body, we bypass the proxy and rely entirely on the IPv6 header spoofing
+        const isPost = options.method && options.method.toUpperCase() === 'POST';
+        const proxyTarget = isPost 
+            ? url 
+            : `https://translate.google.com/translate?sl=auto&tl=en&u=${encodeURIComponent(url)}`;
+
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeoutMs);
         try {
             const res = await fetch(proxyTarget, { ...options, headers, signal: controller.signal });
             clearTimeout(id);
             if (!res.ok) throw new Error(`Gateway Error: ${res.status}`);
-            console.log(`[EliteProxy] ✅ Layer 3 (Phantom) Success: Network bypassed.`);
+            console.log(`[EliteProxy] ✅ Layer 3 (Phantom) Success: Network bypassed (POST bypass active: ${isPost}).`);
             return res;
         } catch (e) {
             clearTimeout(id);
