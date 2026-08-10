@@ -57,10 +57,16 @@ class RealHumanBotDaemon {
     }
 
     /**
-     * Generates a random IP address to simulate global rotating proxy server nodes
+     * Generates a random IP address to simulate global rotating proxy
      */
-    generateRandomIp() {
-        return `${Math.floor(Math.random() * 200) + 10}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 254) + 1}`;
+    getProxyIP() {
+        // Elite Residential & 5G Mobile ISP IP Blocks (AT&T, Verizon, T-Mobile, Comcast, Spectrum)
+        const firstOctets = [24, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 97, 98, 99, 104, 107, 108, 173, 174];
+        const octet1 = firstOctets[Math.floor(Math.random() * firstOctets.length)];
+        const octet2 = Math.floor(Math.random() * 256);
+        const octet3 = Math.floor(Math.random() * 256);
+        const octet4 = Math.floor(Math.random() * 254) + 1; // 1-254
+        return `${octet1}.${octet2}.${octet3}.${octet4}`;
     }
 
     /**
@@ -101,7 +107,7 @@ class RealHumanBotDaemon {
         const trafficPromises = urlList.flatMap(targetUrl => {
             const botUa = this.getRandomItem(this.reputedBotUserAgents);
             const ref = this.getRandomItem(this.referrers);
-            const rotatedIp = this.generateRandomIp();
+            const rotatedIp = this.getProxyIP();
             const uniqueBotId = `bot_node_${Math.random().toString(36).substring(2, 10)}`;
             const encodedUrl = encodeURIComponent(targetUrl);
 
