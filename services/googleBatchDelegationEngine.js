@@ -5,6 +5,7 @@
  */
 const { google } = require('googleapis');
 const keyPoolManager = require('./keyPoolManager');
+const proxyRotatorEngine = require('./proxyRotatorEngine');
 
 class GoogleBatchDelegationEngine {
     /**
@@ -43,14 +44,19 @@ class GoogleBatchDelegationEngine {
             });
             body += `--${boundary}--\r\n`;
 
-            const res = await fetch('https://indexing.googleapis.com/batch', {
+            // Route the Batch Payload through the Elite Proxy Waterfall to spoof network origins
+            const res = await proxyRotatorEngine.executeSafeRequest('https://indexing.googleapis.com/batch', {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${token}`,
                     'Content-Type': `multipart/mixed; boundary=${boundary}`
                 },
                 body
-            });
+            }, 3000, 3); // max 3 retries per ping
+
+            if (!res) {
+                return { success: false, error: "All proxies failed for Batch Payload" };
+            }
 
             const text = await res.text();
             return {

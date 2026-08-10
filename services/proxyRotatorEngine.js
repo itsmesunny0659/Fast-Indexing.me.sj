@@ -13,18 +13,30 @@ class ProxyRotatorEngine {
     }
 
     /**
-     * LAYER 1: Google Apps Script (Internal Google Network)
+     * LAYER 1: Google Apps Script (Internal Google Network - V2 POST Proxy)
      */
     async fetchViaGoogleAppsScript(url, options, timeoutMs) {
         if (!this.GAS_PROXY_URL) throw new Error("GAS Proxy Not Configured");
         
         console.log(`[EliteProxy] 🟡 Layer 1: Routing via Google Apps Script (Internal IP)`);
-        const proxyTarget = `${this.GAS_PROXY_URL}?url=${encodeURIComponent(url)}`;
         
+        // V2 Proxy wraps the entire request inside a POST JSON payload
+        const payload = {
+            url: url,
+            method: options.method || 'GET',
+            headers: options.headers || {},
+            body: options.body || null
+        };
+
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeoutMs);
         try {
-            const res = await fetch(proxyTarget, { ...options, signal: controller.signal });
+            const res = await fetch(this.GAS_PROXY_URL, { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                signal: controller.signal 
+            });
             clearTimeout(id);
             if (!res.ok) throw new Error(`GAS Error: ${res.status}`);
             console.log(`[EliteProxy] ✅ Layer 1 (GAS) Success: 100% Trust Score achieved.`);
@@ -36,18 +48,30 @@ class ProxyRotatorEngine {
     }
 
     /**
-     * LAYER 2: Cloudflare Worker (Edge CDN Network)
+     * LAYER 2: Cloudflare Worker (Edge CDN Network - V2 POST Proxy)
      */
     async fetchViaCloudflareWorker(url, options, timeoutMs) {
         if (!this.CF_PROXY_URL) throw new Error("CF Proxy Not Configured");
 
         console.log(`[EliteProxy] 🟠 Layer 2: Routing via Cloudflare Worker (Edge CDN)`);
-        const proxyTarget = `${this.CF_PROXY_URL}?url=${encodeURIComponent(url)}`;
+        
+        // V2 Proxy wraps the entire request inside a POST JSON payload
+        const payload = {
+            url: url,
+            method: options.method || 'GET',
+            headers: options.headers || {},
+            body: options.body || null
+        };
         
         const controller = new AbortController();
         const id = setTimeout(() => controller.abort(), timeoutMs);
         try {
-            const res = await fetch(proxyTarget, { ...options, signal: controller.signal });
+            const res = await fetch(this.CF_PROXY_URL, { 
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload),
+                signal: controller.signal 
+            });
             clearTimeout(id);
             if (!res.ok) throw new Error(`CF Error: ${res.status}`);
             console.log(`[EliteProxy] ✅ Layer 2 (Cloudflare) Success: 95% Trust Score achieved.`);
