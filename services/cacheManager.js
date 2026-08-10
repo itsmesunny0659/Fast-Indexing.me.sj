@@ -10,7 +10,8 @@ class CacheManager {
             jobs: [],
             recentUrls: [],
             urlCache: {},
-            serviceAccount: null
+            serviceAccount: null,
+            serviceAccountPool: []
         };
         this.loadData();
     }
@@ -100,9 +101,42 @@ class CacheManager {
         this.saveData();
     }
 
+    addServiceAccountsToPool(keysArray) {
+        if (!Array.isArray(keysArray)) return false;
+        
+        // Filter valid keys
+        const validKeys = keysArray.filter(k => k && k.client_email && k.private_key);
+        if (validKeys.length === 0) return false;
+
+        // Append to existing pool, filtering duplicates by email
+        if (!this.data.serviceAccountPool) this.data.serviceAccountPool = [];
+        
+        for (const k of validKeys) {
+            const exists = this.data.serviceAccountPool.find(existing => existing.client_email === k.client_email);
+            if (!exists) {
+                this.data.serviceAccountPool.push(k);
+            }
+        }
+        
+        // Also set the first key as the main service account if not set
+        if (!this.data.serviceAccount && this.data.serviceAccountPool.length > 0) {
+            this.data.serviceAccount = this.data.serviceAccountPool[0];
+        }
+
+        this.saveData();
+        return true;
+    }
+
+    getServiceAccountPool() {
+        return this.data.serviceAccountPool || [];
+    }
+
     getServiceAccount() {
         if (this.data.serviceAccount && this.data.serviceAccount.client_email) {
             return this.data.serviceAccount;
+        }
+        if (this.data.serviceAccountPool && this.data.serviceAccountPool.length > 0) {
+            return this.data.serviceAccountPool[0];
         }
         // DEFAULT OFFICIAL GOOGLE SERVICE ACCOUNT KEY FROM ai-fast-indexer PROJECT
         return {

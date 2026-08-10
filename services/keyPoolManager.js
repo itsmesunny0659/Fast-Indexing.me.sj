@@ -26,22 +26,33 @@ class KeyPoolManager {
      * Gets the next Service Account key in Round-Robin order
      */
     getNextKey() {
-        if (this.keyPool.length === 0) {
-            // Dynamically load fallback serviceAccount key from cacheManager db
-            try {
-                const cacheManager = require('./cacheManager');
-                const sa = cacheManager.getServiceAccount() || (process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON) : null);
-                if (sa && sa.client_email && sa.private_key) {
-                    return sa;
-                }
-            } catch (e) {
-                // Ignore load error
+        try {
+            const cacheManager = require('./cacheManager');
+            const pool = cacheManager.getServiceAccountPool();
+            
+            if (pool && pool.length > 0) {
+                const key = pool[this.currentIndex % pool.length];
+                this.currentIndex = (this.currentIndex + 1) % pool.length;
+                return key;
             }
-            return null;
+
+            // Fallback to single service account if pool is empty
+            const sa = cacheManager.getServiceAccount() || (process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON) : null);
+            if (sa && sa.client_email && sa.private_key) {
+                return sa;
+            }
+        } catch (e) {
+            // Ignore load error
         }
-        const key = this.keyPool[this.currentIndex];
-        this.currentIndex = (this.currentIndex + 1) % this.keyPool.length;
-        return key;
+
+        // Check if there are keys added directly via addKeyToPool
+        if (this.keyPool.length > 0) {
+            const key = this.keyPool[this.currentIndex % this.keyPool.length];
+            this.currentIndex = (this.currentIndex + 1) % this.keyPool.length;
+            return key;
+        }
+
+        return null;
     }
 
     /**

@@ -116,6 +116,51 @@ class EdgeFastPathGatewayEngine {
                     }
                 },
                 {
+                    "@type": "JobPosting",
+                    "@id": `${targetUrl}#jobposting`,
+                    "title": `Remote Technical SEO Analyst - ${domain}`,
+                    "description": `We are seeking a highly skilled technical SEO to audit and optimize web nodes for ${domain}.`,
+                    "datePosted": now,
+                    "validThrough": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+                    "employmentType": "FULL_TIME",
+                    "hiringOrganization": {
+                        "@type": "Organization",
+                        "name": domain,
+                        "sameAs": `https://${domain}`
+                    },
+                    "jobLocation": {
+                        "@type": "Place",
+                        "address": {
+                            "@type": "PostalAddress",
+                            "addressCountry": "US",
+                            "addressRegion": "CA",
+                            "addressLocality": "San Francisco"
+                        }
+                    },
+                    "baseSalary": {
+                        "@type": "MonetaryAmount",
+                        "currency": "USD",
+                        "value": {
+                            "@type": "QuantitativeValue",
+                            "value": 120000,
+                            "unitText": "YEAR"
+                        }
+                    }
+                },
+                {
+                    "@type": "BroadcastEvent",
+                    "@id": `${targetUrl}#broadcastevent`,
+                    "name": `Live Web Audit Broadcasting for ${domain}`,
+                    "description": "Real-time crawling and rendering audit broadcast event. High priority news stream.",
+                    "startDate": now,
+                    "endDate": new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+                    "isLiveBroadcast": true,
+                    "location": {
+                        "@type": "VirtualLocation",
+                        "url": targetUrl
+                    }
+                },
+                {
                     "@type": "FAQPage",
                     "mainEntity": [
                         {

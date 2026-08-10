@@ -693,14 +693,33 @@ router.post('/sitemap', async (req, res) => {
 // POST /fui-api/api/indexing/service-account
 router.post('/service-account', (req, res) => {
     try {
-        const { jsonKey } = req.body;
+        const { jsonKey, jsonKeys } = req.body;
+        
+        // Handle bulk upload of multiple keys via jsonKeys array
+        if (jsonKeys && Array.isArray(jsonKeys)) {
+            const added = cacheManager.addServiceAccountsToPool(jsonKeys);
+            if (added) {
+                const pool = cacheManager.getServiceAccountPool();
+                return res.json({
+                    success: true,
+                    totalActiveKeys: pool.length,
+                    message: `Successfully added keys to the rotation pool. Total active keys: ${pool.length}`
+                });
+            } else {
+                return res.status(400).json({ error: 'No valid Service Account JSON keys found in the array.' });
+            }
+        }
+
+        // Handle single key fallback
         let parsedKey = typeof jsonKey === 'string' ? JSON.parse(jsonKey) : jsonKey;
 
         if (!parsedKey || !parsedKey.client_email || !parsedKey.private_key) {
             return res.status(400).json({ error: 'Invalid Service Account JSON key format.' });
         }
 
-        cacheManager.setServiceAccount(parsedKey);
+        // Add single key to the pool
+        cacheManager.addServiceAccountsToPool([parsedKey]);
+        
         res.json({
             success: true,
             client_email: parsedKey.client_email,
