@@ -91,30 +91,54 @@ class ProxyRotatorEngine {
     }
 
     /**
-     * Master Execution Method (The Waterfall)
+     * Master Execution Method (The Rotating Waterfall)
      */
-    async executeSafeRequest(url, options = {}, timeoutMs = 3000) {
-        // Step 1: Try Layer 1 (GAS)
-        try {
-            return await this.fetchViaGoogleAppsScript(url, options, timeoutMs);
-        } catch (err1) {
-            console.log(`[EliteProxy] ⚠️ Layer 1 Failed (${err1.message}). Falling back to Layer 2...`);
+    async executeSafeRequest(url, options = {}, timeoutMs = 3000, maxRetries = 3) {
+        let attempts = 0;
+        
+        while (attempts < maxRetries) {
+            attempts++;
+            console.log(`[EliteProxy] 🔄 Starting Waterfall Cycle (Attempt ${attempts}/${maxRetries}) for ${url}`);
             
-            // Step 2: Try Layer 2 (CF Worker)
+            // Randomize headers on each cycle to avoid fingerprinting on the backend
+            const cycleOptions = {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'X-Request-Cycle': attempts.toString(),
+                    'X-Random-Node': Math.random().toString(36).substring(2, 10)
+                }
+            };
+
+            // Step 1: Try Layer 1 (GAS)
             try {
-                return await this.fetchViaCloudflareWorker(url, options, timeoutMs);
-            } catch (err2) {
-                console.log(`[EliteProxy] ⚠️ Layer 2 Failed (${err2.message}). Falling back to Layer 3...`);
+                return await this.fetchViaGoogleAppsScript(url, cycleOptions, timeoutMs);
+            } catch (err1) {
+                console.log(`[EliteProxy] ⚠️ Layer 1 Failed (${err1.message}). Falling back to Layer 2...`);
                 
-                // Step 3: Try Layer 3 (Phantom Gateway)
+                // Step 2: Try Layer 2 (CF Worker)
                 try {
-                    return await this.fetchViaDatacenterPhantom(url, options, timeoutMs);
-                } catch (err3) {
-                    console.log(`[EliteProxy] ❌ All 3 Proxy Layers Failed for ${url}`);
-                    return null;
+                    return await this.fetchViaCloudflareWorker(url, cycleOptions, timeoutMs);
+                } catch (err2) {
+                    console.log(`[EliteProxy] ⚠️ Layer 2 Failed (${err2.message}). Falling back to Layer 3...`);
+                    
+                    // Step 3: Try Layer 3 (Phantom Gateway)
+                    try {
+                        return await this.fetchViaDatacenterPhantom(url, cycleOptions, timeoutMs);
+                    } catch (err3) {
+                        console.log(`[EliteProxy] ❌ All 3 Proxy Layers Failed in Cycle ${attempts}.`);
+                        if (attempts >= maxRetries) {
+                            console.log(`[EliteProxy] 🛑 Max retries reached for ${url}. Aborting.`);
+                            return null;
+                        } else {
+                            console.log(`[EliteProxy] ♻️ Rotating back to Layer 1 with fresh IP/network spoof...`);
+                            await new Promise(r => setTimeout(r, 1000));
+                        }
+                    }
                 }
             }
         }
+        return null;
     }
 }
 
