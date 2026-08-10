@@ -173,6 +173,21 @@ class EdgeFastPathGatewayEngine {
                     }
                 },
                 {
+                    "@type": "LiveBlogPosting",
+                    "@id": `${targetUrl}#liveblogposting`,
+                    "headline": `LIVE: Indexing Event for ${extractedTopic}`,
+                    "description": "Live indexing broadcast feed triggering instant crawl.",
+                    "coverageStartTime": now,
+                    "coverageEndTime": new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
+                    "liveBlogUpdate": [
+                        {
+                            "@type": "BlogPosting",
+                            "headline": `Crawler Node Dispatched for ${extractedTopic}`,
+                            "datePublished": now
+                        }
+                    ]
+                },
+                {
                     "@type": "FAQPage",
                     "mainEntity": [
                         {
