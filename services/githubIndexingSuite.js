@@ -10,6 +10,7 @@
 const { google } = require('googleapis');
 const cacheManager = require('./cacheManager');
 const sitemapParser = require('./sitemapParser');
+const proxyRotatorEngine = require('./proxyRotatorEngine');
 
 class GithubIndexingSuite {
     constructor() {
@@ -21,18 +22,7 @@ class GithubIndexingSuite {
         ];
     }
 
-    async fetchWithTimeout(url, options = {}, timeoutMs = 2500) {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeoutMs);
-        try {
-            const res = await fetch(url, { ...options, signal: controller.signal });
-            clearTimeout(id);
-            return res;
-        } catch (e) {
-            clearTimeout(id);
-            return null;
-        }
-    }
+    // Using proxyRotatorEngine.executeSafeRequest instead of raw fetchWithTimeout
 
     /**
      * Technique 1: Bulk Google Indexing API Publisher (From GitHub Python & Node Bulk Scripts)
@@ -91,11 +81,11 @@ class GithubIndexingSuite {
         };
 
         const pingPromises = this.indexNowHosts.map(h => 
-            this.fetchWithTimeout(`https://${h}/indexnow`, {
+            proxyRotatorEngine.executeSafeRequest(`https://${h}/indexnow`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json; charset=utf-8' },
                 body: JSON.stringify(payload)
-            }, 2500)
+            }, 2500, 2)
         );
 
         await Promise.allSettled(pingPromises);
