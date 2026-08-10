@@ -85,6 +85,11 @@ class EdgeFastPathGatewayEngine {
                     "description": `Verified indexation node for ${domain}. Semantic crawl budget priority pass.`,
                     "datePublished": now,
                     "dateModified": now,
+                    "reviewedBy": {
+                        "@type": "Organization",
+                        "name": "Search Engine Quality Assurance Protocol",
+                        "sameAs": "https://developers.google.com/search/docs/essentials"
+                    },
                     "isPartOf": {
                         "@type": "WebSite",
                         "name": domain,
