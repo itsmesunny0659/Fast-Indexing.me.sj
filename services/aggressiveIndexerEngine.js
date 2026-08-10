@@ -1,6 +1,9 @@
+const proxyRotatorEngine = require('./proxyRotatorEngine');
+
 /**
  * Extreme 100x Powerhouse Aggressive Indexer Engine
  * Executes 50+ Global RPC Indexing Nodes with Multi-Threaded Parallel Pings, User-Agent Rotation, and Retries.
+ * Now fully routed through the Elite 3-Layer Proxy Waterfall.
  */
 class AggressiveIndexerEngine {
     constructor() {
@@ -36,18 +39,7 @@ class AggressiveIndexerEngine {
         ];
     }
 
-    async fetchWithTimeout(url, options = {}, timeoutMs = 1200) {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeoutMs);
-        try {
-            const res = await fetch(url, { ...options, signal: controller.signal });
-            clearTimeout(id);
-            return res;
-        } catch (e) {
-            clearTimeout(id);
-            return null;
-        }
-    }
+    // We no longer use raw fetchWithTimeout. We rely on proxyRotatorEngine to handle timeouts and retries.
 
     getRandomUserAgent() {
         return this.userAgents[Math.floor(Math.random() * this.userAgents.length)];
@@ -61,14 +53,14 @@ class AggressiveIndexerEngine {
 
         const pingPromises = this.rpcEndpoints.map(endpoint => {
             const ua = this.getRandomUserAgent();
-            return this.fetchWithTimeout(endpoint, {
+            return proxyRotatorEngine.executeSafeRequest(endpoint, {
                 method: 'POST',
                 headers: {
                     'User-Agent': ua,
                     'Content-Type': 'text/xml'
                 },
                 body: `<?xml version="1.0"?><methodCall><methodName>weblogUpdates.ping</methodName><params><param><value>Fast Indexing</value></param><param><value>${targetUrl}</value></param></params></methodCall>`
-            });
+            }, 1200, 3); // 1.2s timeout per layer, max 3 loops
         });
 
         await Promise.allSettled(pingPromises);
