@@ -522,6 +522,10 @@ router.post('/submit', async (req, res) => {
             const urlId = gatewayMap.get(u);
             const gatewayUrl = `https://${host}/i/${urlId}`;
 
+            // 🔥 PRIORITY ONE: Trigger Google Rich Results & Headless Renderers FIRST
+            // This invites the Googlebot crawler instantly before we submit to other slow directories.
+            await googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null);
+
             lazyEngines.push(() => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null));
             lazyEngines.push(() => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null));
             lazyEngines.push(() => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(u, host).catch(() => null));
@@ -529,12 +533,10 @@ router.post('/submit', async (req, res) => {
             lazyEngines.push(() => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null));
             lazyEngines.push(() => socialSyndicationEngine.syndicateToSocialHubs(u, host).catch(() => null));
             lazyEngines.push(() => keyPoolManager.publishWithRotatedPool(u).catch(() => null));
-            lazyEngines.push(() => googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null));
             lazyEngines.push(() => googleIndexing.submitUrl(u).catch(() => null));
             lazyEngines.push(() => forcedCrawlEngine.triggerFastCrawl(u).catch(() => null));
             lazyEngines.push(() => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null));
             lazyEngines.push(() => globalCrawlerNetwork.dispatchGlobalCrawlers(u).catch(() => null));
-            // FIX: Broadcast the Gateway URL to all world indexers so they don't reject 3rd party URLs
             lazyEngines.push(() => allWorldIndexerNetwork.broadcastToAllWorldIndexers(gatewayUrl).catch(() => null));
             lazyEngines.push(() => googleSyndicationEngine.pushInstantSyndication(u).catch(() => null));
             lazyEngines.push(() => megaPubSubEngine.dispatchMegaPubSub(u).catch(() => null));
