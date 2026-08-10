@@ -64,6 +64,16 @@ class UnifiedMachineSignalEngine {
         res.setHeader('X-Goog-Api-Client', 'gl-node/18.0.0 gccl/3.0.0');
         res.setHeader('AMP-Cache-Transform', 'google;v="1"');
         
+        // 🚀 THE CORE HTTP VALIDATOR HANDSHAKE (ETag & Last-Modified)
+        // Generates a deterministic ETag based on the targetUrl so Googlebot knows it's a dynamic but stable entity.
+        const crypto = require('crypto');
+        const etagHash = crypto.createHash('md5').update(targetUrl || 'fast-indexing-core').digest('hex');
+        res.setHeader('ETag', `W/"${etagHash}"`);
+        // Set Last-Modified to the beginning of the current day to ensure freshness but stability.
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        res.setHeader('Last-Modified', today.toUTCString());
+
         res.setHeader('X-Edge-Authority-Score', '99.8');
         res.setHeader('X-Trust-Signal', 'Verified-EEAT-Compliant');
         res.setHeader('X-Organic-Traffic-Est', 'High');

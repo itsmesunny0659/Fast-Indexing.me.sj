@@ -248,6 +248,21 @@ class EdgeFastPathGatewayEngine {
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- THE ALIVE & MONITORED HANDSHAKE (WebMention & Pingback) -->
+    <link rel="webmention" href="https://webmention.io/${host}/webmention">
+    <link rel="pingback" href="https://pingomatic.com/">
+
+    <!-- ACTIVE TRAFFIC HANDSHAKE (GA4 Simulation) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-8X7Y6Z5W4V"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'G-8X7Y6Z5W4V', { 'send_page_view': true });
+      // Simulate an active user session event for Googlebot rendering engine
+      setTimeout(() => { gtag('event', 'scroll_depth', { depth: '50%' }); }, 2000);
+    </script>
 
     <!-- OpenGraph Tags -->
     <meta property="og:type" content="${isPdf ? 'book' : 'article'}">
