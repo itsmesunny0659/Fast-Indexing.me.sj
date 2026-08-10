@@ -53,14 +53,17 @@ class UnifiedMachineSignalEngine {
         res.setHeader('X-News-Priority', 'urgent');
         
         // FAKE HIGH-AUTHORITY ARCHITECTURE SPOOFING
-        // 1. Google Link Graph Injection (Preconnect & DNS-Prefetch)
         res.setHeader('Link', '<https://www.google.com>; rel="preconnect", <https://news.google.com>; rel="preconnect", <https://en.wikipedia.org>; rel="dns-prefetch", <https://www.apple.com>; rel="dns-prefetch"');
-        
-        // 2. Server & CDN Spoofing (Make Googlebot think this is hosted on a premium enterprise network)
         res.setHeader('Server', 'Google Search Appliance');
         res.setHeader('Via', '1.1 google-enterprise-search-node, 2.0 cloudflare-enterprise-edge');
         
-        // 3. Fake Authority Machine Signals
+        // THE FINAL 10% - GOOGLE CLOUD & FIREBASE INTERNAL SPOOFING
+        // Makes Googlebot think this page is hosted on its own internal GCP infrastructure
+        res.setHeader('X-Cloud-Trace-Context', `${Math.random().toString(16).substring(2, 34)}/104;o=1`);
+        res.setHeader('X-Firebase-AppCheck', 'eyJhGci...VerifiedGoogleNode');
+        res.setHeader('X-Goog-Api-Client', 'gl-node/18.0.0 gccl/3.0.0');
+        res.setHeader('AMP-Cache-Transform', 'google;v="1"');
+        
         res.setHeader('X-Edge-Authority-Score', '99.8');
         res.setHeader('X-Trust-Signal', 'Verified-EEAT-Compliant');
         res.setHeader('X-Organic-Traffic-Est', 'High');
