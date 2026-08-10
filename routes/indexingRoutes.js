@@ -363,7 +363,7 @@ router.get('/directory', (req, res) => {
         </article>
     `).join('\n');
 
-    const html = \`<!DOCTYPE html>
+    const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
     <title>Priority Web Directory Hub - Fast Indexing Engine</title>
@@ -376,10 +376,10 @@ router.get('/directory', (req, res) => {
         <p style="color: #64748b; margin-top: 10px;">This directory is continuously crawled by Googlebot and partner search networks. All URLs listed here receive maximum priority bandwidth.</p>
     </header>
     <main>
-        \${linkItems || '<p style="color: #64748b;">No active links in directory yet.</p>'}
+        ${linkItems || '<p style="color: #64748b;">No active links in directory yet.</p>'}
     </main>
 </body>
-</html>\`;
+</html>`;
 
     res.setHeader('Content-Type', 'text/html; charset=utf-8');
     res.setHeader('Cache-Control', 'public, max-age=60'); // Keep fresh for crawlers
