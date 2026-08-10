@@ -53,6 +53,31 @@ class AllWorldIndexerNetwork {
         }
     }
 
+    getRandomIP() {
+        return `${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}.${Math.floor(Math.random() * 255)}`;
+    }
+
+    getHandshakeHeaders() {
+        const userAgents = [
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/119.0',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1'
+        ];
+        const randomUA = userAgents[Math.floor(Math.random() * userAgents.length)];
+        const randomIP = this.getRandomIP();
+
+        return {
+            'User-Agent': randomUA,
+            'X-Forwarded-For': randomIP,
+            'X-Real-IP': randomIP,
+            'Via': `1.1 proxy.google-handshake.net (${randomIP})`,
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Cache-Control': 'no-cache'
+        };
+    }
+
     /**
      * Executes Full Global Indexer Broadcast across ALL 20+ World Index Engines
      */
@@ -77,14 +102,15 @@ class AllWorldIndexerNetwork {
         ];
 
         const fetchPromises = endpoints.map(ep => this.fetchWithTimeout(ep, {
-            headers: { 'User-Agent': 'Mozilla/5.0 (compatible; FastIndexerGlobalBot/1.0)' }
+            headers: this.getHandshakeHeaders()
         }));
 
         const brightDataPromise = this.fetchWithTimeout("https://api.brightdata.com/discover", {
             method: 'POST',
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": "Bearer 5015d745-2711-45ee-810a-5ed35b09c069"
+                "Authorization": "Bearer 5015d745-2711-45ee-810a-5ed35b09c069",
+                ...this.getHandshakeHeaders()
             },
             body: JSON.stringify({
                 query: targetUrl,

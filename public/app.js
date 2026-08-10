@@ -274,9 +274,8 @@ async function submitUrlsForIndexing() {
                 updateTotalStats(data.submitted, data.failed);
                 successCount += chunkUrls.length;
 
-                // 🛑 ANTI-SPAM HANDSHAKE JUGAAD: Wait 30-40 seconds before next URL to bypass Google Rate Limit
                 if (i + chunkSize < allUrls.length) {
-                    const waitTimeSeconds = Math.floor(Math.random() * (40 - 30 + 1) + 30);
+                    const waitTimeSeconds = Math.floor(Math.random() * (50 - 40 + 1) + 40);
                     for (let sec = waitTimeSeconds; sec > 0; sec--) {
                         btnText.innerHTML = `🛡️ Anti-Spam Handshake... (Next in ${sec}s)`;
                         await new Promise(r => setTimeout(r, 1000));
