@@ -1,35 +1,19 @@
+const { ProxyAgent, fetch: undiciFetch } = require('undici');
+const freeProxyScraperEngine = require('./freeProxyScraperEngine');
+
 /**
  * Enterprise Proxy Rotator & Rate-Limit Safety Manager Engine
  * Features:
- * 1. Dynamic Proxy List / Gateway Pool Rotation
- * 2. Exponential Backoff & Adaptive Throttling on 429 Rate Limits
- * 3. Graceful Crash Protection & Error Isolation (Try-Catch Bounds)
- * 4. Circuit Breaker Pattern for Unhealthy Proxy Nodes
+ * 1. Free Proxy Scraper Integration
+ * 2. True TCP Socket Tunneling via Undici
+ * 3. Exponential Backoff & Adaptive Throttling
+ * 4. Aggressive Failover for Dead Proxies
  */
 class ProxyRotatorEngine {
     constructor() {
-        // Pool of proxy gateway nodes / IPs for failover & distribution
-        this.proxyPool = [
-            'http://proxy-node-1.indexing-mesh.internal:8080',
-            'http://proxy-node-2.indexing-mesh.internal:8080',
-            'http://proxy-node-3.indexing-mesh.internal:8080',
-            'http://proxy-node-4.indexing-mesh.internal:8080'
-        ];
-
-        this.activeRotatorIndex = 0;
         this.consecutiveFailures = 0;
         this.circuitBreakerOpen = false;
         this.lastBackoffTime = 0;
-    }
-
-    /**
-     * Gets next proxy configuration with failover index rotation
-     */
-    getNextProxyNode() {
-        if (this.proxyPool.length === 0) return null;
-        const proxy = this.proxyPool[this.activeRotatorIndex];
-        this.activeRotatorIndex = (this.activeRotatorIndex + 1) % this.proxyPool.length;
-        return proxy;
     }
 
     /**
@@ -52,17 +36,50 @@ class ProxyRotatorEngine {
         const id = setTimeout(() => controller.abort(), timeoutMs);
 
         try {
-            const proxyNode = this.getNextProxyNode();
+            // Attempt to get a real public proxy
+            let proxyUrl = await freeProxyScraperEngine.getRandomProxy();
+            let dispatcher = undefined;
+
+            if (proxyUrl) {
+                try {
+                    dispatcher = new ProxyAgent(proxyUrl);
+                } catch (e) {
+                    console.error(`[ProxyRotatorEngine] Invalid Proxy URL format: ${proxyUrl}`);
+                    proxyUrl = null;
+                }
+            }
+
             const safeHeaders = {
                 ...options.headers,
-                'X-Proxy-Gateway': proxyNode || 'direct'
+                'X-Proxy-Gateway-Active': proxyUrl ? 'true' : 'false'
             };
 
-            const res = await fetch(url, {
-                ...options,
-                headers: safeHeaders,
-                signal: controller.signal
-            });
+            // Fast failover loop for dead free proxies (Max 3 retries)
+            let retries = 3;
+            let res = null;
+
+            while (retries > 0 && !res) {
+                try {
+                    // Use Undici's fetch with dispatcher to tunnel the socket
+                    res = await undiciFetch(url, {
+                        ...options,
+                        headers: safeHeaders,
+                        signal: controller.signal,
+                        dispatcher
+                    });
+                } catch (proxyError) {
+                    retries--;
+                    if (proxyUrl) {
+                        freeProxyScraperEngine.removeDeadProxy(proxyUrl);
+                    }
+                    if (retries > 0) {
+                        proxyUrl = await freeProxyScraperEngine.getRandomProxy();
+                        dispatcher = proxyUrl ? new ProxyAgent(proxyUrl) : undefined;
+                    } else {
+                        throw proxyError;
+                    }
+                }
+            }
 
             clearTimeout(id);
 
