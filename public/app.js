@@ -563,12 +563,11 @@ function initPipelinePanel() {
     }, lastFinish + 200));
 }
 
-// Patch submitUrlsForIndexing to show pipeline
-const _origSubmit = submitUrlsForIndexing;
-async function submitUrlsForIndexing() {
+// Entrypoint function called by HTML button click that wraps the original submission function and initializes the pipeline panel
+async function triggerSubmissionPipeline() {
     // Show & start pipeline immediately on submit
     initPipelinePanel();
     // Run actual submission
-    await _origSubmit();
+    await submitUrlsForIndexing();
 }
 
