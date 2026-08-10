@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Allow: /i/
+Allow: /directory
+Allow: /pbn-network
+Allow: /hub/
+Disallow: /api/
+Disallow: /fui-api/
+Disallow: /*?*
+Disallow: /download-today
+
+# High Priority XML Sitemaps & RSS/Atom Feeds
+Sitemap: https://ai-fast-indexing-engine.vercel.app/sitemap.xml
+Sitemap: https://ai-fast-indexing-engine.vercel.app/news-sitemap.xml
+Sitemap: https://ai-fast-indexing-engine.vercel.app/pbn-sitemap.xml
+Sitemap: https://ai-fast-indexing-engine.vercel.app/rss.xml
+Sitemap: https://ai-fast-indexing-engine.vercel.app/atom.xml

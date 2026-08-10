@@ -470,7 +470,7 @@ class EdgeFastPathGatewayEngine {
                     <!-- SPIDERWEB DIRECTORY LINKING (White-Hat Hub & Spoke) -->
                     <div style="margin: 40px 0 20px 0; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 30px;">
                         <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 15px;">Looking for more verified URLs and resources?</p>
-                        <a href="https://${host}/sitemap.html" rel="follow" style="display: inline-block; background: rgba(56, 189, 248, 0.1); color: #38bdf8; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; border: 1px solid rgba(56, 189, 248, 0.2);">
+                        <a href="https://${host}/directory" rel="follow" style="display: inline-block; background: rgba(56, 189, 248, 0.1); color: #38bdf8; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; border: 1px solid rgba(56, 189, 248, 0.2);">
                             Explore the Full URL Directory Hub &rarr;
                         </a>
                     </div>

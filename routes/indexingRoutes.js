@@ -347,6 +347,46 @@ router.get('/sitemap.html', (req, res) => {
     res.send(htmlSitemap);
 });
 
+// GET /directory - High-DA Spiderweb Link Hub
+router.get('/directory', (req, res) => {
+    const host = req.get('host') || 'ai-fast-indexing-engine.vercel.app';
+    const entries = persistentGatewayStore.getAllGateways();
+    const now = new Date().toISOString();
+
+    const linkItems = entries.map(([id, data]) => `
+        <article style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 15px; margin-bottom: 15px; border-radius: 8px; border-left: 3px solid #38bdf8;">
+            <h3 style="margin: 0 0 10px 0; font-size: 1.1rem;"><a href="https://${host}/i/${id}" style="color: #38bdf8; text-decoration: none;">Verified Indexing Node #${id}</a></h3>
+            <p style="margin: 0; color: #94a3b8; font-size: 0.9rem;">
+                <strong>Target Payload:</strong> <a href="${escapeHtml(data.url)}" target="_blank" style="color: #a78bfa;">${escapeHtml(data.url)}</a><br>
+                <small>Delegated for Fast Indexing Priority at ${new Date(data.timestamp || now).toLocaleString()}</small>
+            </p>
+        </article>
+    `).join('\n');
+
+    const html = \`<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>Priority Web Directory Hub - Fast Indexing Engine</title>
+    <meta name="robots" content="index, follow">
+    <meta name="description" content="Global Spiderweb network indexing hub containing priority verified URLs.">
+</head>
+<body style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #07080b; color: #f8fafc; padding: 40px 20px; max-width: 900px; margin: 0 auto;">
+    <header style="border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 20px; margin-bottom: 30px;">
+        <h1 style="color: #38bdf8; margin: 0;">🌐 Web Directory Indexing Hub</h1>
+        <p style="color: #64748b; margin-top: 10px;">This directory is continuously crawled by Googlebot and partner search networks. All URLs listed here receive maximum priority bandwidth.</p>
+    </header>
+    <main>
+        \${linkItems || '<p style="color: #64748b;">No active links in directory yet.</p>'}
+    </main>
+</body>
+</html>\`;
+
+    res.setHeader('Content-Type', 'text/html; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=60'); // Keep fresh for crawlers
+    res.setHeader('X-Robots-Tag', 'index, follow');
+    res.send(html);
+});
+
 // GET /atom.xml - Google W3C Atom 1.0 Real-Time Syndication Feed
 router.get('/atom.xml', (req, res) => {
     const recentUrls = cacheManager.getRecentUrls();
