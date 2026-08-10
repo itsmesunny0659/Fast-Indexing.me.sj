@@ -180,10 +180,19 @@ async function saveServiceAccountKey() {
     }
 
     try {
+        let parsedInput = JSON.parse(jsonKey);
+        let requestBody = {};
+        
+        if (Array.isArray(parsedInput)) {
+            requestBody = { jsonKeys: parsedInput };
+        } else {
+            requestBody = { jsonKey: parsedInput };
+        }
+
         const res = await fetch('/fui-api/api/indexing/service-account', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ jsonKey })
+            body: JSON.stringify(requestBody)
         });
 
         const data = await res.json();
@@ -191,12 +200,16 @@ async function saveServiceAccountKey() {
         if (res.ok && data.success) {
             if (messageDiv) {
                 messageDiv.style.display = 'block';
-                messageDiv.innerHTML = `<span style="color: #4ade80">✅ Successfully Connected & Verified Google Key: <strong>${data.client_email}</strong></span>`;
+                if (data.totalActiveKeys) {
+                    messageDiv.innerHTML = `<span style="color: #4ade80">✅ Successfully Added Keys to Rotation Pool! <strong>Total Active Keys: ${data.totalActiveKeys}</strong></span>`;
+                } else {
+                    messageDiv.innerHTML = `<span style="color: #4ade80">✅ Successfully Connected & Verified Google Key: <strong>${data.client_email}</strong></span>`;
+                }
             }
             setTimeout(() => {
                 closeModal('keyModal');
                 refreshStatus();
-            }, 1500);
+            }, 2500);
         } else {
             if (messageDiv) {
                 messageDiv.style.display = 'block';
