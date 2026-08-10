@@ -11,5 +11,44 @@
     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
     "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/indexing-bot-1%40my-indexing-tool-001.iam.gserviceaccount.com",
     "universe_domain": "googleapis.com"
+  },
+  {
+    "type": "service_account",
+    "project_id": "my-indexing-tool-002",
+    "private_key_id": "4e5a6772dea8b132d5c61f85ad7038e8bdea2aac",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQDLE0cY38r7P99M\nhJlInbLMi40NKQLt/vC7Jp+B/qnMe0YvWo672Ns5KLLkGjDobmKE2/8SEuSZtAXI\nIOzLLURHLSE9yB76CSM+mFPPQeiTD2kEIuUZa5mmu9+rDYbrqkqy059yo7s8tkiR\nn3TABVBz8c3e+kxvFSiyQohvStW8l1p5DO9gc3AJ6TR++yven/opjGOiV3H/aJnx\nVWGcqsBOx8q8aANV4T61eHaEh9dCcY1JFN9pFVBu8SBXQQ1vYK5MnWMczNPjmsaU\nfCm39rQLkuF8rellZgenLo+mdz9X6NtniDmfXyI/r2a58g/unC/1NnRun4JlPH8V\nUZ2hpkQBAgMBAAECggEABpYiR2UN/FNe0E7srQJDlLn7lS9JvQmSKgySpKPrdfDG\na5RdIZKWNnOV4CtJTGcBvJvPphJrmUcErDA4ZE6cWRw8zvgsQqFq1zjkxWNQQi5m\nklySk0R+Jn5DC67T1W9S606zbGoLEWkIHLdpqsca8oFa0zfJcUDkCDdINycPAtLT\n4weceK4s60qKDeFoERswANvf42wr/ud6W5hUXoduIC88363PuMiLCh8GerpA7/WR\nq8iogP3naUa/gwDmx9iw0akamP0ykIoHNRY2MCWIAKAA8ECukzQl+EYz69L5KIkr\nOEWzig3a+4nb1q/xTeiwTSYskjHbGkUhJP9ePLgNEQKBgQDqTiRqB+IL2u5sUNt/\nmXkZV/0zdGpllNNqhAersYT0JOGdsx6pvzTUdhr8Hu9naYsHWgZa3pqIwpVD6lhV\n6nQZvrxCkdY9L0Q/OALwpZli7H3gTG9azBvbpyFyzLG/oqKekFSJQc0zNIDLywBo\nUz1Al4A2pKG1EdF4Szgl3ILsewKBgQDd4OBLgFSYUxRYXU2voPdXOeuX75SrgP/J\nyzWgqp4nveuKViOOjqUEeIpmoHkRQTvijiNLZlkCWjOvUNJXdx0PZ8hVkmgkUkeH\nXxjEr9VA9s6skBwDMfbhkVM7PuDvuZ5tOiNVDkyhUIxtlV2RIJMVM+MgKlZiK5kO\nPcDShUWeswKBgEVShVeRqYGUbsJBUg/4mmmzLMjSgsA3Pi3fjl1wEkQhvVbpLgNO\n/RR3NRivFmnkQiwUqJiuD86ys3L6nNQen+cWFaEkgNxtZaXGrqgAdtdb3QpF0xRs\nGznrwuuyQEzQk4iSb1CE1W928zxYfXBgYFkB+f8wyl9GPFF4/83D5kCNAoGAUFC1\ngD8M4DK6m53yoA+JWQa7VD1COK6yaK5pVCZOp54k4+d4aYMTEsI7fxi5mlhdwA2p\nkwKSV7qlGOINseGJIGl16BveHL+36rWutovbiu+MMoTbzwBIGLDNSxXgwIYVZf50\nibZqYL5ShtxZiU4cT8F/hsYsjM6xUali4hGh+OcCgYBwMW4B1gHXmhG4JaIFMvAp\n50sbwNUQCJa6rkbjQ0pAo/Pe2O+GK2tsfAD+CWbq6hnBRIzzUIYwELiS9b2UQspI\nDo0Tdqg7xl2ll3yPoI8f2YAKisI7GeiOFTgwpPBJJ9YZ5mNHh7nTIsXcmVs0Lpxf\njbveSf6p3/oxBjncMYWT2Q==\n-----END PRIVATE KEY-----\n",
+    "client_email": "indexing-bot-2@my-indexing-tool-002.iam.gserviceaccount.com",
+    "client_id": "111721215236956198541",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/indexing-bot-2%40my-indexing-tool-002.iam.gserviceaccount.com",
+    "universe_domain": "googleapis.com"
+  },
+  {
+    "type": "service_account",
+    "project_id": "enduring-rush-505113-n8",
+    "private_key_id": "2bb416444be3f194da06c2b2291e604e3d0a01c2",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDJ48kXAwe8ObOh\nmEJZ/w6T+sdRNjiAQOq0/MO39SvFIpZhuSCjNqEd3uS4fJ+GCd7aLsZoHin9f/Ap\nzMf5lM95OB2bxdMTk2HJTEO/PifhaggJVAs2/++ppiRV23yfREHhvcawkAvXFUKk\nHR+C0AkrPsCXWkZ3oDVpGLWNBlUjZLWvXzWYtOD7wqwAVDlgYnLHn4djRyTrnfKo\nTRDE8/KWVSFRpCkxe1mEfTtbuLhGQJk6iEffB5+z3b0xoyw9APgYo9xNPh/lbQEQ\nPeeo+Pc4eHHLRvUYWpESIWhAkENRxeJRg3jdt0/ILrjRlRYTou0rfMoLwnXaqnKo\nFqXgiXIJAgMBAAECggEAArm7Q38EOfeKdAZG8QmXNAq46aECgsK9mGtoJgHekSb+\nIjwaU3G/m5RggJgYHDpiYo4qmgm8NeKmBp5v3a/zXBbUmX+Ccbt14L6RlJGdfrbM\nfHnAvAGZBfCLAYi4xjqo7AgAmG4dZs4v6+DDxeOSmB2dAn4SwPct+Wj+vHRnLlbd\n0gpQALcELUACrj6lkZR5eFvjCEExlvoCT/kjn361YsHfHC4ycOJyJykQv7csIC9n\n56Ivsb2vvNF4rC2yPz6Zw331vRP366Ecce84iyG+SPivEr2Qa2Y7RLL1fdv/Snhz\nUlsWcv2F/UYW799kmvaXcdEDQRTT5reWgiE/dgYoAQKBgQDwzuDB8RC9+vhBF7sa\nNB5cuX5iyvHvKM6gdHnPQdbRf91cH8wDeim6SD0f6XIT6KNz4zqppoxL4sO6UxhD\nipyQ8AElvqkzCGVS2R8KIj6DIF2I7f+RG2Z/XZ1SRYRUQjeRNI7dps+YyKhdHAn8\nRC6vPsnZguhsnYrDl3k/Sqv2CQKBgQDWoF10JzzfAHJ54XyaTAJjywrShi7qoEbP\nbDCK5S3NHVZ2HZLQQ0BAFOiIl/x4bRW0jnhGNTBSAcvRWPl2D2Oa2k1vAT9+9JpJ\nJci39CnNzVFdyFVzMHxgI2o02US/QWYDVbGbQ6T0LnLWsVMeVjug+vYxP7IJ8vtO\nNxii6HCcAQKBgQDgNu/lBK0fBzfxe8QVkOOYWIqKOAZuNWO22Ny2EsqPBGw6o8yU\njEGgFjT7qqQyT1EpzTBI2C8XVUwDB+22rbA774xR9aWbQ7z8F/ejuuDTvOX6Yges\nt4OHIcYi3WFqBsGwbOx9Cx2OV38UOtA9V8rUFzVgVlhNEZ8roLUfLkrQ6QKBgH+G\nMYD+f3CRN3Orwvl7CEB7OCb2i5HlQa2lPwKIQbqKIAF2ePE9xENPKQtgIyb6ydbK\ngDRXDirr3kq5bx/y7N/prfCy8SNh+vpTdPu4G86onBv5GKyktoH5CPX10p9BIHgC\nxtDWVICxyJJAMn7oBe4Ur4t7qTG4KhHDMuQ48BABAoGARc6Ol2gM3YM6NwUcqLbM\nRTOTLJsrD9yGDa2WD0LxSiHGvQcsKZtCpD5Mophy0Tg02eKblhqE161eeIu4sXNu\nL07p7KTzvLTW9TZN6Rb11HPIwRh5zUYLl4YAPakeI5Z47Esqy66jhX9LUYh1fatN\nAbrFWk3BhYwg4+c9mLp09Y4=\n-----END PRIVATE KEY-----\n",
+    "client_email": "myindexingbot51@enduring-rush-505113-n8.iam.gserviceaccount.com",
+    "client_id": "111034478370506346367",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/myindexingbot51%40enduring-rush-505113-n8.iam.gserviceaccount.com",
+    "universe_domain": "googleapis.com"
+  },
+  {
+    "type": "service_account",
+    "project_id": "my-indexing-tool-003",
+    "private_key_id": "3b9b09558ba29859a174d0eef98f185cc2bec445",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvAIBADANBgkqhkiG9w0BAQEFAASCBKYwggSiAgEAAoIBAQCa+0iSxPKR8CUw\nw4KlPjcjazcWT/O5U0vZwkDXsXbM8uE2lZXZImjLzAnL9yKEpCgeBYzpqfgeOhG3\nfphRJzxlx3Awfk2sct4KAFFFZN+lyhxO4k82zKxFhre3lHtFkkJwBqiK/LOtqy7G\nddkDix2Wg4T/2Wb9QLPoGlymx5oNHgX40OFFGsos57N55vP+mx0kSJ5XyjVCNnaQ\n8TFOyBSdAQNMDZNnMTk//b9kV9x5phk5O+2r/ux7319yCJsZRyM2L3otGDyf3wzx\ne3C7BsmdlmO5dWW1w6v42FSJ0An5MJp3iv0AWB+Fo7SS48Fzpgp9S/zq7xV2DpyB\nviRWHKHPAgMBAAECggEAJHyGQG93gB4eU1Wj+00jZAZIyMr34SiYEeMmquEPy/5e\nQSCET8NHErutjsRW7w1KmI7L9vLaBBu9sgpux6RKFtgWNIR3uuKsHYSnnYO7F2f2\ntCeZaJhU8mVd+S1OvDlLxN38bgRCNN+5OmXiOnBU/etms2k2UucZs8oJCAaz4ORT\nyISaACLHnZjrnB9CV8BPV+o0dgDZa2yJj5Gn8DDHaOX+eh2WcrKr9nOndcBWlC1Z\npmGMPjbfWl94q6QTGk0Sp8ZmnihahV8dT9ocP/GW5PFr4C4JmSFddGi5K6sY63nU\nu4mDivLIjraLYYAUEH8ULL0GaFqvrO0U2kROwG97qQKBgQDMKo2lpgfuLzuSug15\nyueSp+KZx7d2q9s7Bx0t8JjChsYBqGQ3+mb9nMbrg23Rp4ophFLz4R5aXtyxUEG8\npO9eTqQm4sKL1AUQjPruXRrcXWekGX4gf7p6eXlgAkAB/CGrU7WM69SPpjy3p47V\nGiE435k3vHeaeZywK1rHpRpfgwKBgQDCVA4hJQrMuEqyC8b8arXDQq6V6AogSzpY\n41sQj6rSkKg55sJRpb+vnVBQi40SMhiFcEPfqfCfXcoAMdvcvT7qNMNZuAaZ65kq\na3J0Or+6XtKyygdE06DrLw/iUkwknfTUzVn5dI9zPjVCgYQeVQ2cHALKqs59MwVD\n1q0DpU62xQKBgFQ4vaP2wNC9xUp627JBRJQYE38yhvk6Xb6U6bGYzbt5U1c9utHo\nxvGZ6ekfl37kKTeFMZ8PX7ER7uJqZCPIukHiGQ89fdmmxcwVDDKmT71V/roQFhqb\n9jYtxCcZ5oOrGcyORJd0dYQopGVyhpZcKBZJDvCSG5iq0DtQNyuibSW3AoGAFowS\nJ55YpnArmoTrTZZECKfQAeyuYBjaaD3Y7w78TvohyrYPjdGhcArcqrvGXnoZhkIE\nXgsltBf5vBQM4ovCpQICOIK1oV5IozdcTEgUvtcJs1zlgwLbBO6s9SF/XDBHm/lH\nmz3+9uwc2d6VKb/MmHRXjpRK6RPmZHygDnA7tdECgYAb4M9zLSIJBji9LNVToqq4\nb1P2aLLe95IwS+O2MoLgtbaOm4EDZYnpnTO3GSXEFU7NwjdloXn6FW7RvNTPufHo\nkjl93TjBdMx0Jx0HSsAt229B2syBHMP/ZjLg7PXr8lzLyTGQnaZhyhtU+h/Ia3Gi\nrsPsTfsQBjndNSd8UbQz5Q==\n-----END PRIVATE KEY-----\n",
+    "client_email": "indexing-bot-3@my-indexing-tool-003.iam.gserviceaccount.com",
+    "client_id": "110569561873550238878",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/indexing-bot-3%40my-indexing-tool-003.iam.gserviceaccount.com",
+    "universe_domain": "googleapis.com"
   }
 ]
