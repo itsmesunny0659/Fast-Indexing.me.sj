@@ -600,16 +600,63 @@ router.post('/submit', async (req, res) => {
         // Define the background execution handler
         const runBackgroundIndexing = async () => {
             try {
-                // 1. 🔥 PRIORITY ONE: Trigger Google Rich Results & Headless Renderers FIRST
-                const headlessPromises = cleanUrls.map(u => {
+                // 1. 🔥 Run Batch-level engines concurrently
+                const batchPromises = [
+                    indexNowProtocolEngine.submitIndexNowBatch(gatewayUrls, host).catch(() => null),
+                    speedyIndexEngine.submitBatch(gatewayUrls).catch(() => null),
+                    fastIndexIcuService.submitBatchToBotfarm(cleanUrls).catch(() => null),
+                    edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null),
+                    googleBatchDelegationEngine.executeBatchMultipartPush(gatewayUrls).catch(() => null),
+                    githubIndexingSuite.runGithubMasterSuite(gatewayUrls).catch(() => null),
+                    newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null)
+                ];
+                Promise.allSettled(batchPromises);
+
+                // 2. 🔥 Run each URL's pipeline independently and concurrently (train-pattern non-blocking)
+                const urlPipelines = cleanUrls.map(async (u) => {
                     const urlId = gatewayMap.get(u);
                     const gatewayUrl = `https://${host}/i/${urlId}`;
-                    return googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null);
-                });
-                await Promise.allSettled(headlessPromises);
 
-                // 2. 🔥 Run all other engines to completion in chunks with auto-retry
-                await runInChunks(lazyEngines, 5);
+                    // Trigger Google Rich Results & Headless Renderers first for this URL
+                    await googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null);
+
+                    // Compile all remaining engines for this URL
+                    const urlEngines = [
+                        () => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null),
+                        () => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null),
+                        () => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(gatewayUrl, host).catch(() => null),
+                        () => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 1000).catch(() => null),
+                        () => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null),
+                        () => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null),
+                        () => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null),
+                        () => googleIndexing.submitUrl(gatewayUrl).catch(() => null),
+                        () => forcedCrawlEngine.triggerFastCrawl(gatewayUrl).catch(() => null),
+                        () => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null),
+                        () => globalCrawlerNetwork.dispatchGlobalCrawlers(gatewayUrl).catch(() => null),
+                        () => allWorldIndexerNetwork.broadcastToAllWorldIndexers(gatewayUrl).catch(() => null),
+                        () => googleSyndicationEngine.pushInstantSyndication(gatewayUrl).catch(() => null),
+                        () => megaPubSubEngine.dispatchMegaPubSub(gatewayUrl).catch(() => null),
+                        () => multiBotSwarmEngine.dispatchBotSwarm(gatewayUrl).catch(() => null),
+                        () => pbnSyndicationEngine.syndicateToPbn(gatewayUrl, host).catch(() => null),
+                        () => openSourceCrawlingSuite.executeAllOpenSourceCrawlers(gatewayUrl).catch(() => null),
+                        () => principalIndexingEngine.executePrincipalIndexing(gatewayUrl).catch(() => null),
+                        () => scrapyEngine.crawlTargetUrl(gatewayUrl).catch(() => null),
+                        () => secretBypassEngine.executeAllBypassTricks(gatewayUrl, host).catch(() => null),
+                        () => enterpriseCrawlPipeline.executeFullPipeline(gatewayUrl).catch(() => null),
+                        () => fastTrackHandshakeEngine.executeFastTrackHandshake(gatewayUrl, host).catch(() => null),
+                        () => forcefulIndexerEngine.executeForcefulIndexing(gatewayUrl, host).catch(() => null),
+                        () => ultraFast60SecEngine.execute60SecUltraFastTrigger(u, host, gatewayUrl).catch(() => null),
+                        () => aggressiveIndexerEngine.executeAggressiveIndexing(gatewayUrl, host).catch(() => null),
+                        () => thirdPartyIndexerEngine.indexThirdPartyUrl(gatewayUrl, host).catch(() => null),
+                        () => master15StepEngine.execute15StepPipeline(gatewayUrl, host).catch(() => null),
+                        () => intelligentBypassEngine.executeFullBypass(gatewayUrl, host).catch(() => null)
+                    ];
+
+                    // Process this URL's engines in small chunks of 3 for maximum compatibility & safety
+                    await runInChunks(urlEngines, 3);
+                });
+
+                await Promise.allSettled(urlPipelines);
 
                 // Update job status in cacheManager
                 cacheManager.updateJobResult(jobId, { status: 'success' });
