@@ -99,7 +99,8 @@ router.get('/i/:urlId', (req, res) => {
             const lastUnderscoreIndex = urlId.lastIndexOf('_');
             if (lastUnderscoreIndex > 2) {
                 const base64part = urlId.substring(2, lastUnderscoreIndex);
-                const decodedUrl = Buffer.from(base64part, 'base64url').toString('utf8');
+                const base64 = base64part.replace(/-/g, '+').replace(/_/g, '/');
+                const decodedUrl = Buffer.from(base64, 'base64').toString('utf8');
                 if (decodedUrl.startsWith('http')) {
                     targetData = { url: decodedUrl };
                 }
