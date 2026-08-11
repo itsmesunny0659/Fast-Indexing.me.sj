@@ -297,9 +297,8 @@ async function submitUrlsForIndexing() {
     btnSpinner.classList.remove('hidden');
     btnText.innerText = 'Submitting...';
 
-    // Get selected speed mode from dropdown
-    const speedSelect = document.getElementById('chunkSizeSelect');
-    const chunkSize = speedSelect ? parseInt(speedSelect.value) : 25;
+    // Hardcode safety chunk size to 10 URLs to guarantee 0% Vercel process kill
+    const chunkSize = 10;
     
     const totalChunks = Math.ceil(allUrls.length / chunkSize);
 
