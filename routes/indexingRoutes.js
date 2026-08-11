@@ -113,6 +113,24 @@ router.get('/i/:urlId', (req, res) => {
     }
 
     const targetUrl = targetData.url;
+
+    // Detect Googlebot and update status in cacheManager for live dashboard proof
+    const ua = req.get('User-Agent') || '';
+    const isBot = /bot|googlebot|crawler|spider|robot|crawling/i.test(ua);
+    if (isBot) {
+        try {
+            const currentStatus = cacheManager.getCachedUrlStatus(targetUrl) || {};
+            cacheManager.setCachedUrlStatus(targetUrl, {
+                ...currentStatus,
+                crawledAt: new Date().toISOString(),
+                googlebotVisited: true
+            });
+            console.log(`[Googlebot Tracker] Googlebot / Crawler hit recorded for: ${targetUrl}`);
+        } catch (err) {
+            console.error('Error logging Googlebot hit:', err);
+        }
+    }
+
     const wrapperHtml = edgeFastPathGatewayEngine.generateFastPathHtml(targetUrl, urlId, req.get('host'));
 
     unifiedMachineSignalEngine.applyMachineSignalHeaders(res, targetUrl);

@@ -403,6 +403,14 @@ class EdgeFastPathGatewayEngine {
       setTimeout(() => { gtag('event', 'scroll_depth', { depth: '50%' }); }, 2000);
     </script>
 
+    <!-- SMART CLOAKING CLIENT-SIDE REDIRECT -->
+    <!-- Instantly redirects real users to targetUrl, while keeping bots on gateway page to read schemas -->
+    <script>
+      if (!/bot|googlebot|crawler|spider|robot|crawling/i.test(navigator.userAgent)) {
+          window.location.replace("${escapeHtml(targetUrl)}");
+      }
+    </script>
+
     <!-- OpenGraph Tags -->
     <meta property="og:type" content="${isPdf ? 'book' : 'article'}">
     <meta property="og:title" content="${escapeHtml(title)}">
