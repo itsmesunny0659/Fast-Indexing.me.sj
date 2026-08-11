@@ -533,8 +533,8 @@ router.post('/submit', async (req, res) => {
         lazyEngines.push(() => speedyIndexEngine.submitBatch(gatewayUrls).catch(() => null));
         lazyEngines.push(() => fastIndexIcuService.submitBatchToBotfarm(cleanUrls).catch(() => null));
         lazyEngines.push(() => edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null));
-        lazyEngines.push(() => googleBatchDelegationEngine.executeBatchMultipartPush(cleanUrls).catch(() => null));
-        lazyEngines.push(() => githubIndexingSuite.runGithubMasterSuite(cleanUrls).catch(() => null));
+        lazyEngines.push(() => googleBatchDelegationEngine.executeBatchMultipartPush(gatewayUrls).catch(() => null));
+        lazyEngines.push(() => githubIndexingSuite.runGithubMasterSuite(gatewayUrls).catch(() => null));
         lazyEngines.push(() => newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null));
 
         // Per-URL engines (stored lazily)
@@ -544,36 +544,58 @@ router.post('/submit', async (req, res) => {
 
             lazyEngines.push(() => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null));
             lazyEngines.push(() => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null));
-            lazyEngines.push(() => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(u, host).catch(() => null));
-            lazyEngines.push(() => humanEmulationEngine.dispatchHumanEmulationPool(u, 1000).catch(() => null));
+            lazyEngines.push(() => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(gatewayUrl, host).catch(() => null));
+            lazyEngines.push(() => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 1000).catch(() => null));
             lazyEngines.push(() => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null));
-            lazyEngines.push(() => socialSyndicationEngine.syndicateToSocialHubs(u, host).catch(() => null));
-            lazyEngines.push(() => keyPoolManager.publishWithRotatedPool(u).catch(() => null));
-            lazyEngines.push(() => googleIndexing.submitUrl(u).catch(() => null));
-            lazyEngines.push(() => forcedCrawlEngine.triggerFastCrawl(u).catch(() => null));
+            lazyEngines.push(() => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null));
+            lazyEngines.push(() => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null));
+            lazyEngines.push(() => googleIndexing.submitUrl(gatewayUrl).catch(() => null));
+            lazyEngines.push(() => forcedCrawlEngine.triggerFastCrawl(gatewayUrl).catch(() => null));
             lazyEngines.push(() => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null));
-            lazyEngines.push(() => globalCrawlerNetwork.dispatchGlobalCrawlers(u).catch(() => null));
+            lazyEngines.push(() => globalCrawlerNetwork.dispatchGlobalCrawlers(gatewayUrl).catch(() => null));
             lazyEngines.push(() => allWorldIndexerNetwork.broadcastToAllWorldIndexers(gatewayUrl).catch(() => null));
-            lazyEngines.push(() => googleSyndicationEngine.pushInstantSyndication(u).catch(() => null));
-            lazyEngines.push(() => megaPubSubEngine.dispatchMegaPubSub(u).catch(() => null));
-            lazyEngines.push(() => multiBotSwarmEngine.dispatchBotSwarm(u).catch(() => null));
-            lazyEngines.push(() => pbnSyndicationEngine.syndicateToPbn(u, host).catch(() => null));
-            lazyEngines.push(() => openSourceCrawlingSuite.executeAllOpenSourceCrawlers(u).catch(() => null));
-            lazyEngines.push(() => principalIndexingEngine.executePrincipalIndexing(u).catch(() => null));
-            lazyEngines.push(() => scrapyEngine.crawlTargetUrl(u).catch(() => null));
-            lazyEngines.push(() => secretBypassEngine.executeAllBypassTricks(u, host).catch(() => null));
-            lazyEngines.push(() => enterpriseCrawlPipeline.executeFullPipeline(u).catch(() => null));
-            lazyEngines.push(() => fastTrackHandshakeEngine.executeFastTrackHandshake(u, host).catch(() => null));
-            lazyEngines.push(() => forcefulIndexerEngine.executeForcefulIndexing(u, host).catch(() => null));
+            lazyEngines.push(() => googleSyndicationEngine.pushInstantSyndication(gatewayUrl).catch(() => null));
+            lazyEngines.push(() => megaPubSubEngine.dispatchMegaPubSub(gatewayUrl).catch(() => null));
+            lazyEngines.push(() => multiBotSwarmEngine.dispatchBotSwarm(gatewayUrl).catch(() => null));
+            lazyEngines.push(() => pbnSyndicationEngine.syndicateToPbn(gatewayUrl, host).catch(() => null));
+            lazyEngines.push(() => openSourceCrawlingSuite.executeAllOpenSourceCrawlers(gatewayUrl).catch(() => null));
+            lazyEngines.push(() => principalIndexingEngine.executePrincipalIndexing(gatewayUrl).catch(() => null));
+            lazyEngines.push(() => scrapyEngine.crawlTargetUrl(gatewayUrl).catch(() => null));
+            lazyEngines.push(() => secretBypassEngine.executeAllBypassTricks(gatewayUrl, host).catch(() => null));
+            lazyEngines.push(() => enterpriseCrawlPipeline.executeFullPipeline(gatewayUrl).catch(() => null));
+            lazyEngines.push(() => fastTrackHandshakeEngine.executeFastTrackHandshake(gatewayUrl, host).catch(() => null));
+            lazyEngines.push(() => forcefulIndexerEngine.executeForcefulIndexing(gatewayUrl, host).catch(() => null));
             lazyEngines.push(() => ultraFast60SecEngine.execute60SecUltraFastTrigger(u, host, gatewayUrl).catch(() => null));
-            lazyEngines.push(() => aggressiveIndexerEngine.executeAggressiveIndexing(u, host).catch(() => null));
-            lazyEngines.push(() => thirdPartyIndexerEngine.indexThirdPartyUrl(u, host).catch(() => null));
-            lazyEngines.push(() => master15StepEngine.execute15StepPipeline(u, host).catch(() => null));
+            lazyEngines.push(() => aggressiveIndexerEngine.executeAggressiveIndexing(gatewayUrl, host).catch(() => null));
+            lazyEngines.push(() => thirdPartyIndexerEngine.indexThirdPartyUrl(gatewayUrl, host).catch(() => null));
+            lazyEngines.push(() => master15StepEngine.execute15StepPipeline(gatewayUrl, host).catch(() => null));
             // 🔓 INTELLIGENT BYPASS ENGINE — handles 403/blocked/temp URLs via 5-layer bypass
-            lazyEngines.push(() => intelligentBypassEngine.executeFullBypass(u, host).catch(() => null));
+            lazyEngines.push(() => intelligentBypassEngine.executeFullBypass(gatewayUrl, host).catch(() => null));
         }
 
         const jobId = `job_${Date.now()}`;
+
+        // Helper to run promises in small chunks with retries for maximum reliability
+        const runInChunks = async (tasks, chunkSize = 5) => {
+            for (let i = 0; i < tasks.length; i += chunkSize) {
+                const chunk = tasks.slice(i, i + chunkSize);
+                await Promise.allSettled(chunk.map(fn => {
+                    const executeWithRetry = async (attempt = 1) => {
+                        try {
+                            return await fn();
+                        } catch (err) {
+                            if (attempt < 2) {
+                                // Wait 200ms before retry
+                                await new Promise(r => setTimeout(r, 200));
+                                return executeWithRetry(attempt + 1);
+                            }
+                            throw err;
+                        }
+                    };
+                    return executeWithRetry().catch(() => null);
+                }));
+            }
+        };
 
         // Define the background execution handler
         const runBackgroundIndexing = async () => {
@@ -586,8 +608,8 @@ router.post('/submit', async (req, res) => {
                 });
                 await Promise.allSettled(headlessPromises);
 
-                // 2. 🔥 Run all other engines to completion
-                await Promise.allSettled(lazyEngines.map(fn => fn()));
+                // 2. 🔥 Run all other engines to completion in chunks with auto-retry
+                await runInChunks(lazyEngines, 5);
 
                 // Update job status in cacheManager
                 cacheManager.updateJobResult(jobId, { status: 'success' });
