@@ -47,6 +47,7 @@ globalThis.fetch = async function(url, options = {}) {
 const indexingRoutes = require('./routes/indexingRoutes');
 
 const app = express();
+app.set('trust proxy', true);
 const PORT = process.env.PORT || 3000;
 
 // Middleware configuration
