@@ -269,30 +269,9 @@ async function submitUrlsForIndexing() {
             const data = await res.json();
 
             if (res.ok) {
-                let jobData = data;
-                if (data.status === 'processing') {
-                    btnText.innerText = `⏳ Executing 28+ Indexers...`;
-                    let isCompleted = false;
-                    while (!isCompleted) {
-                        await new Promise(r => setTimeout(r, 2000));
-                        try {
-                            const statusRes = await fetch(`/fui-api/api/indexing/job-status/${data.jobId}`);
-                            if (statusRes.ok) {
-                                const statusData = await statusRes.json();
-                                if (statusData.status === 'success' || statusData.status === 'failed') {
-                                    jobData = statusData;
-                                    isCompleted = true;
-                                }
-                            }
-                        } catch (e) {
-                            // ignore status check errors and retry
-                        }
-                    }
-                }
-
-                renderResults(jobData, currentChunk > 1);
+                renderResults(data, currentChunk > 1);
                 refreshStatus();
-                updateTotalStats(jobData.submitted, jobData.failed);
+                updateTotalStats(data.submitted, data.failed);
                 successCount += chunkUrls.length;
 
                 if (i + chunkSize < allUrls.length) {
