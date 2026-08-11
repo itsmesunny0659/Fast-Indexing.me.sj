@@ -224,6 +224,50 @@ async function saveServiceAccountKey() {
     }
 }
 
+// Background Queue for submitting chunks asynchronously without blocking the UI
+let isQueueRunning = false;
+const submissionQueue = [];
+
+async function processSubmissionQueue() {
+    if (isQueueRunning || submissionQueue.length === 0) return;
+    isQueueRunning = true;
+
+    while (submissionQueue.length > 0) {
+        const { chunkUrls } = submissionQueue.shift();
+        
+        try {
+            const res = await fetch('/fui-api/api/indexing/submit', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ urls: chunkUrls })
+            });
+
+            if (res.status === 401) {
+                window.location.href = '/login.html';
+                return;
+            }
+
+            const data = await res.json();
+
+            if (res.ok) {
+                renderResults(data, true); // Append to table
+                refreshStatus();
+                updateTotalStats(data.submitted, data.failed);
+            }
+        } catch (error) {
+            console.error('Background submission error:', error);
+        }
+
+        // Anti-Spam Handshake Wait between chunks in background
+        if (submissionQueue.length > 0) {
+            const waitTimeSeconds = Math.floor(Math.random() * (50 - 40 + 1) + 40);
+            await new Promise(r => setTimeout(r, waitTimeSeconds * 1000));
+        }
+    }
+
+    isQueueRunning = false;
+}
+
 // Submit URLs for Indexing
 async function submitUrlsForIndexing() {
     const text = document.getElementById('urlInput').value;
@@ -240,71 +284,56 @@ async function submitUrlsForIndexing() {
 
     btn.disabled = true;
     btnSpinner.classList.remove('hidden');
+    btnText.innerText = 'Submitting...';
 
     // Get selected speed mode from dropdown
     const speedSelect = document.getElementById('chunkSizeSelect');
     const chunkSize = speedSelect ? parseInt(speedSelect.value) : 25;
     
-    let successCount = 0;
-    let currentChunk = 0;
     const totalChunks = Math.ceil(allUrls.length / chunkSize);
 
     try {
-        for (let i = 0; i < allUrls.length; i += chunkSize) {
-            const chunkUrls = allUrls.slice(i, i + chunkSize);
-            currentChunk++;
-            btnText.innerText = `Indexing chunk ${currentChunk} of ${totalChunks}...`;
-
-            const res = await fetch('/fui-api/api/indexing/submit', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ urls: chunkUrls })
-            });
-
-            if (res.status === 401) {
-                window.location.href = '/login.html';
-                return;
-            }
-
-            const data = await res.json();
-
-            if (res.ok) {
-                renderResults(data, currentChunk > 1);
-                refreshStatus();
-                updateTotalStats(data.submitted, data.failed);
-                successCount += chunkUrls.length;
-
-                if (i + chunkSize < allUrls.length) {
-                    const waitTimeSeconds = Math.floor(Math.random() * (50 - 40 + 1) + 40);
-                    for (let sec = waitTimeSeconds; sec > 0; sec--) {
-                        btnText.innerHTML = `🛡️ Anti-Spam Handshake... (Next in ${sec}s)`;
-                        await new Promise(r => setTimeout(r, 1000));
-                    }
-                }
-            } else {
-                alert(`Submission Error (${res.status}): ${data.error || 'Failed to submit chunk'}`);
-                break; // Stop on API error
-            }
-        }
+        // Send the FIRST chunk immediately
+        const firstChunkUrls = allUrls.slice(0, chunkSize);
         
-        if (successCount === allUrls.length) {
-            btnText.innerText = `✅ Indexed ${successCount} URLs!`;
-            
-            // Auto-clear input box on success
-            clearUrls();
+        const res = await fetch('/fui-api/api/indexing/submit', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ urls: firstChunkUrls })
+        });
 
-            setTimeout(() => {
-                btnText.innerText = '🚀 Submit URLs for Fast Indexing';
-            }, 3000);
+        if (res.status === 401) {
+            window.location.href = '/login.html';
+            return;
+        }
+
+        const data = await res.json();
+
+        if (res.ok) {
+            renderResults(data, false); // Clear and render first chunk
+            refreshStatus();
+            updateTotalStats(data.submitted, data.failed);
+
+            // Queue the remaining chunks in the background
+            for (let i = chunkSize; i < allUrls.length; i += chunkSize) {
+                const chunkUrls = allUrls.slice(i, i + chunkSize);
+                submissionQueue.push({ chunkUrls });
+            }
+            
+            // Trigger background processing of queued chunks
+            processSubmissionQueue();
+
+            // Clear input box immediately so user can type/submit more URLs!
+            clearUrls();
+        } else {
+            alert(`Submission Error (${res.status}): ${data.error || 'Failed to submit'}`);
         }
     } catch (error) {
-        alert('Network Error: Process stopped due to connection issue.');
+        alert('Network Error: Failed to connect to server.');
     } finally {
         btn.disabled = false;
-        if (btnText.innerText.indexOf('✅') === -1) {
-            btnText.innerText = '🚀 Submit URLs for Fast Indexing';
-        }
         btnSpinner.classList.add('hidden');
+        btnText.innerText = '🚀 Submit URLs for Fast Indexing';
     }
 }
 
@@ -383,7 +412,7 @@ function renderResults(data, append = false) {
             </td>
             <td>
                 <span id="${statusCellId}" class="status-pill pending" style="background: rgba(234, 179, 8, 0.15); color: #fde047; border-color: rgba(234, 179, 8, 0.3);">
-                    ⏳ Injecting...
+                    ⏳ Pending...
                 </span>
             </td>
             <td style="color: var(--text-secondary); font-size: 0.85rem; white-space: nowrap;">
@@ -400,15 +429,12 @@ function renderResults(data, append = false) {
 
         tableBody.appendChild(row);
 
-        // TRIGGER IMMEDIATE HACKER-BYPASS LIVE VERIFICATION
-        // Wait 3.5 seconds for datacenter rendering waves to trigger, then verify indexation state
-        setTimeout(async () => {
+        // CONTINUOUS BACKGROUND VERIFICATION PROBE (Retries every 20s until indexed)
+        const checkLiveStatus = async () => {
             const statusCell = document.getElementById(statusCellId);
-            if (!statusCell) return;
-            statusCell.innerHTML = `🧬 Verifying...`;
+            if (!statusCell) return; // Cell was removed or DOM changed
 
             try {
-                // Perform live handshake verification via custom diagnostic probe
                 const verifyRes = await fetch('/fui-api/api/indexing/diagnose', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -422,21 +448,22 @@ function renderResults(data, append = false) {
                     statusCell.style.color = "#4ade80";
                     statusCell.style.borderColor = "rgba(34, 197, 94, 0.3)";
                     statusCell.innerHTML = "✅ LIVE IN GOOGLE";
-                } else {
-                    statusCell.className = "status-pill success";
-                    statusCell.style.background = "rgba(6, 182, 212, 0.15)";
-                    statusCell.style.color = "#67e8f9";
-                    statusCell.style.borderColor = "rgba(6, 182, 212, 0.3)";
-                    statusCell.innerHTML = "📤 Fired & Queued";
+                    return; // Live! Stop polling
                 }
-            } catch (e) {
-                statusCell.className = "status-pill success";
-                statusCell.style.background = "rgba(6, 182, 212, 0.15)";
-                statusCell.style.color = "#67e8f9";
-                statusCell.style.borderColor = "rgba(6, 182, 212, 0.3)";
-                statusCell.innerHTML = "📤 Fired & Queued";
-            }
-        }, 3500);
+            } catch (e) {}
+
+            // Keep status pending and schedule next check in 20 seconds
+            statusCell.className = "status-pill pending";
+            statusCell.style.background = "rgba(234, 179, 8, 0.15)";
+            statusCell.style.color = "#fde047";
+            statusCell.style.borderColor = "rgba(234, 179, 8, 0.3)";
+            statusCell.innerHTML = "⏳ Pending...";
+
+            setTimeout(checkLiveStatus, 20000);
+        };
+
+        // Start checking after 3.5 seconds
+        setTimeout(checkLiveStatus, 3500);
     });
 
     resultsSection.classList.remove('hidden');
