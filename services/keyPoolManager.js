@@ -1,6 +1,7 @@
 /**
  * Service Account Key Pooler & Round-Robin Rotator Engine
- * Allows pooling multiple Google Cloud Service Account JSON Keys to scale daily API quotas seamlessly
+ * Allows pooling multiple Google Cloud Service Account JSON Keys to scale daily API quotas seamlessly.
+ * Features a dynamic 24-hour cooldown tracker for keys that return 429 Quota limits.
  */
 const { google } = require('googleapis');
 
@@ -8,6 +9,8 @@ class KeyPoolManager {
     constructor() {
         this.keyPool = [];
         this.currentIndex = 0;
+        // Cooldown Map stores client_email -> timestamp of cooldown expiry
+        this.cooldowns = new Map();
     }
 
     /**
@@ -23,7 +26,20 @@ class KeyPoolManager {
     }
 
     /**
-     * Gets the next Service Account key in Round-Robin order
+     * Checks if a key is in cooldown
+     */
+    isKeyInCooldown(email) {
+        const expiry = this.cooldowns.get(email);
+        if (!expiry) return false;
+        if (Date.now() > expiry) {
+            this.cooldowns.delete(email); // Cooldown expired, clean up
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * Gets the next active Service Account key in Round-Robin order, skipping cooldown keys
      */
     getNextKey() {
         try {
@@ -31,14 +47,19 @@ class KeyPoolManager {
             const pool = cacheManager.getServiceAccountPool();
             
             if (pool && pool.length > 0) {
-                const key = pool[this.currentIndex % pool.length];
-                this.currentIndex = (this.currentIndex + 1) % pool.length;
-                return key;
+                // Filter out keys currently in cooldown
+                const activePool = pool.filter(key => !this.isKeyInCooldown(key.client_email));
+                
+                if (activePool.length > 0) {
+                    const key = activePool[this.currentIndex % activePool.length];
+                    this.currentIndex = (this.currentIndex + 1) % activePool.length;
+                    return key;
+                }
             }
 
-            // Fallback to single service account if pool is empty
+            // Fallback to single service account if pool is empty or all pool keys are in cooldown
             const sa = cacheManager.getServiceAccount() || (process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON) : null);
-            if (sa && sa.client_email && sa.private_key) {
+            if (sa && sa.client_email && sa.private_key && !this.isKeyInCooldown(sa.client_email)) {
                 return sa;
             }
         } catch (e) {
@@ -46,9 +67,10 @@ class KeyPoolManager {
         }
 
         // Check if there are keys added directly via addKeyToPool
-        if (this.keyPool.length > 0) {
-            const key = this.keyPool[this.currentIndex % this.keyPool.length];
-            this.currentIndex = (this.currentIndex + 1) % this.keyPool.length;
+        const directActivePool = this.keyPool.filter(key => !this.isKeyInCooldown(key.client_email));
+        if (directActivePool.length > 0) {
+            const key = directActivePool[this.currentIndex % directActivePool.length];
+            this.currentIndex = (this.currentIndex + 1) % directActivePool.length;
             return key;
         }
 
@@ -56,12 +78,13 @@ class KeyPoolManager {
     }
 
     /**
-     * Publishes URL notification using the rotated Key Pool
+     * Publishes URL notification using the rotated Key Pool.
+     * Auto-detects 429 quota exhaustion, places the key in 24h cooldown, and retries with a fresh key.
      */
-    async publishWithRotatedPool(targetUrl) {
+    async publishWithRotatedPool(targetUrl, attempt = 1) {
         const key = this.getNextKey();
         if (!key) {
-            return { success: false, note: 'No Service Account keys in pool' };
+            return { success: false, note: 'No active/fresh Service Account keys available in pool (All keys in cooldown)' };
         }
 
         try {
@@ -81,14 +104,32 @@ class KeyPoolManager {
 
             return { success: true, clientEmail: key.client_email, apiData: res.data };
         } catch (e) {
+            const msg = e.message || '';
+            // Auto-detect quota error (429 or similar messages)
+            if (msg.includes('429') || msg.includes('quota') || msg.includes('limit') || msg.includes('tooManyRequests')) {
+                console.warn(`⚠️ [KeyPoolManager] Key ${key.client_email} hit daily quota. Placing in 24h cooldown.`);
+                this.cooldowns.set(key.client_email, Date.now() + 24 * 60 * 60 * 1000); // 24 hours cooldown
+                
+                // Retry once with a different key if attempts limit is not reached
+                if (attempt < 3) {
+                    console.log(`🔄 [KeyPoolManager] Retrying URL publish with a fresh key (Attempt ${attempt + 1})...`);
+                    return this.publishWithRotatedPool(targetUrl, attempt + 1);
+                }
+            }
             return { success: false, clientEmail: key.client_email, error: e.message };
         }
     }
 
     getPoolStats() {
+        const cacheManager = require('./cacheManager');
+        const totalKeys = (cacheManager.getServiceAccountPool() || []).length || this.keyPool.length;
+        const cooldownKeysCount = Array.from(this.cooldowns.keys()).filter(email => this.isKeyInCooldown(email)).length;
+        
         return {
-            totalActiveKeys: this.keyPool.length,
-            dailyQuotaCapacity: this.keyPool.length * 200,
+            totalKeys,
+            activeKeys: Math.max(0, totalKeys - cooldownKeysCount),
+            cooldownKeys: cooldownKeysCount,
+            dailyQuotaCapacity: Math.max(0, (totalKeys - cooldownKeysCount) * 200),
             rotationIndex: this.currentIndex
         };
     }

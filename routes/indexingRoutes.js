@@ -725,7 +725,7 @@ router.post('/submit', async (req, res) => {
         let gscSubmitResult = { indexingApiSubmitted: true, gscStatus: '📤 Request Indexing submitted to Google ✓' };
         try {
             // Check if key is configured before awaiting to avoid blocking UI with API Errors
-            const sa = cacheManager.getServiceAccount() || (process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON) : null);
+            const sa = keyPoolManager.getNextKey() || cacheManager.getServiceAccount() || (process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON) : null);
             if (sa && sa.client_email && sa.private_key) {
                 const apiResult = await Promise.race([
                     gscInspectionEngine.processUrl(targetSubmitUrl, cleanUrls[0], host),
