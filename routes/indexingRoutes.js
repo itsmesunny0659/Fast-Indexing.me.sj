@@ -517,14 +517,19 @@ router.post('/submit', async (req, res) => {
         lazyEngines.push(() => githubIndexingSuite.runGithubMasterSuite(cleanUrls).catch(() => null));
         lazyEngines.push(() => newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null));
 
+        // 🔥 PRIORITY ONE: Trigger Google Rich Results & Headless Renderers FIRST
+        // Run all of them concurrently (in parallel) to avoid sequential loop delay, and await completion so they aren't cut off by Vercel.
+        const headlessPromises = cleanUrls.map(u => {
+            const urlId = gatewayMap.get(u);
+            const gatewayUrl = `https://${host}/i/${urlId}`;
+            return googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null);
+        });
+        await Promise.allSettled(headlessPromises);
+
         // Per-URL engines (stored lazily)
         for (const u of cleanUrls) {
             const urlId = gatewayMap.get(u);
             const gatewayUrl = `https://${host}/i/${urlId}`;
-
-            // 🔥 PRIORITY ONE: Trigger Google Rich Results & Headless Renderers FIRST
-            // This invites the Googlebot crawler instantly before we submit to other slow directories.
-            await googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null);
 
             lazyEngines.push(() => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null));
             lazyEngines.push(() => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null));
@@ -559,11 +564,8 @@ router.post('/submit', async (req, res) => {
 
         // 🔥 FIRE ALL ENGINES CONCURRENTLY AND AWAIT THEM
         // Since Vercel kills background tasks immediately after the HTTP response is sent,
-        // we MUST await these promises so the data actually reaches Google's backend.
-        // FIX: Wrap in a Promise.race to enforce an 8.5-second absolute timeout so Vercel doesn't 504 error.
-        const allEnginesPromise = Promise.allSettled(lazyEngines.map(fn => fn()));
-        const timeoutPromise = new Promise(r => setTimeout(r, 8500));
-        await Promise.race([allEnginesPromise, timeoutPromise]).catch(() => null);
+        // we MUST await these promises to absolute completion so every single engine delivers its payload.
+        await Promise.allSettled(lazyEngines.map(fn => fn())).catch(() => null);
 
         const results = [];
         let submittedCount = cleanUrls.length;
