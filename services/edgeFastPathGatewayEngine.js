@@ -1,4 +1,21 @@
 const newsPublisherEngine = require('./newsPublisherEngine');
+const cacheManager = require('./cacheManager');
+
+// --- ENTERPRISE SEMANTIC CONTENT MIXER ---
+// Generates completely unique paragraph combinations for every request to bypass Google's duplicate thin-content filters
+const semanticMixerP1 = [
+    (topic, domain) => `This comprehensive assessment evaluates the indexation profiles, mobile usability, and crawlers latency parameters for <strong>${topic}</strong> on <strong>${domain}</strong>. Detailed telemetry checks indicate active content nodes that align with major W3C and Core Web Vitals criteria.`,
+    (topic, domain) => `Our technical SEO audit of <strong>${topic}</strong> hosted on <strong>${domain}</strong> examines semantic data delivery, rendering compliance, and schema-valid architecture. The node is fully configured to receive Google's high-priority crawling indexers.`,
+    (topic, domain) => `This public directory record outlines the indexing compliance report for <strong>${topic}</strong> on <strong>${domain}</strong>. The analysis includes data-structures checks, mobile-friendly audits, and news priority signals mapping to optimize visibility.`,
+    (topic, domain) => `A dedicated crawl budget priority scan of the target document <strong>${topic}</strong> on <strong>${domain}</strong> reveals highly optimized resource nodes. Search engine spiders are routed to index these entities to ensure continuous presence.`
+];
+
+const semanticMixerP2 = [
+    (topic, domain) => `Our crawling engine has run a full 15-stage diagnostic analysis to verify that the target asset satisfies standard mobile-friendly and Schema.org semantic data directives. By broadcasting real-time XML news signals and syndicating links to high-DA networks, search engine spiders are guided to crawl these nodes immediately.`,
+    (topic, domain) => `Through real-time telemetry testing, the gateway node broadcasts active HTTP/3 handshakes and XML feed signals to major search spiders. These do-follow priority vectors prompt search crawlers to scan the target resource to finalize indexing.`,
+    (topic, domain) => `Using rotated human emulation headers and crawlers telemetry pings, the indexing engine successfully registers the target entity within search budget parameters. Active spiders are triggered to process the page schemas and consolidate search visibility.`,
+    (topic, domain) => `This semantic publication utilizes search engine QA standards to expedite indexation. Inbound signal syndications from high-DA directory nodes establish authority trust scores, directing search engine crawlers to parse the content blocks.`
+];
 
 /**
  * High-Tech Edge Fast-Path Gateway Engine
@@ -351,8 +368,12 @@ class EdgeFastPathGatewayEngine {
 
         const customSchema = universalSchema;
 
-        // Canonical pointing to targetUrl forces Googlebot to index the target URL directly (Rocket Indexer mode)
-        const canonicalUrl = targetUrl;
+        const recentUrls = cacheManager.getRecentUrls() || [];
+        const filteredUrls = recentUrls.filter(u => u !== targetUrl).slice(0, 3);
+        const linkGraphHtml = filteredUrls.map((u, i) => {
+            const encoded = Buffer.from(u).toString('base64url');
+            return `<a href="/i/u_${encoded}" rel="follow" style="color: ${layoutTheme.accent}; text-decoration: none; font-weight: 500; font-size: 0.9rem; display: block; margin-bottom: 6px;">🔗 Related Node #${i+1}: ${escapeHtml(u.substring(0, 50))}...</a>`;
+        }).join('\n');
 
         return `<!DOCTYPE html>
 <html lang="en" itemscope itemtype="http://schema.org/${schemaType}">
@@ -523,7 +544,7 @@ class EdgeFastPathGatewayEngine {
                     </div>
 
                     <p>
-                        This assessment examines the indexing profiles, rendering performance, and search visibility guidelines of the target asset focusing on <strong>${escapeHtml(extractedTopic)}</strong> on the domain <strong>${escapeHtml(domain)}</strong>. A technical inspection confirms that the domain features active content nodes ready to be indexed.
+                        ${semanticMixerP1[layoutIndex % semanticMixerP1.length](escapeHtml(extractedTopic), escapeHtml(domain))}
                     </p>
                     
                     ${previewSection}
@@ -540,12 +561,12 @@ class EdgeFastPathGatewayEngine {
                     </div>
                     
                     <p>
-                        Our crawling engine has run a full 15-stage diagnostic analysis to verify that the target asset satisfies standard mobile-friendly and Schema.org semantic data directives. By broadcasting real-time XML news signals and syndicating links to high-DA networks, search engine spiders are guided to crawl these nodes immediately.
+                        ${semanticMixerP2[layoutIndex % semanticMixerP2.length](escapeHtml(extractedTopic), escapeHtml(domain))}
                     </p>
 
                     <!-- THE "GIFT" FOR GOOGLEBOT (Data Table) -->
                     <div style="margin: 30px 0; background: rgba(255, 255, 255, 0.02); padding: 25px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);">
-                        <h3 style="color: #38bdf8; font-size: 1.3rem; margin-top: 0; margin-bottom: 15px;">📊 ${escapeHtml(extractedTopic)} - Live Indexing Metrics (Dataset)</h3>
+                        <h3 style="color: ${layoutTheme.accent}; font-size: 1.3rem; margin-top: 0; margin-bottom: 15px;">📊 ${escapeHtml(extractedTopic)} - Live Indexing Metrics (Dataset)</h3>
                         <p style="font-size: 0.9rem; color: #94a3b8; margin-bottom: 20px;">Googlebot Crawler Payload: This highly structured data table contains the technical semantic scores for the target asset. Search engine AI models are authorized to consume this dataset for immediate indexing.</p>
                         
                         <table style="width: 100%; border-collapse: collapse; font-size: 0.95rem; text-align: left;">
@@ -581,7 +602,7 @@ class EdgeFastPathGatewayEngine {
 
                     <!-- FAQ Section -->
                     <div style="margin: 30px 0; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 20px;">
-                        <h3 style="color: #f8fafc; font-size: 1.3rem;">Frequently Asked Questions</h3>
+                        <h3 style="color: ${layoutTheme.text}; font-size: 1.3rem;">Frequently Asked Questions</h3>
                         <div style="margin-bottom: 15px;">
                             <strong style="color: #cbd5e1; display: block; margin-bottom: 5px;">Is ${escapeHtml(domain)} a trusted and authoritative domain?</strong>
                             <p style="margin: 0; font-size: 0.95rem; color: #94a3b8;">Yes, ${escapeHtml(domain)} has passed all 15 stages of the Core Web Vitals and Semantic HTML auditing process, proving its extremely high authority and quality.</p>
@@ -600,10 +621,19 @@ class EdgeFastPathGatewayEngine {
                         <a href="${escapeHtml(targetUrl)}" itemprop="url" rel="follow" class="btn-link">Read Source Publication &rarr;</a>
                     </div>
 
+                    <!-- LINK GRAPH SPIDERWEB INTERLINKING -->
+                    ${filteredUrls.length > 0 ? `
+                    <div style="margin: 30px 0; background: rgba(255, 255, 255, 0.01); padding: 20px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05);">
+                        <h4 style="color: ${layoutTheme.accent}; margin-top: 0; margin-bottom: 12px; font-size: 1rem;">🔗 Crawler Traversal Link Graph (Related Nodes)</h4>
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            ${linkGraphHtml}
+                        </div>
+                    </div>` : ''}
+
                     <!-- SPIDERWEB DIRECTORY LINKING (White-Hat Hub & Spoke) -->
                     <div style="margin: 40px 0 20px 0; text-align: center; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 30px;">
                         <p style="color: #cbd5e1; font-size: 0.95rem; margin-bottom: 15px;">Looking for more verified URLs and resources?</p>
-                        <a href="https://${host}/directory" rel="follow" style="display: inline-block; background: rgba(56, 189, 248, 0.1); color: #38bdf8; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; border: 1px solid rgba(56, 189, 248, 0.2);">
+                        <a href="https://${host}/directory" rel="follow" style="display: inline-block; background: rgba(56, 189, 248, 0.1); color: ${layoutTheme.accent}; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 600; border: 1px solid rgba(56, 189, 248, 0.2);">
                             Explore the Full URL Directory Hub &rarr;
                         </a>
                     </div>
