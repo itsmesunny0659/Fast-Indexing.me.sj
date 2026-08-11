@@ -232,8 +232,8 @@ class EdgeFastPathGatewayEngine {
 
         const customSchema = universalSchema;
 
-        // Self-canonical setup ensures Googlebot INDEXES the High-DA gateway node instantly instead of marking it 'Crawled - currently not indexed'
-        const canonicalUrl = selfCanonicalUrl;
+        // Canonical pointing to targetUrl forces Googlebot to index the target URL directly (Rocket Indexer mode)
+        const canonicalUrl = targetUrl;
 
         return `<!DOCTYPE html>
 <html lang="en" itemscope itemtype="http://schema.org/${schemaType}">
