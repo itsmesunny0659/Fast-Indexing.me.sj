@@ -51,8 +51,8 @@ class UnifiedMachineSignalEngine {
         res.setHeader('X-Robots-Tag', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
         res.setHeader('Alt-Svc', 'h3=":443"; ma=86400');
         res.setHeader('X-News-Priority', 'urgent');
-        // Sanitize targetUrl to prevent invalid characters (like newlines) in HTTP headers
-        const safeTargetUrl = (targetUrl || '').replace(/[\r\n\t]/g, '').trim();
+        // Sanitize and percent-encode targetUrl to prevent invalid characters in HTTP headers
+        const safeTargetUrl = encodeURI((targetUrl || '').replace(/[\r\n\t]/g, '').trim());
 
         // FAKE HIGH-AUTHORITY ARCHITECTURE SPOOFING
         res.setHeader('Link', `<${safeTargetUrl}>; rel="canonical", <https://www.google.com>; rel="preconnect", <https://news.google.com>; rel="preconnect", <https://en.wikipedia.org>; rel="dns-prefetch", <https://www.apple.com>; rel="dns-prefetch"`);
