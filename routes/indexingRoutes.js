@@ -105,7 +105,7 @@ router.get('/i/:urlId', (req, res) => {
                     targetData = { url: decodedUrl };
                 }
             }
-        } catch (e) {}
+        } catch (e) { }
     }
 
     if (!targetData) {
@@ -136,7 +136,7 @@ router.get('/hub/:hubId', (req, res) => {
 
     const linkItems = urls.map((urlObj, i) => {
         const targetUrl = typeof urlObj === 'string' ? urlObj : urlObj.original;
-        const gatewayUrl = typeof urlObj === 'string' 
+        const gatewayUrl = typeof urlObj === 'string'
             ? `https://${host}/i/u_${Buffer.from(targetUrl).toString('base64url')}`
             : urlObj.gateway;
 
@@ -175,9 +175,9 @@ router.get('/hub/:hubId', (req, res) => {
       "datePublished": "${now}",
       "description": "A curated collection of ${urls.length} URLs for fast Google indexing.",
       "hasPart": [${urls.map(u => {
-          const target = typeof u === 'string' ? u : u.original;
-          return `{"@type":"WebPage","url":"${target.replace(/"/g, '')}"}`;
-      }).join(',')}]
+        const target = typeof u === 'string' ? u : u.original;
+        return `{"@type":"WebPage","url":"${target.replace(/"/g, '')}"}`;
+    }).join(',')}]
     }
     </script>
     <style>
@@ -494,7 +494,7 @@ router.post('/submit', async (req, res) => {
 
         // Pre-Flight Validation & Analytics Record
         analyticsEngine.recordSubmission(cleanUrls.length);
-        
+
         // Log URLs for daily tracking (auto-clears entries older than 24 hours)
         dailyLogsManager.logUrls(cleanUrls);
 
@@ -872,7 +872,7 @@ router.post('/sitemap', async (req, res) => {
 router.post('/service-account', (req, res) => {
     try {
         const { jsonKey, jsonKeys } = req.body;
-        
+
         // Handle bulk upload of multiple keys via jsonKeys array
         if (jsonKeys && Array.isArray(jsonKeys)) {
             const added = cacheManager.addServiceAccountsToPool(jsonKeys);
@@ -897,7 +897,7 @@ router.post('/service-account', (req, res) => {
 
         // Add single key to the pool
         cacheManager.addServiceAccountsToPool([parsedKey]);
-        
+
         res.json({
             success: true,
             client_email: parsedKey.client_email,
@@ -1053,14 +1053,14 @@ router.get('/pbn-sitemap.xml', (req, res) => {
 router.get('/download-today', (req, res) => {
     // Perform cleanup for expired logs
     dailyLogsManager.cleanExpired();
-    
+
     const urls = dailyLogsManager.getRecentUrls();
-    
+
     // Unique list of URLs
     const uniqueUrls = [...new Set(urls)];
-    
+
     const fileContent = uniqueUrls.join('\n');
-    
+
     res.setHeader('Content-Type', 'text/plain');
     res.setHeader('Content-Disposition', 'attachment; filename="today_submitted_urls.txt"');
     res.send(fileContent);
