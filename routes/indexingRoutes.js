@@ -613,59 +613,51 @@ router.post('/submit', async (req, res) => {
                 ];
                 Promise.allSettled(batchPromises);
 
-                // 2. 🔥 Run each URL's pipeline independently in chunks of 4 (non-blocking train-pattern)
-                for (let i = 0; i < cleanUrls.length; i += 4) {
-                    // Check if we are approaching Vercel's 60-second limit (leaving a safe 10-second margin)
-                    const elapsed = Date.now() - startTime;
-                    if (elapsed > 50000) {
-                        console.warn(`⚠️ [Vercel Timeout Guard] Elapsed time reached ${Math.round(elapsed / 1000)}s. Exiting gracefully to avoid process kill.`);
-                        break;
-                    }
+                // 2. 🔥 Run each URL's pipeline concurrently (train-pattern non-blocking)
+                const urlPipelines = cleanUrls.map(async (u) => {
+                    const urlId = gatewayMap.get(u);
+                    const gatewayUrl = `https://${host}/i/${urlId}`;
 
-                    const chunkUrls = cleanUrls.slice(i, i + 4);
-                    await Promise.allSettled(chunkUrls.map(async (u) => {
-                        const urlId = gatewayMap.get(u);
-                        const gatewayUrl = `https://${host}/i/${urlId}`;
+                    // Trigger Google Rich Results & Headless Renderers first for this URL
+                    await googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null);
 
-                        // Trigger Google Rich Results & Headless Renderers first for this URL
-                        await googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null);
+                    // Compile all remaining engines for this URL
+                    const urlEngines = [
+                        () => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null),
+                        () => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null),
+                        () => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(gatewayUrl, host).catch(() => null),
+                        () => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 1000).catch(() => null),
+                        () => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null),
+                        () => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null),
+                        () => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null),
+                        () => googleIndexing.submitUrl(gatewayUrl).catch(() => null),
+                        () => forcedCrawlEngine.triggerFastCrawl(gatewayUrl).catch(() => null),
+                        () => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null),
+                        () => globalCrawlerNetwork.dispatchGlobalCrawlers(gatewayUrl).catch(() => null),
+                        () => allWorldIndexerNetwork.broadcastToAllWorldIndexers(gatewayUrl).catch(() => null),
+                        () => googleSyndicationEngine.pushInstantSyndication(gatewayUrl).catch(() => null),
+                        () => megaPubSubEngine.dispatchMegaPubSub(gatewayUrl).catch(() => null),
+                        () => multiBotSwarmEngine.dispatchBotSwarm(gatewayUrl).catch(() => null),
+                        () => pbnSyndicationEngine.syndicateToPbn(gatewayUrl, host).catch(() => null),
+                        () => openSourceCrawlingSuite.executeAllOpenSourceCrawlers(gatewayUrl).catch(() => null),
+                        () => principalIndexingEngine.executePrincipalIndexing(gatewayUrl).catch(() => null),
+                        () => scrapyEngine.crawlTargetUrl(gatewayUrl).catch(() => null),
+                        () => secretBypassEngine.executeAllBypassTricks(gatewayUrl, host).catch(() => null),
+                        () => enterpriseCrawlPipeline.executeFullPipeline(gatewayUrl).catch(() => null),
+                        () => fastTrackHandshakeEngine.executeFastTrackHandshake(gatewayUrl, host).catch(() => null),
+                        () => forcefulIndexerEngine.executeForcefulIndexing(gatewayUrl, host).catch(() => null),
+                        () => ultraFast60SecEngine.execute60SecUltraFastTrigger(u, host, gatewayUrl).catch(() => null),
+                        () => aggressiveIndexerEngine.executeAggressiveIndexing(gatewayUrl, host).catch(() => null),
+                        () => thirdPartyIndexerEngine.indexThirdPartyUrl(gatewayUrl, host).catch(() => null),
+                        () => master15StepEngine.execute15StepPipeline(gatewayUrl, host).catch(() => null),
+                        () => intelligentBypassEngine.executeFullBypass(gatewayUrl, host).catch(() => null)
+                    ];
 
-                        // Compile all remaining engines for this URL
-                        const urlEngines = [
-                            () => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null),
-                            () => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null),
-                            () => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(gatewayUrl, host).catch(() => null),
-                            () => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 1000).catch(() => null),
-                            () => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null),
-                            () => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null),
-                            () => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null),
-                            () => googleIndexing.submitUrl(gatewayUrl).catch(() => null),
-                            () => forcedCrawlEngine.triggerFastCrawl(gatewayUrl).catch(() => null),
-                            () => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null),
-                            () => globalCrawlerNetwork.dispatchGlobalCrawlers(gatewayUrl).catch(() => null),
-                            () => allWorldIndexerNetwork.broadcastToAllWorldIndexers(gatewayUrl).catch(() => null),
-                            () => googleSyndicationEngine.pushInstantSyndication(gatewayUrl).catch(() => null),
-                            () => megaPubSubEngine.dispatchMegaPubSub(gatewayUrl).catch(() => null),
-                            () => multiBotSwarmEngine.dispatchBotSwarm(gatewayUrl).catch(() => null),
-                            () => pbnSyndicationEngine.syndicateToPbn(gatewayUrl, host).catch(() => null),
-                            () => openSourceCrawlingSuite.executeAllOpenSourceCrawlers(gatewayUrl).catch(() => null),
-                            () => principalIndexingEngine.executePrincipalIndexing(gatewayUrl).catch(() => null),
-                            () => scrapyEngine.crawlTargetUrl(gatewayUrl).catch(() => null),
-                            () => secretBypassEngine.executeAllBypassTricks(gatewayUrl, host).catch(() => null),
-                            () => enterpriseCrawlPipeline.executeFullPipeline(gatewayUrl).catch(() => null),
-                            () => fastTrackHandshakeEngine.executeFastTrackHandshake(gatewayUrl, host).catch(() => null),
-                            () => forcefulIndexerEngine.executeForcefulIndexing(gatewayUrl, host).catch(() => null),
-                            () => ultraFast60SecEngine.execute60SecUltraFastTrigger(u, host, gatewayUrl).catch(() => null),
-                            () => aggressiveIndexerEngine.executeAggressiveIndexing(gatewayUrl, host).catch(() => null),
-                            () => thirdPartyIndexerEngine.indexThirdPartyUrl(gatewayUrl, host).catch(() => null),
-                            () => master15StepEngine.execute15StepPipeline(gatewayUrl, host).catch(() => null),
-                            () => intelligentBypassEngine.executeFullBypass(gatewayUrl, host).catch(() => null)
-                        ];
+                    // Process this URL's engines in small chunks of 4 for maximum compatibility & safety
+                    await runInChunks(urlEngines, 4);
+                });
 
-                        // Process this URL's engines in small chunks of 4 for maximum compatibility & safety
-                        await runInChunks(urlEngines, 4);
-                    }));
-                }
+                await Promise.allSettled(urlPipelines);
 
                 // Update job status in cacheManager
                 cacheManager.updateJobResult(jobId, { status: 'success' });
@@ -675,13 +667,8 @@ router.post('/submit', async (req, res) => {
             }
         };
 
-        // Fire the background tasks
-        const bgPromise = runBackgroundIndexing();
-
-        // Support Vercel's waitUntil feature to ensure the background process completes without being killed
-        if (typeof res.waitUntil === 'function') {
-            res.waitUntil(bgPromise);
-        }
+        // Synchronously await the indexing pipeline to prevent Vercel container freezing
+        await runBackgroundIndexing();
 
         const results = [];
         let submittedCount = cleanUrls.length;
