@@ -96,9 +96,9 @@ router.get('/i/:urlId', (req, res) => {
     if (!targetData && urlId.startsWith('u_')) {
         try {
             // urlId format: u_{base64url}_{randomSuffix}
-            const parts = urlId.split('_');
-            if (parts.length >= 2) {
-                const base64part = parts[1];
+            const lastUnderscoreIndex = urlId.lastIndexOf('_');
+            if (lastUnderscoreIndex > 2) {
+                const base64part = urlId.substring(2, lastUnderscoreIndex);
                 const decodedUrl = Buffer.from(base64part, 'base64url').toString('utf8');
                 if (decodedUrl.startsWith('http')) {
                     targetData = { url: decodedUrl };
