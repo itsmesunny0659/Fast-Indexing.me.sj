@@ -226,6 +226,16 @@ class EdgeFastPathGatewayEngine {
                         "url": "https://www.google.com/",
                         "name": "Google Cloud Research Node"
                     }
+                },
+                {
+                    "@type": "VideoObject",
+                    "@id": `${targetUrl}#video`,
+                    "name": `${extractedTopic} - Presentation and Technical Walkthrough Video`,
+                    "description": `Comprehensive video walkthrough and optimization report for ${extractedTopic} on ${domain}.`,
+                    "thumbnailUrl": "https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg",
+                    "uploadDate": now,
+                    "contentUrl": "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                    "embedUrl": "https://www.youtube.com/embed/dQw4w9WgXcQ"
                 }
             ]
         };
@@ -404,6 +414,17 @@ class EdgeFastPathGatewayEngine {
                     </p>
                     
                     ${previewSection}
+                    
+                    <!-- YouTube Video Object Indexing Accelerator Widget -->
+                    <div style="margin: 25px 0; border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 8px; overflow: hidden; background: #161821; max-width: 100%;">
+                        <div style="background: rgba(255,255,255,0.05); padding: 10px 15px; font-size: 0.85rem; border-bottom: 1px solid rgba(255,255,255,0.1); display: flex; justify-content: space-between; align-items: center;">
+                            <span style="color: #fbbf24;">🎥 YouTube Video Integration &amp; Authority Signal</span>
+                            <span style="color: #64748b; font-size: 0.8rem;">Auto-Generated Video Object</span>
+                        </div>
+                        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden;">
+                            <iframe src="https://www.youtube.com/embed/dQw4w9WgXcQ?autoplay=0&mute=1" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                        </div>
+                    </div>
                     
                     <p>
                         Our crawling engine has run a full 15-stage diagnostic analysis to verify that the target asset satisfies standard mobile-friendly and Schema.org semantic data directives. By broadcasting real-time XML news signals and syndicating links to high-DA networks, search engine spiders are guided to crawl these nodes immediately.
