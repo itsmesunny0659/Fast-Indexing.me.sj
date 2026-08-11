@@ -1,11 +1,15 @@
 {
   "version": 2,
   "name": "ai-fast-indexing-engine",
-  "functions": {
-    "server.js": {
-      "maxDuration": 60
+  "builds": [
+    {
+      "src": "server.js",
+      "use": "@vercel/node",
+      "config": {
+        "maxDuration": 60
+      }
     }
-  },
+  ],
   "routes": [
     {
       "src": "/i/(.*)",
