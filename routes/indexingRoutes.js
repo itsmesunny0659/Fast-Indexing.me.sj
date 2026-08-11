@@ -609,7 +609,8 @@ router.post('/submit', async (req, res) => {
                     edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null),
                     googleBatchDelegationEngine.executeBatchMultipartPush(gatewayUrls).catch(() => null),
                     githubIndexingSuite.runGithubMasterSuite(gatewayUrls).catch(() => null),
-                    newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null)
+                    newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null),
+                    googleSyndicationEngine.pushPubSubHubbub(`https://${host}/feed.xml`).catch(() => null)
                 ];
                 Promise.allSettled(batchPromises);
 
@@ -1057,5 +1058,42 @@ function escapeHtml(str) {
     if (!str) return '';
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
+
+// GET /feed.xml - Dynamic RSS 2.0 Feed for Google PubSubHubbub Syndication
+router.get('/feed.xml', (req, res) => {
+    const host = req.get('host') || 'fast-indexing-me-sj.vercel.app';
+    const recentUrls = cacheManager.getRecentUrls() || [];
+
+    const itemsXml = recentUrls.slice(0, 50).map((url) => {
+        const encoded = Buffer.from(url).toString('base64url');
+        const gatewayUrl = `https://${host}/i/u_${encoded}`;
+        return `
+        <item>
+            <title>Technical Indexation Audit Report - ${escapeHtml(url.substring(0, 50))}</title>
+            <link>${escapeHtml(gatewayUrl)}</link>
+            <guid isPermaLink="true">${escapeHtml(gatewayUrl)}</guid>
+            <pubDate>${new Date().toUTCString()}</pubDate>
+            <description>Crawler indexing validation node for ${escapeHtml(url)}</description>
+        </item>`;
+    }).join('\n');
+
+    const rss = `<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+    <title>Public Site Publication Directory RSS Feed</title>
+    <link>https://${host}</link>
+    <description>Dynamic indexing and crawl optimization network feed</description>
+    <lastBuildDate>${new Date().toUTCString()}</lastBuildDate>
+    <atom:link href="https://${host}/feed.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://pubsubhubbub.appspot.com/" rel="hub" />
+    ${itemsXml}
+</channel>
+</rss>`;
+
+    res.setHeader('Content-Type', 'application/rss+xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'public, max-age=600');
+    res.setHeader('X-Robots-Tag', 'index, follow');
+    res.send(rss);
+});
 
 module.exports = router;
