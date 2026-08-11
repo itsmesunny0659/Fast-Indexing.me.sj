@@ -72,6 +72,115 @@ class EdgeFastPathGatewayEngine {
 
         const isProduct = targetUrl.toLowerCase().includes('/product/') || targetUrl.toLowerCase().includes('/item/') || targetUrl.toLowerCase().includes('/shop/');
 
+        // --- FOOTPRINT TEMPLATE ROTATION SYSTEM (6 distinct UI Layouts) ---
+        // Dynamically changes UI styling, fonts, branding headers, and accents based on the urlId hash
+        const layoutIndex = (urlId || 'u_').charCodeAt((urlId || 'u_').length - 1) % 6;
+        let layoutTheme = {
+            name: 'Blogger',
+            bg: 'radial-gradient(circle at top left, #0e1017, #07080b)',
+            cardBg: 'rgba(255, 255, 255, 0.02)',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
+            text: '#f8fafc',
+            accent: '#38bdf8',
+            btnBg: 'linear-gradient(135deg, #a855f7, #6366f1)',
+            btnShadow: 'rgba(168, 85, 247, 0.3)',
+            headerLogo: '📝 Blogger Publication Directory',
+            tag1: 'Blogger Post',
+            tag2: 'Technical Article'
+        };
+
+        if (layoutIndex === 0) {
+            // YouTube Theme
+            layoutTheme = {
+                name: 'YouTube',
+                bg: '#0f0f0f',
+                cardBg: '#1f1f1f',
+                border: '1px solid #2d2d2d',
+                text: '#f1f1f1',
+                accent: '#ff0000',
+                btnBg: 'linear-gradient(135deg, #ff0000, #cc0000)',
+                btnShadow: 'rgba(255, 0, 0, 0.2)',
+                headerLogo: '🎥 YouTube Creator Network Node',
+                tag1: 'YouTube Video Object',
+                tag2: 'Crawl Priority'
+            };
+        } else if (layoutIndex === 1) {
+            // Wikipedia Theme
+            layoutTheme = {
+                name: 'Wikipedia',
+                bg: '#f6f6f6',
+                cardBg: '#ffffff',
+                border: '1px solid #a2a9b1',
+                text: '#202122',
+                accent: '#3366cc',
+                btnBg: 'linear-gradient(135deg, #3366cc, #4477dd)',
+                btnShadow: 'rgba(51, 102, 204, 0.2)',
+                headerLogo: '📚 Wikipedia Archive Project Node',
+                tag1: 'Wikipedia Reference',
+                tag2: 'Academic Publication'
+            };
+        } else if (layoutIndex === 2) {
+            // Medium Theme
+            layoutTheme = {
+                name: 'Medium',
+                bg: '#ffffff',
+                cardBg: '#f9f9f9',
+                border: '1px solid #e6e6e6',
+                text: '#292929',
+                accent: '#1a8917',
+                btnBg: 'linear-gradient(135deg, #1a8917, #22a21e)',
+                btnShadow: 'rgba(26, 137, 23, 0.2)',
+                headerLogo: '✍️ Medium Technical Network Hub',
+                tag1: 'Medium Story',
+                tag2: 'SEO Analytics Audit'
+            };
+        } else if (layoutIndex === 3) {
+            // Reddit Theme
+            layoutTheme = {
+                name: 'Reddit',
+                bg: '#0b1416',
+                cardBg: '#1a282d',
+                border: '1px solid #34464c',
+                text: '#d7dadc',
+                accent: '#ff4500',
+                btnBg: 'linear-gradient(135deg, #ff4500, #e03d00)',
+                btnShadow: 'rgba(255, 69, 0, 0.2)',
+                headerLogo: '💬 Reddit Public Discussion Archive',
+                tag1: 'Reddit Thread',
+                tag2: 'User QA Directory'
+            };
+        } else if (layoutIndex === 4) {
+            // Goodreads Theme
+            layoutTheme = {
+                name: 'Goodreads',
+                bg: '#f4f1ea',
+                cardBg: '#ffffff',
+                border: '1px solid #d8d4c7',
+                text: '#333333',
+                accent: '#76553f',
+                btnBg: 'linear-gradient(135deg, #76553f, #946f56)',
+                btnShadow: 'rgba(118, 85, 63, 0.2)',
+                headerLogo: '📖 Goodreads Literature Catalog System',
+                tag1: 'Goodreads Page',
+                tag2: 'Digital Book Archive'
+            };
+        } else if (layoutIndex === 5) {
+            // LinkedIn Theme
+            layoutTheme = {
+                name: 'LinkedIn',
+                bg: '#f3f2ef',
+                cardBg: '#ffffff',
+                border: '1px solid #e0e0e0',
+                text: '#191919',
+                accent: '#0a66c2',
+                btnBg: 'linear-gradient(135deg, #0a66c2, #0077b5)',
+                btnShadow: 'rgba(10, 102, 194, 0.2)',
+                headerLogo: '👔 LinkedIn Pulse Professional Feed',
+                tag1: 'LinkedIn Pulse',
+                tag2: 'Corporate Audit Node'
+            };
+        }
+
         // UNIVERSAL MASTER SCHEMA GRAPH — Applies to ANY XYZ link (Blog, Product, PDF, Landing Page, Forum, etc.)
         // This guarantees Googlebot receives full multi-type Schema validation regardless of URL structure.
         const universalSchema = {
@@ -292,8 +401,8 @@ class EdgeFastPathGatewayEngine {
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background: radial-gradient(circle at top left, #0e1017, #07080b);
-            color: #f8fafc;
+            background: ${layoutTheme.bg};
+            color: ${layoutTheme.text};
             line-height: 1.7;
             margin: 0;
             padding: 40px 20px;
@@ -301,15 +410,15 @@ class EdgeFastPathGatewayEngine {
         .container {
             max-width: 800px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+            background: ${layoutTheme.cardBg};
+            border: ${layoutTheme.border};
             border-radius: 16px;
             padding: 40px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
             backdrop-filter: blur(10px);
         }
         h1 {
-            color: #38bdf8;
+            color: ${layoutTheme.accent};
             font-size: 2.25rem;
             line-height: 1.3;
             margin-top: 0;
@@ -329,7 +438,7 @@ class EdgeFastPathGatewayEngine {
         }
         .btn-link {
             display: inline-block;
-            background: linear-gradient(135deg, #a855f7, #6366f1);
+            background: ${layoutTheme.btnBg};
             color: #fff;
             text-decoration: none;
             padding: 14px 28px;
@@ -338,11 +447,11 @@ class EdgeFastPathGatewayEngine {
             margin-top: 20px;
             margin-bottom: 40px;
             transition: transform 0.2s, box-shadow 0.2s;
-            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.3);
+            box-shadow: 0 4px 15px ${layoutTheme.btnShadow};
         }
         .btn-link:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(168, 85, 247, 0.5);
+            box-shadow: 0 6px 20px ${layoutTheme.btnShadow};
         }
         .author-box {
             display: flex;
@@ -377,7 +486,7 @@ class EdgeFastPathGatewayEngine {
         .tag {
             display: inline-block;
             background: rgba(56, 189, 248, 0.1);
-            color: #38bdf8;
+            color: ${layoutTheme.accent};
             padding: 4px 12px;
             border-radius: 4px;
             font-size: 0.8rem;
@@ -388,11 +497,15 @@ class EdgeFastPathGatewayEngine {
 </head>
 <body>
     <div class="container">
+        <!-- Brand Verification Watermark -->
+        <div style="font-size: 0.8rem; font-weight: 700; color: ${layoutTheme.accent}; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.8;">
+            ${layoutTheme.headerLogo}
+        </div>
         <main>
             <article>
                 <header>
-                    <span class="tag">${isPdf ? 'PDF Document' : (isGoogleSite ? 'Google Site' : 'SEO Audit')}</span>
-                    <span class="tag">${isPdf ? 'Google Docs Resource' : 'Technical Analysis'}</span>
+                    <span class="tag">${layoutTheme.tag1}</span>
+                    <span class="tag">${layoutTheme.tag2}</span>
                     <h1 itemprop="name">${escapeHtml(title)}</h1>
                     <div class="meta">
                         Published on <time itemprop="datePublished" datetime="${now}">${new Date(now).toLocaleDateString()}</time> | 
