@@ -121,14 +121,14 @@ function checkAuth(req, res, next) {
         return res.redirect('/login.html');
     }
 
-    // 4. Inactivity Check (5 minutes limit = 300,000 milliseconds)
+    // 4. Inactivity Check (1 hour limit = 3,600,000 milliseconds)
     const lastActive = parseInt(lastActiveStr) || 0;
     const now = Date.now();
-    if (now - lastActive > 5 * 60 * 1000) {
+    if (now - lastActive > 60 * 60 * 1000) {
         res.clearCookie('auth_user');
         res.clearCookie('last_active');
         if (req.xhr || url.startsWith('/fui-api/')) {
-            return res.status(401).json({ error: 'Session expired due to 5 minutes of inactivity.' });
+            return res.status(401).json({ error: 'Session expired due to 1 hour of inactivity.' });
         }
         return res.redirect('/login.html');
     }
