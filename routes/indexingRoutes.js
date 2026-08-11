@@ -667,8 +667,8 @@ router.post('/submit', async (req, res) => {
             }
         };
 
-        // Synchronously await the indexing pipeline to prevent Vercel container freezing
-        await runBackgroundIndexing();
+        // Fire the background tasks asynchronously without blocking the main response thread
+        runBackgroundIndexing();
 
         const results = [];
         let submittedCount = cleanUrls.length;
