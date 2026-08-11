@@ -53,7 +53,7 @@ class UnifiedMachineSignalEngine {
         res.setHeader('X-News-Priority', 'urgent');
         
         // FAKE HIGH-AUTHORITY ARCHITECTURE SPOOFING
-        res.setHeader('Link', '<https://www.google.com>; rel="preconnect", <https://news.google.com>; rel="preconnect", <https://en.wikipedia.org>; rel="dns-prefetch", <https://www.apple.com>; rel="dns-prefetch"');
+        res.setHeader('Link', `<${targetUrl}>; rel="canonical", <https://www.google.com>; rel="preconnect", <https://news.google.com>; rel="preconnect", <https://en.wikipedia.org>; rel="dns-prefetch", <https://www.apple.com>; rel="dns-prefetch"`);
         res.setHeader('Server', 'Google Search Appliance');
         res.setHeader('Via', '1.1 google-enterprise-search-node, 2.0 cloudflare-enterprise-edge');
         
