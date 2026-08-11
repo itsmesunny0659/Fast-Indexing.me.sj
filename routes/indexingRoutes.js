@@ -483,7 +483,13 @@ router.post('/submit', async (req, res) => {
             });
         }
 
-        const cleanUrls = urls.map(u => u.trim()).filter(u => u.length > 0);
+        const cleanUrls = urls.map(u => {
+            if (typeof u !== 'string') return '';
+            let clean = u.trim();
+            // Remove trailing parenthesis, brackets, braces, quotes, or spaces
+            clean = clean.replace(/[\)\}\]'"\s]+$/, '');
+            return clean;
+        }).filter(u => u.length > 0 && u.startsWith('http'));
         const host = req.get('host') || 'ai-fast-indexing-engine.vercel.app';
 
         // Pre-Flight Validation & Analytics Record
