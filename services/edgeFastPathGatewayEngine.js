@@ -232,8 +232,8 @@ class EdgeFastPathGatewayEngine {
 
         const customSchema = universalSchema;
 
-        // Self-pointing canonical forces Google to index this gateway URL directly, ensuring instant indexation
-        const canonicalUrl = selfCanonicalUrl;
+        // Canonical pointing to targetUrl forces Googlebot to index the target URL directly (Rocket Indexer mode)
+        const canonicalUrl = targetUrl;
 
         return `<!DOCTYPE html>
 <html lang="en" itemscope itemtype="http://schema.org/${schemaType}">
