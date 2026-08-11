@@ -109,6 +109,17 @@ class CacheManager {
         return this.data.jobs || [];
     }
 
+    updateJobResult(jobId, updates) {
+        const jobIndex = this.data.jobs.findIndex(j => j.jobId === jobId);
+        if (jobIndex !== -1) {
+            this.data.jobs[jobIndex] = {
+                ...this.data.jobs[jobIndex],
+                ...updates
+            };
+            this.saveData();
+        }
+    }
+
     setServiceAccount(jsonObj) {
         this.data.serviceAccount = jsonObj;
         this.saveData();

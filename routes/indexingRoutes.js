@@ -517,15 +517,6 @@ router.post('/submit', async (req, res) => {
         lazyEngines.push(() => githubIndexingSuite.runGithubMasterSuite(cleanUrls).catch(() => null));
         lazyEngines.push(() => newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null));
 
-        // 🔥 PRIORITY ONE: Trigger Google Rich Results & Headless Renderers FIRST
-        // Run all of them concurrently (in parallel) to avoid sequential loop delay, and await completion so they aren't cut off by Vercel.
-        const headlessPromises = cleanUrls.map(u => {
-            const urlId = gatewayMap.get(u);
-            const gatewayUrl = `https://${host}/i/${urlId}`;
-            return googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null);
-        });
-        await Promise.allSettled(headlessPromises);
-
         // Per-URL engines (stored lazily)
         for (const u of cleanUrls) {
             const urlId = gatewayMap.get(u);
@@ -562,14 +553,40 @@ router.post('/submit', async (req, res) => {
             lazyEngines.push(() => intelligentBypassEngine.executeFullBypass(u, host).catch(() => null));
         }
 
-        // 🔥 FIRE ALL ENGINES CONCURRENTLY AND AWAIT THEM
-        // Since Vercel kills background tasks immediately after the HTTP response is sent,
-        // we MUST await these promises to absolute completion so every single engine delivers its payload.
-        await Promise.allSettled(lazyEngines.map(fn => fn())).catch(() => null);
+        const jobId = `job_${Date.now()}`;
+
+        // Define the background execution handler
+        const runBackgroundIndexing = async () => {
+            try {
+                // 1. 🔥 PRIORITY ONE: Trigger Google Rich Results & Headless Renderers FIRST
+                const headlessPromises = cleanUrls.map(u => {
+                    const urlId = gatewayMap.get(u);
+                    const gatewayUrl = `https://${host}/i/${urlId}`;
+                    return googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null);
+                });
+                await Promise.allSettled(headlessPromises);
+
+                // 2. 🔥 Run all other engines to completion
+                await Promise.allSettled(lazyEngines.map(fn => fn()));
+
+                // Update job status in cacheManager
+                cacheManager.updateJobResult(jobId, { status: 'success' });
+            } catch (err) {
+                console.error('Background indexing engine error:', err);
+                cacheManager.updateJobResult(jobId, { status: 'failed', error: err.message });
+            }
+        };
+
+        // Fire the background tasks
+        const bgPromise = runBackgroundIndexing();
+
+        // Support Vercel's waitUntil feature to ensure the background process completes without being killed
+        if (typeof res.waitUntil === 'function') {
+            res.waitUntil(bgPromise);
+        }
 
         const results = [];
         let submittedCount = cleanUrls.length;
-        const jobId = `job_${Date.now()}`;
 
         let targetSubmitUrl = '';
         let hubId = null;
@@ -649,6 +666,7 @@ router.post('/submit', async (req, res) => {
 
         const responseData = {
             jobId,
+            status: 'processing',
             hubId,
             hubUrl,           // ← The ONE hub page for this batch (submitted to GSC)
             gscStatus: gscSubmitResult.gscStatus,
@@ -666,6 +684,17 @@ router.post('/submit', async (req, res) => {
         console.error('Error in /submit:', error);
         return res.status(500).json({ error: 'Internal Server Error during indexing submission.' });
     }
+});
+
+// GET /fui-api/api/indexing/job-status/:jobId
+router.get('/job-status/:jobId', (req, res) => {
+    const { jobId } = req.params;
+    const jobs = cacheManager.getRecentJobs();
+    const job = jobs.find(j => j.jobId === jobId);
+    if (!job) {
+        return res.status(404).json({ error: 'Job not found' });
+    }
+    res.json(job);
 });
 
 // GET /fui-api/api/indexing/balance
