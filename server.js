@@ -20,6 +20,10 @@ globalThis.fetch = async function(url, options = {}) {
         options?.headers?.['x-proxy-bypass'] === 'true' ||
         urlString.includes('script.google.com') ||
         urlString.includes('translate.google.com') ||
+        urlString.includes('googleapis.com') ||
+        urlString.includes('google.com') ||
+        urlString.includes('bing.com') ||
+        urlString.includes('yandex.com') ||
         (process.env.CF_PROXY_URL && urlString.includes(new URL(process.env.CF_PROXY_URL).hostname));
 
     if (isProxyBypass) {
