@@ -260,7 +260,18 @@ async function processSubmissionQueue() {
 
         // Anti-Spam Handshake Wait between chunks in background
         if (submissionQueue.length > 0) {
-            const waitTimeSeconds = Math.floor(Math.random() * (50 - 40 + 1) + 40);
+            // Calculate remaining URLs in the queue
+            const remainingUrlsCount = submissionQueue.reduce((acc, item) => acc + item.chunkUrls.length, 0);
+            let waitTimeSeconds = 10; // Default fast delay
+
+            if (remainingUrlsCount > 50) {
+                waitTimeSeconds = Math.floor(Math.random() * (45 - 35 + 1) + 35); // 35-45s for massive bulk
+            } else if (remainingUrlsCount > 20) {
+                waitTimeSeconds = Math.floor(Math.random() * (25 - 15 + 1) + 15); // 15-25s for medium bulk
+            } else {
+                waitTimeSeconds = Math.floor(Math.random() * (10 - 5 + 1) + 5);   // 5-10s for small leftovers
+            }
+
             await new Promise(r => setTimeout(r, waitTimeSeconds * 1000));
         }
     }

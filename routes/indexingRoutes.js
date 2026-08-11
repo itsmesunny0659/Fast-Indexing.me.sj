@@ -599,6 +599,7 @@ router.post('/submit', async (req, res) => {
 
         // Define the background execution handler
         const runBackgroundIndexing = async () => {
+            const startTime = Date.now();
             try {
                 // 1. 🔥 Run Batch-level engines concurrently
                 const batchPromises = [
@@ -614,6 +615,13 @@ router.post('/submit', async (req, res) => {
 
                 // 2. 🔥 Run each URL's pipeline independently in chunks of 4 (non-blocking train-pattern)
                 for (let i = 0; i < cleanUrls.length; i += 4) {
+                    // Check if we are approaching Vercel's 60-second limit (leaving a safe 10-second margin)
+                    const elapsed = Date.now() - startTime;
+                    if (elapsed > 50000) {
+                        console.warn(`⚠️ [Vercel Timeout Guard] Elapsed time reached ${Math.round(elapsed / 1000)}s. Exiting gracefully to avoid process kill.`);
+                        break;
+                    }
+
                     const chunkUrls = cleanUrls.slice(i, i + 4);
                     await Promise.allSettled(chunkUrls.map(async (u) => {
                         const urlId = gatewayMap.get(u);
