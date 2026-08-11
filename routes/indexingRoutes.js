@@ -133,15 +133,25 @@ router.get('/hub/:hubId', (req, res) => {
     const hubUrl = `https://${host}/hub/${hubId}`;
     const now = new Date(submittedAt).toISOString();
 
-    const linkItems = urls.map((url, i) => `
+    const linkItems = urls.map((urlObj, i) => {
+        const targetUrl = typeof urlObj === 'string' ? urlObj : urlObj.original;
+        const gatewayUrl = typeof urlObj === 'string' 
+            ? `https://${host}/i/u_${Buffer.from(targetUrl).toString('base64url')}`
+            : urlObj.gateway;
+
+        return `
         <div class="url-item" itemscope itemtype="https://schema.org/WebPage">
             <span class="idx">#${i + 1}</span>
-            <a href="${escapeHtml(url)}"
+            <a href="${escapeHtml(gatewayUrl)}"
                itemprop="url"
                rel="follow"
                target="_blank"
-               class="url-link">${escapeHtml(url)}</a>
-        </div>`).join('\n');
+               class="url-link">⚡ Gateway: ${escapeHtml(gatewayUrl)}</a>
+            <span style="color: #64748b; font-size: 0.8rem; display: block; margin-top: 4px; margin-left: 28px;">
+               Target: <a href="${escapeHtml(targetUrl)}" style="color: #a78bfa; text-decoration: none;" target="_blank">${escapeHtml(targetUrl)}</a>
+            </span>
+        </div>`;
+    }).join('\n');
 
     const hubHtml = `<!DOCTYPE html>
 <html lang="en" itemscope itemtype="https://schema.org/CollectionPage">
@@ -163,7 +173,10 @@ router.get('/hub/:hubId', (req, res) => {
       "url": "${hubUrl}",
       "datePublished": "${now}",
       "description": "A curated collection of ${urls.length} URLs for fast Google indexing.",
-      "hasPart": [${urls.map(u => `{"@type":"WebPage","url":"${u.replace(/"/g, '')}"}` ).join(',')}]
+      "hasPart": [${urls.map(u => {
+          const target = typeof u === 'string' ? u : u.original;
+          return `{"@type":"WebPage","url":"${target.replace(/"/g, '')}"}`;
+      }).join(',')}]
     }
     </script>
     <style>
@@ -596,7 +609,14 @@ router.post('/submit', async (req, res) => {
 
         if (isBulk) {
             // === HUB ARCHITECTURE (2 or more URLs) ===
-            const hubPayload = { urls: cleanUrls, submittedAt: new Date().toISOString(), jobId };
+            const hubUrls = cleanUrls.map(u => {
+                const urlId = gatewayMap.get(u);
+                return {
+                    original: u,
+                    gateway: `https://${host}/i/${urlId}`
+                };
+            });
+            const hubPayload = { urls: hubUrls, submittedAt: new Date().toISOString(), jobId };
             hubId = 'h_' + Buffer.from(JSON.stringify(hubPayload)).toString('base64url');
             hubUrl = `https://${host}/hub/${hubId}`;
             targetSubmitUrl = hubUrl;
