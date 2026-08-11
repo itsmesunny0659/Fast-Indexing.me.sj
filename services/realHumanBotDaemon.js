@@ -70,21 +70,34 @@ class RealHumanBotDaemon {
     }
 
     /**
-     * Registers new URLs into the continuous 5-second High-DA ping loop
+     * Registers new URLs into the continuous High-DA ping loop and executes an intense immediate pulse
      */
-    registerUrls(urls) {
+    async registerUrls(urls) {
         urls.forEach(u => this.activeUrls.add(u));
-        console.log(`🤖 [RealHumanBotDaemon] Total active URLs in 5-second High-DA Ping Loop: ${this.activeUrls.size}`);
+        console.log(`🤖 [RealHumanBotDaemon] Total active URLs in High-DA Ping Loop: ${this.activeUrls.size}`);
+        
+        // Serverless Execution Guard: Execute 3 intense parallel pulses immediately
+        // so they run within the Vercel execution window before the container is frozen
+        try {
+            await this.execute5SecondTrafficPulse();
+            await new Promise(r => setTimeout(r, 300));
+            await this.execute5SecondTrafficPulse();
+            await new Promise(r => setTimeout(r, 300));
+            await this.execute5SecondTrafficPulse();
+        } catch (e) {
+            console.error('RealHumanBotDaemon Immediate Pulse Error:', e.message);
+        }
+
         this.startDaemon();
     }
 
     /**
-     * Starts the 5-Second High-DA Re-Ping Loop Daemon
+     * Starts the 5-Second High-DA Re-Ping Loop Daemon (Best effort for serverless keep-alive)
      */
     startDaemon() {
         if (this.isDaemonRunning) return;
         this.isDaemonRunning = true;
-        console.log('⚡ [RealHumanBotDaemon] Continuous 5-Second High-DA Re-Ping Loop Activated!');
+        console.log('⚡ [RealHumanBotDaemon] Continuous Re-Ping Loop Activated!');
 
         this.intervalId = setInterval(() => {
             this.execute5SecondTrafficPulse().catch(() => null);
@@ -92,8 +105,6 @@ class RealHumanBotDaemon {
         if (this.intervalId && typeof this.intervalId.unref === 'function') {
             this.intervalId.unref();
         }
-
-        this.execute5SecondTrafficPulse().catch(() => null);
     }
 
     /**
