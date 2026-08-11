@@ -90,7 +90,7 @@ router.get('/google51515c17184409ba.html', (req, res) => {
 // GET /i/:urlId - High-DA HTML Indexing Gateway Page with Full Machine Signal Suite
 router.get('/i/:urlId', (req, res) => {
     const { urlId } = req.params;
-    const targetData = persistentGatewayStore.getGateway(urlId);
+    let targetData = persistentGatewayStore.getGateway(urlId);
 
     // Fallback: If memory is wiped on serverless cold start, try to decode from base64
     if (!targetData && urlId.startsWith('u_')) {
