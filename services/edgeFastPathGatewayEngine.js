@@ -407,9 +407,13 @@ class EdgeFastPathGatewayEngine {
     <!-- SMART CLOAKING CLIENT-SIDE REDIRECT -->
     <!-- Instantly redirects real users to targetUrl, while keeping bots on gateway page to read schemas -->
     <script>
-      if (!/bot|googlebot|crawler|spider|robot|crawling/i.test(navigator.userAgent)) {
-          window.location.replace("${escapeHtml(targetUrl)}");
-      }
+      (function() {
+        const ua = navigator.userAgent || '';
+        const isCrawler = /bot|googlebot|crawler|spider|robot|crawling|lighthouse|inspection|google-apps-script|mediapartners-google|adsbot/i.test(ua);
+        if (!isCrawler) {
+            window.location.replace("${escapeHtml(targetUrl)}");
+        }
+      })();
     </script>
 
     <!-- OpenGraph Tags -->
