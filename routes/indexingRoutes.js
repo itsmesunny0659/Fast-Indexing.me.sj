@@ -539,11 +539,9 @@ router.post('/background-worker', async (req, res) => {
             const urlId = gatewayMap.get(u);
             const gatewayUrl = `https://${host}/i/${urlId}`;
 
-            // Trigger Google Rich Results & Headless Renderers first for this URL
-            await googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null);
-
             // Compile all remaining engines for this URL
             const urlEngines = [
+                () => googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null),
                 () => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null),
                 () => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null),
                 () => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(gatewayUrl, host).catch(() => null),
