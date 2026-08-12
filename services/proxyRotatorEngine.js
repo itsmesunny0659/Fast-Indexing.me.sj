@@ -131,10 +131,21 @@ class ProxyRotatorEngine {
         }
     }
 
-    /**
-     * Master Execution Method (The Rotating Waterfall)
-     */
     async executeSafeRequest(url, options = {}, timeoutMs = 3000, maxRetries = 3) {
+        if (!this.GAS_PROXY_URL && !this.CF_PROXY_URL) {
+            console.log(`[EliteProxy] ⚠️ Proxies not configured. Executing direct native fetch for: ${url}`);
+            try {
+                const cleanHeaders = {
+                    ...(options.headers || {}),
+                    'X-Proxy-Bypass': 'true'
+                };
+                return await globalThis.fetch(url, { ...options, headers: cleanHeaders });
+            } catch (fallbackErr) {
+                console.error(`[EliteProxy] 🚨 Direct native fetch failed:`, fallbackErr.message);
+                return null;
+            }
+        }
+
         let attempts = 0;
         
         while (attempts < maxRetries) {
