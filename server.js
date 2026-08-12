@@ -10,6 +10,9 @@ const cookieParser = require('cookie-parser');
 // through the Elite Proxy Waterfall automatically.
 // ============================================================
 const originalFetch = globalThis.fetch;
+const proxyRotatorEngine = require('./services/proxyRotatorEngine');
+proxyRotatorEngine.originalFetch = originalFetch;
+
 globalThis.fetch = async function(url, options = {}) {
     const urlString = typeof url === 'string' ? url : (url.url || '');
     

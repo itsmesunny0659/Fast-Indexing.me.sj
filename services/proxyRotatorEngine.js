@@ -139,7 +139,8 @@ class ProxyRotatorEngine {
                     ...(options.headers || {}),
                     'X-Proxy-Bypass': 'true'
                 };
-                return await globalThis.fetch(url, { ...options, headers: cleanHeaders });
+                const fetchFn = this.originalFetch || globalThis.fetch;
+                return await fetchFn(url, { ...options, headers: cleanHeaders });
             } catch (fallbackErr) {
                 console.error(`[EliteProxy] 🚨 Direct native fetch failed:`, fallbackErr.message);
                 return null;
@@ -186,7 +187,8 @@ class ProxyRotatorEngine {
                                     ...(options.headers || {}),
                                     'X-Proxy-Bypass': 'true'
                                 };
-                                return await globalThis.fetch(url, { ...options, headers: cleanHeaders });
+                                const fetchFn = this.originalFetch || globalThis.fetch;
+                                return await fetchFn(url, { ...options, headers: cleanHeaders });
                             } catch (fallbackErr) {
                                 console.error(`[EliteProxy] 🚨 Direct fallback fetch also failed:`, fallbackErr.message);
                                 return null;
