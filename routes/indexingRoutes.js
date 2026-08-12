@@ -574,8 +574,8 @@ router.post('/background-worker', async (req, res) => {
                 () => intelligentBypassEngine.executeFullBypass(gatewayUrl, host).catch(() => null)
             ];
 
-            // Process this URL's engines in small chunks of 4 for maximum compatibility & safety
-            await runInChunks(urlEngines, 4);
+            // Process all engines in parallel for zero latency and to prevent Vercel 504 invocation timeout
+            await Promise.allSettled(urlEngines.map(fn => fn()));
         });
 
         await Promise.allSettled(urlPipelines);
