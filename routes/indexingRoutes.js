@@ -68,6 +68,30 @@ function escapeHtml(str) {
         .replace(/'/g, '&#39;');
 }
 
+// GET /robots.txt - Dynamic robots.txt with host-matching Sitemap URLs
+router.get('/robots.txt', (req, res) => {
+    const host = req.get('host');
+    const robots = `User-agent: *
+Allow: /
+Allow: /i/
+Allow: /directory
+Allow: /pbn-network
+Allow: /hub/
+Disallow: /api/
+Disallow: /fui-api/
+Disallow: /*?*
+Disallow: /download-today
+
+Sitemap: https://${host}/sitemap.xml
+Sitemap: https://${host}/news-sitemap.xml
+Sitemap: https://${host}/pbn-sitemap.xml
+Sitemap: https://${host}/rss.xml
+Sitemap: https://${host}/atom.xml`;
+
+    res.setHeader('Content-Type', 'text/plain');
+    res.send(robots);
+});
+
 // GET /:key.txt - IndexNow Key Location Verification Wildcard Endpoint
 router.get('/:key.txt', (req, res) => {
     const { key } = req.params;
