@@ -169,8 +169,17 @@ class ProxyRotatorEngine {
                     } catch (err3) {
                         console.log(`[EliteProxy] ❌ All 3 Proxy Layers Failed in Cycle ${attempts}.`);
                         if (attempts >= maxRetries) {
-                            console.log(`[EliteProxy] 🛑 Max retries reached for ${url}. Aborting.`);
-                            return null;
+                            console.log(`[EliteProxy] 🛑 Max retries reached for ${url}. Executing direct fallback fetch.`);
+                            try {
+                                const cleanHeaders = {
+                                    ...(options.headers || {}),
+                                    'X-Proxy-Bypass': 'true'
+                                };
+                                return await globalThis.fetch(url, { ...options, headers: cleanHeaders });
+                            } catch (fallbackErr) {
+                                console.error(`[EliteProxy] 🚨 Direct fallback fetch also failed:`, fallbackErr.message);
+                                return null;
+                            }
                         } else {
                             console.log(`[EliteProxy] ♻️ Rotating back to Layer 1 with fresh IP/network spoof...`);
                             await new Promise(r => setTimeout(r, 1000));

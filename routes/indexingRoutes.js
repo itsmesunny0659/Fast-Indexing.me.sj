@@ -698,7 +698,10 @@ router.post('/submit', async (req, res) => {
         // This prevents Vercel from freezing the background promises after the submit response returns!
         const fetch = globalThis.fetch;
         if (typeof fetch === 'function') {
-            const headers = { 'Content-Type': 'application/json' };
+            const headers = { 
+                'Content-Type': 'application/json',
+                'X-Proxy-Bypass': 'true'
+            };
             if (req.headers.cookie) {
                 headers['cookie'] = req.headers.cookie;
             }
