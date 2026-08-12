@@ -380,7 +380,7 @@ class EdgeFastPathGatewayEngine {
 
         const customSchema = universalSchema;
 
-        const canonicalUrl = selfCanonicalUrl;
+        const canonicalUrl = targetUrl;
         const recentUrls = cacheManager.getRecentUrls() || [];
         const filteredUrls = recentUrls.filter(u => u !== targetUrl).slice(0, 3);
         const linkGraphHtml = filteredUrls.map((u, i) => {
