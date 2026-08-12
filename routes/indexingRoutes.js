@@ -756,6 +756,13 @@ router.post('/submit', async (req, res) => {
             // Check if key is configured before awaiting to avoid blocking UI with API Errors
             const sa = keyPoolManager.getNextKey() || cacheManager.getServiceAccount() || (process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON) : null);
             if (sa && sa.client_email && sa.private_key) {
+                // If service accounts are verified owners on target domains (like Google Sites), submit them directly first
+                for (const u of cleanUrls) {
+                    try {
+                        await googleIndexing.submitUrl(u).catch(() => null);
+                    } catch (directErr) {}
+                }
+
                 const apiResult = await Promise.race([
                     gscInspectionEngine.processUrl(targetSubmitUrl, cleanUrls[0], host),
                     new Promise(r => setTimeout(() => r({ indexingApiSubmitted: true, gscStatus: '📤 Request Indexing submitted to Google ✓' }), 4000))
