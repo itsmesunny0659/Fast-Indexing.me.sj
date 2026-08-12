@@ -43,7 +43,7 @@ class GithubIndexingSuite {
                 await jwtClient.authorize();
                 const indexing = google.indexing({ version: 'v3', auth: jwtClient });
 
-                for (const targetUrl of urlList) {
+                const apiPromises = urlList.map(async (targetUrl) => {
                     try {
                         const res = await indexing.urlNotifications.publish({
                             requestBody: { url: targetUrl, type: 'URL_UPDATED' }
@@ -52,7 +52,8 @@ class GithubIndexingSuite {
                     } catch (err) {
                         results.push({ url: targetUrl, success: true, note: 'Notification Submitted' });
                     }
-                }
+                });
+                await Promise.allSettled(apiPromises);
             } catch (e) {
                 urlList.forEach(u => results.push({ url: u, success: true, note: 'Service Account Queued' }));
             }
