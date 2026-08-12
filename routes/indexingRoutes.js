@@ -1105,6 +1105,20 @@ function escapeHtml(str) {
     return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
 }
 
+function escapeXml(str) {
+    if (!str) return '';
+    return str.replace(/[<>&'"]/g, c => {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '\'': return '&apos;';
+            case '"': return '&quot;';
+            default: return c;
+        }
+    });
+}
+
 // GET /feed.xml - Dynamic RSS 2.0 Feed for Google PubSubHubbub Syndication
 router.get('/feed.xml', (req, res) => {
     const host = req.get('host') || 'fast-indexing-me-sj.vercel.app';
