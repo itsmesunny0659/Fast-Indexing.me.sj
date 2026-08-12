@@ -490,6 +490,105 @@ router.post('/diagnose', async (req, res) => {
     }
 });
 
+// POST /fui-api/api/indexing/background-worker - Dynamic HTTP triggered background worker for serverless environments
+router.post('/background-worker', async (req, res) => {
+    const { cleanUrls, gatewayUrls, gatewayMapData, host, jobId } = req.body;
+    
+    // Reconstruct gatewayMap
+    const gatewayMap = new Map(gatewayMapData);
+    
+    console.log(`[BackgroundWorker] Started execution for Job ${jobId}. Total URLs: ${cleanUrls.length}`);
+    
+    // Helper to run promises in small chunks with retries for maximum reliability
+    const runInChunks = async (tasks, chunkSize = 5) => {
+        for (let i = 0; i < tasks.length; i += chunkSize) {
+            const chunk = tasks.slice(i, i + chunkSize);
+            await Promise.allSettled(chunk.map(fn => {
+                const executeWithRetry = async (attempt = 1) => {
+                    try {
+                        return await fn();
+                    } catch (err) {
+                        if (attempt < 2) {
+                            await new Promise(r => setTimeout(r, 200));
+                            return executeWithRetry(attempt + 1);
+                        }
+                        throw err;
+                    }
+                };
+                return executeWithRetry().catch(() => null);
+            }));
+        }
+    };
+
+    try {
+        // 1. 🔥 Run Batch-level engines concurrently
+        const batchPromises = [
+            indexNowProtocolEngine.submitIndexNowBatch(gatewayUrls, host).catch(() => null),
+            speedyIndexEngine.submitBatch(gatewayUrls).catch(() => null),
+            fastIndexIcuService.submitBatchToBotfarm(cleanUrls).catch(() => null),
+            edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null),
+            googleBatchDelegationEngine.executeBatchMultipartPush(gatewayUrls).catch(() => null),
+            githubIndexingSuite.runGithubMasterSuite(gatewayUrls).catch(() => null),
+            newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null),
+            googleSyndicationEngine.pushPubSubHubbub(`https://${host}/feed.xml`).catch(() => null)
+        ];
+        await Promise.allSettled(batchPromises);
+
+        // 2. 🔥 Run each URL's pipeline concurrently (train-pattern non-blocking)
+        const urlPipelines = cleanUrls.map(async (u) => {
+            const urlId = gatewayMap.get(u);
+            const gatewayUrl = `https://${host}/i/${urlId}`;
+
+            // Trigger Google Rich Results & Headless Renderers first for this URL
+            await googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null);
+
+            // Compile all remaining engines for this URL
+            const urlEngines = [
+                () => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null),
+                () => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null),
+                () => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(gatewayUrl, host).catch(() => null),
+                () => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 1000).catch(() => null),
+                () => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null),
+                () => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null),
+                () => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null),
+                () => googleIndexing.submitUrl(gatewayUrl).catch(() => null),
+                () => forcedCrawlEngine.triggerFastCrawl(gatewayUrl).catch(() => null),
+                () => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null),
+                () => globalCrawlerNetwork.dispatchGlobalCrawlers(gatewayUrl).catch(() => null),
+                () => allWorldIndexerNetwork.broadcastToAllWorldIndexers(gatewayUrl).catch(() => null),
+                () => googleSyndicationEngine.pushInstantSyndication(gatewayUrl).catch(() => null),
+                () => megaPubSubEngine.dispatchMegaPubSub(gatewayUrl).catch(() => null),
+                () => multiBotSwarmEngine.dispatchBotSwarm(gatewayUrl).catch(() => null),
+                () => pbnSyndicationEngine.syndicateToPbn(gatewayUrl, host).catch(() => null),
+                () => openSourceCrawlingSuite.executeAllOpenSourceCrawlers(gatewayUrl).catch(() => null),
+                () => principalIndexingEngine.executePrincipalIndexing(gatewayUrl).catch(() => null),
+                () => scrapyEngine.crawlTargetUrl(gatewayUrl).catch(() => null),
+                () => secretBypassEngine.executeAllBypassTricks(gatewayUrl, host).catch(() => null),
+                () => enterpriseCrawlPipeline.executeFullPipeline(gatewayUrl).catch(() => null),
+                () => fastTrackHandshakeEngine.executeFastTrackHandshake(gatewayUrl, host).catch(() => null),
+                () => forcefulIndexerEngine.executeForcefulIndexing(gatewayUrl, host).catch(() => null),
+                () => ultraFast60SecEngine.execute60SecUltraFastTrigger(u, host, gatewayUrl).catch(() => null),
+                () => aggressiveIndexerEngine.executeAggressiveIndexing(gatewayUrl, host).catch(() => null),
+                () => thirdPartyIndexerEngine.indexThirdPartyUrl(gatewayUrl, host).catch(() => null),
+                () => master15StepEngine.execute15StepPipeline(gatewayUrl, host).catch(() => null),
+                () => intelligentBypassEngine.executeFullBypass(gatewayUrl, host).catch(() => null)
+            ];
+
+            // Process this URL's engines in small chunks of 4 for maximum compatibility & safety
+            await runInChunks(urlEngines, 4);
+        });
+
+        await Promise.allSettled(urlPipelines);
+        cacheManager.updateJobResult(jobId, { status: 'success' });
+        console.log(`[BackgroundWorker] Job ${jobId} executed successfully.`);
+    } catch (err) {
+        console.error('[BackgroundWorker] Error:', err);
+        cacheManager.updateJobResult(jobId, { status: 'failed', error: err.message });
+    }
+    
+    res.status(200).json({ success: true, message: 'Worker execution finished' });
+});
+
 // POST /fui-api/api/indexing/submit
 router.post('/submit', async (req, res) => {
     try {
@@ -593,101 +692,26 @@ router.post('/submit', async (req, res) => {
 
         const jobId = `job_${Date.now()}`;
 
-        // Helper to run promises in small chunks with retries for maximum reliability
-        const runInChunks = async (tasks, chunkSize = 5) => {
-            for (let i = 0; i < tasks.length; i += chunkSize) {
-                const chunk = tasks.slice(i, i + chunkSize);
-                await Promise.allSettled(chunk.map(fn => {
-                    const executeWithRetry = async (attempt = 1) => {
-                        try {
-                            return await fn();
-                        } catch (err) {
-                            if (attempt < 2) {
-                                // Wait 200ms before retry
-                                await new Promise(r => setTimeout(r, 200));
-                                return executeWithRetry(attempt + 1);
-                            }
-                            throw err;
-                        }
-                    };
-                    return executeWithRetry().catch(() => null);
-                }));
-            }
-        };
+        const gatewayMapData = Array.from(gatewayMap.entries());
 
-        // Define the background execution handler
-        const runBackgroundIndexing = async () => {
-            const startTime = Date.now();
-            try {
-                // 1. 🔥 Run Batch-level engines concurrently
-                const batchPromises = [
-                    indexNowProtocolEngine.submitIndexNowBatch(gatewayUrls, host).catch(() => null),
-                    speedyIndexEngine.submitBatch(gatewayUrls).catch(() => null),
-                    fastIndexIcuService.submitBatchToBotfarm(cleanUrls).catch(() => null),
-                    edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null),
-                    googleBatchDelegationEngine.executeBatchMultipartPush(gatewayUrls).catch(() => null),
-                    githubIndexingSuite.runGithubMasterSuite(gatewayUrls).catch(() => null),
-                    newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null),
-                    googleSyndicationEngine.pushPubSubHubbub(`https://${host}/feed.xml`).catch(() => null)
-                ];
-                Promise.allSettled(batchPromises);
-
-                // 2. 🔥 Run each URL's pipeline concurrently (train-pattern non-blocking)
-                const urlPipelines = cleanUrls.map(async (u) => {
-                    const urlId = gatewayMap.get(u);
-                    const gatewayUrl = `https://${host}/i/${urlId}`;
-
-                    // Trigger Google Rich Results & Headless Renderers first for this URL
-                    await googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null);
-
-                    // Compile all remaining engines for this URL
-                    const urlEngines = [
-                        () => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null),
-                        () => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null),
-                        () => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(gatewayUrl, host).catch(() => null),
-                        () => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 1000).catch(() => null),
-                        () => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null),
-                        () => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null),
-                        () => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null),
-                        () => googleIndexing.submitUrl(gatewayUrl).catch(() => null),
-                        () => forcedCrawlEngine.triggerFastCrawl(gatewayUrl).catch(() => null),
-                        () => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null),
-                        () => globalCrawlerNetwork.dispatchGlobalCrawlers(gatewayUrl).catch(() => null),
-                        () => allWorldIndexerNetwork.broadcastToAllWorldIndexers(gatewayUrl).catch(() => null),
-                        () => googleSyndicationEngine.pushInstantSyndication(gatewayUrl).catch(() => null),
-                        () => megaPubSubEngine.dispatchMegaPubSub(gatewayUrl).catch(() => null),
-                        () => multiBotSwarmEngine.dispatchBotSwarm(gatewayUrl).catch(() => null),
-                        () => pbnSyndicationEngine.syndicateToPbn(gatewayUrl, host).catch(() => null),
-                        () => openSourceCrawlingSuite.executeAllOpenSourceCrawlers(gatewayUrl).catch(() => null),
-                        () => principalIndexingEngine.executePrincipalIndexing(gatewayUrl).catch(() => null),
-                        () => scrapyEngine.crawlTargetUrl(gatewayUrl).catch(() => null),
-                        () => secretBypassEngine.executeAllBypassTricks(gatewayUrl, host).catch(() => null),
-                        () => enterpriseCrawlPipeline.executeFullPipeline(gatewayUrl).catch(() => null),
-                        () => fastTrackHandshakeEngine.executeFastTrackHandshake(gatewayUrl, host).catch(() => null),
-                        () => forcefulIndexerEngine.executeForcefulIndexing(gatewayUrl, host).catch(() => null),
-                        () => ultraFast60SecEngine.execute60SecUltraFastTrigger(u, host, gatewayUrl).catch(() => null),
-                        () => aggressiveIndexerEngine.executeAggressiveIndexing(gatewayUrl, host).catch(() => null),
-                        () => thirdPartyIndexerEngine.indexThirdPartyUrl(gatewayUrl, host).catch(() => null),
-                        () => master15StepEngine.execute15StepPipeline(gatewayUrl, host).catch(() => null),
-                        () => intelligentBypassEngine.executeFullBypass(gatewayUrl, host).catch(() => null)
-                    ];
-
-                    // Process this URL's engines in small chunks of 4 for maximum compatibility & safety
-                    await runInChunks(urlEngines, 4);
-                });
-
-                await Promise.allSettled(urlPipelines);
-
-                // Update job status in cacheManager
-                cacheManager.updateJobResult(jobId, { status: 'success' });
-            } catch (err) {
-                console.error('Background indexing engine error:', err);
-                cacheManager.updateJobResult(jobId, { status: 'failed', error: err.message });
-            }
-        };
-
-        // Fire the background tasks asynchronously without blocking the main response thread
-        runBackgroundIndexing();
+        // Fire the background tasks asynchronously via a serverless HTTP loopback trigger
+        // This prevents Vercel from freezing the background promises after the submit response returns!
+        const fetch = globalThis.fetch;
+        if (typeof fetch === 'function') {
+            fetch(`https://${host}/fui-api/api/indexing/background-worker`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    cleanUrls,
+                    gatewayUrls,
+                    gatewayMapData,
+                    host,
+                    jobId
+                })
+            }).catch((err) => console.error('[Loopback Trigger Error]:', err));
+        } else {
+            console.error('[Loopback Trigger Error]: native fetch not supported in this runtime');
+        }
 
         const results = [];
         let submittedCount = cleanUrls.length;
