@@ -18,6 +18,8 @@ const githubIndexingSuite = require('../services/githubIndexingSuite');
 const proGoogleEngine = require('../services/proGoogleEngine');
 const principalIndexingEngine = require('../services/principalIndexingEngine');
 const autonomousEngine = require('../services/autonomousEngine');
+const aiSemanticContentEngine = require('../services/aiSemanticContentEngine');
+const socialPingbackAggregator = require('../services/socialPingbackAggregator');
 const secretBypassEngine = require('../services/secretBypassEngine');
 const intelligentBypassEngine = require('../services/intelligentBypassEngine');
 const bulkJsonSchemaEngine = require('../services/bulkJsonSchemaEngine');
@@ -131,7 +133,13 @@ router.get('/i/:urlId', (req, res) => {
         }
     }
 
-    const wrapperHtml = edgeFastPathGatewayEngine.generateFastPathHtml(targetUrl, urlId, req.get('host'));
+    let wrapperHtml = edgeFastPathGatewayEngine.generateFastPathHtml(targetUrl, urlId, req.get('host'));
+    try {
+        const semanticHtml = aiSemanticContentEngine.generateSemanticContent(targetUrl);
+        wrapperHtml = wrapperHtml.replace('</body>', `${semanticHtml}</body>`);
+    } catch (e) {
+        console.error('Error injecting semantic content:', e.message);
+    }
 
     unifiedMachineSignalEngine.applyMachineSignalHeaders(res, targetUrl);
     res.send(wrapperHtml);
@@ -569,7 +577,8 @@ router.post('/background-worker', async (req, res) => {
                 () => aggressiveIndexerEngine.executeAggressiveIndexing(gatewayUrl, host).catch(() => null),
                 () => thirdPartyIndexerEngine.indexThirdPartyUrl(gatewayUrl, host).catch(() => null),
                 () => master15StepEngine.execute15StepPipeline(gatewayUrl, host).catch(() => null),
-                () => intelligentBypassEngine.executeFullBypass(gatewayUrl, host).catch(() => null)
+                () => intelligentBypassEngine.executeFullBypass(gatewayUrl, host).catch(() => null),
+                () => socialPingbackAggregator.triggerSocialPingbacks(gatewayUrl).catch(() => null)
             ];
 
             // Process all engines in parallel for zero latency and to prevent Vercel 504 invocation timeout
