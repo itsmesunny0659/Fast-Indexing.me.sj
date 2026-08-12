@@ -547,7 +547,7 @@ router.post('/background-worker', async (req, res) => {
                 () => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null),
                 () => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null),
                 () => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(gatewayUrl, host).catch(() => null),
-                () => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 1000).catch(() => null),
+                () => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 50).catch(() => null),
                 () => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null),
                 () => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null),
                 () => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null),
@@ -662,7 +662,7 @@ router.post('/submit', async (req, res) => {
             lazyEngines.push(() => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null));
             lazyEngines.push(() => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null));
             lazyEngines.push(() => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(gatewayUrl, host).catch(() => null));
-            lazyEngines.push(() => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 1000).catch(() => null));
+            lazyEngines.push(() => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 50).catch(() => null));
             lazyEngines.push(() => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null));
             lazyEngines.push(() => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null));
             lazyEngines.push(() => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null));
@@ -985,7 +985,7 @@ router.post('/firehose/ping', async (req, res) => {
         // Trigger all powerhouse indexer swarms (in background)
         const promises = [
             cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(url, host),
-            humanEmulationEngine.dispatchHumanEmulationPool(url, 1000),
+            humanEmulationEngine.dispatchHumanEmulationPool(url, 50),
             verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(url, String(globalIdCounter), host),
             stealthGreyHatEngine.executeStealthIndexing(url, `https://${host}/i/${globalIdCounter}`),
             allWorldIndexerNetwork.broadcastToAllWorldIndexers(url),
