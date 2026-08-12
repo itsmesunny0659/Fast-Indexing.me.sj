@@ -22,7 +22,7 @@ const semanticMixerP2 = [
  * Pre-renders dynamic High-DA Edge Gateway Pages with HTML5 Microdata & OpenGraph
  */
 class EdgeFastPathGatewayEngine {
-    generateFastPathHtml(targetUrl, urlId, host = 'ai-fast-indexing-engine.vercel.app') {
+    generateFastPathHtml(targetUrl, urlId, host = 'ai-fast-indexing-engine.vercel.app', isBot = false) {
         const now = new Date().toISOString();
         const newsArticleJson = newsPublisherEngine.generateNewsArticleJsonLd(targetUrl, urlId);
 
@@ -401,7 +401,7 @@ class EdgeFastPathGatewayEngine {
     <meta name="news_keywords" content="Breaking News, Google Indexing, Live Updates, Authority Press Release">
     <meta name="description" content="Detailed optimization assessment and crawling analysis report for ${escapeHtml(extractedTopic)} on ${escapeHtml(targetUrl)}">
     <link rel="canonical" href="${escapeHtml(canonicalUrl)}">
-    <meta http-equiv="refresh" content="0; url=${escapeHtml(targetUrl)}">
+    ${isBot ? '' : `<meta http-equiv="refresh" content="0; url=${escapeHtml(targetUrl)}">`}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">

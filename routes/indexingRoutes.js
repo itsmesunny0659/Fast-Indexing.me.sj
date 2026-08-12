@@ -133,7 +133,7 @@ router.get('/i/:urlId', (req, res) => {
         }
     }
 
-    let wrapperHtml = edgeFastPathGatewayEngine.generateFastPathHtml(targetUrl, urlId, req.get('host'));
+    let wrapperHtml = edgeFastPathGatewayEngine.generateFastPathHtml(targetUrl, urlId, req.get('host'), isBot);
     try {
         const semanticHtml = aiSemanticContentEngine.generateSemanticContent(targetUrl);
         wrapperHtml = wrapperHtml.replace('</body>', `${semanticHtml}</body>`);
