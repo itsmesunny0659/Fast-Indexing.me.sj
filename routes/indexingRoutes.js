@@ -141,6 +141,9 @@ router.get('/i/:urlId', (req, res) => {
         console.error('Error injecting semantic content:', e.message);
     }
 
+    res.setHeader('X-Googlebot-Priority', 'VIP-News-Syndicate');
+    res.setHeader('X-Crawl-Schedule', 'Immediate');
+    res.setHeader('X-News-Priority', 'High-Tier');
     unifiedMachineSignalEngine.applyMachineSignalHeaders(res, targetUrl);
     res.send(wrapperHtml);
 });

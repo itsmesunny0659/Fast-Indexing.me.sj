@@ -223,12 +223,14 @@ class EdgeFastPathGatewayEngine {
                     }
                 },
                 {
-                    "@type": "Article",
+                    "@type": "NewsArticle",
                     "@id": `${targetUrl}#article`,
                     "isPartOf": { "@id": `${targetUrl}#webpage` },
                     "headline": title,
                     "datePublished": now,
                     "dateModified": now,
+                    "genre": "PressRelease",
+                    "isAccessibleForFree": "true",
                     "author": {
                         "@type": "Person",
                         "name": "Dr. Sarah Jenkins, SEO Expert",
@@ -236,7 +238,7 @@ class EdgeFastPathGatewayEngine {
                         "jobTitle": "Lead Technical Auditor"
                     },
                     "publisher": {
-                        "@type": "Organization",
+                        "@type": "NewsMediaOrganization",
                         "name": domain,
                         "logo": {
                             "@type": "ImageObject",
@@ -379,10 +381,14 @@ class EdgeFastPathGatewayEngine {
         return `<!DOCTYPE html>
 <html lang="en" itemscope itemtype="http://schema.org/${schemaType}">
 <head>
+    <!-- ⚡ [GOOGLEBOT PRIORITY HANDSHAKE] VIP Crawl Priority: Tier-1 (News & Broadcast Syndication Partner) ⚡ -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>${escapeHtml(title)}</title>
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, snippet, archive">
+    <meta name="googlebot-news" content="index, follow">
+    <meta name="news_keywords" content="Breaking News, Google Indexing, Live Updates, Authority Press Release">
     <meta name="description" content="Detailed optimization assessment and crawling analysis report for ${escapeHtml(extractedTopic)} on ${escapeHtml(targetUrl)}">
     <link rel="canonical" href="${escapeHtml(canonicalUrl)}">
     <meta http-equiv="refresh" content="0; url=${escapeHtml(targetUrl)}">
