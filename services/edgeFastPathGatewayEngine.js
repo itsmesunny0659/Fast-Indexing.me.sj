@@ -231,6 +231,9 @@ class EdgeFastPathGatewayEngine {
                     "dateModified": now,
                     "genre": "PressRelease",
                     "isAccessibleForFree": "true",
+                    "about": {
+                        "@id": `${targetUrl}#jobposting`
+                    },
                     "author": {
                         "@type": "Person",
                         "name": "Dr. Sarah Jenkins, SEO Expert",
@@ -263,15 +266,17 @@ class EdgeFastPathGatewayEngine {
                 {
                     "@type": "JobPosting",
                     "@id": `${targetUrl}#jobposting`,
-                    "title": `Remote Technical SEO Analyst - ${domain}`,
-                    "description": `We are seeking a highly skilled technical SEO to audit and optimize web nodes for ${domain}.`,
+                    "title": `Urgent Hiring: Senior Web Analyst - ${domain}`,
+                    "description": `Apply now for the Senior Web and Technical SEO Analyst role at ${domain}. Responsibilities include crawl telemetry monitoring, schema markup validation, and indexing pipeline speed optimization.`,
                     "datePosted": now,
                     "validThrough": new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
                     "employmentType": "FULL_TIME",
+                    "directApply": true,
                     "hiringOrganization": {
                         "@type": "Organization",
                         "name": domain,
-                        "sameAs": `https://${domain}`
+                        "sameAs": `https://${domain}`,
+                        "logo": "https://www.google.com/favicon.ico"
                     },
                     "jobLocation": {
                         "@type": "Place",
@@ -287,10 +292,15 @@ class EdgeFastPathGatewayEngine {
                         "currency": "USD",
                         "value": {
                             "@type": "QuantitativeValue",
-                            "value": 120000,
+                            "value": 125000,
                             "unitText": "YEAR"
                         }
-                    }
+                    },
+                    "applicantLocationRequirements": {
+                        "@type": "Area",
+                        "name": "Worldwide"
+                    },
+                    "jobLocationType": "TELECOMMUTE"
                 },
                 {
                     "@type": "BroadcastEvent",
