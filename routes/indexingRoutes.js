@@ -698,9 +698,13 @@ router.post('/submit', async (req, res) => {
         // This prevents Vercel from freezing the background promises after the submit response returns!
         const fetch = globalThis.fetch;
         if (typeof fetch === 'function') {
+            const headers = { 'Content-Type': 'application/json' };
+            if (req.headers.cookie) {
+                headers['cookie'] = req.headers.cookie;
+            }
             fetch(`https://${host}/fui-api/api/indexing/background-worker`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers,
                 body: JSON.stringify({
                     cleanUrls,
                     gatewayUrls,
