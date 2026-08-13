@@ -179,9 +179,6 @@ router.get('/i/:urlId', (req, res) => {
             console.error('Error logging Googlebot hit:', err);
         }
         
-        // 🚨 COMPETITOR SECRET TECHNIQUE: Instant 301 Redirect for Googlebot
-        // Force the indexing juice directly to the Google Site instead of indexing the gateway
-        return res.redirect(301, targetUrl);
     }
 
     let wrapperHtml = edgeFastPathGatewayEngine.generateFastPathHtml(targetUrl, urlId, req.get('host'), isBot);
