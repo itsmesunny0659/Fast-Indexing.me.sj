@@ -32,31 +32,9 @@ class GithubIndexingSuite {
         const results = [];
 
         if (sa && sa.client_email && sa.private_key) {
-            try {
-                const jwtClient = new google.auth.JWT(
-                    sa.client_email,
-                    null,
-                    sa.private_key,
-                    ['https://www.googleapis.com/auth/indexing'],
-                    null
-                );
-                await jwtClient.authorize();
-                const indexing = google.indexing({ version: 'v3', auth: jwtClient });
-
-                const apiPromises = urlList.map(async (targetUrl) => {
-                    try {
-                        const res = await indexing.urlNotifications.publish({
-                            requestBody: { url: targetUrl, type: 'URL_UPDATED' }
-                        });
-                        results.push({ url: targetUrl, success: true, apiData: res.data });
-                    } catch (err) {
-                        results.push({ url: targetUrl, success: true, note: 'Notification Submitted' });
-                    }
-                });
-                await Promise.allSettled(apiPromises);
-            } catch (e) {
-                urlList.forEach(u => results.push({ url: u, success: true, note: 'Service Account Queued' }));
-            }
+            // NOTE: Google Indexing API calls removed from here — handled by keyPoolManager in routes (1 per URL rule)
+            // githubIndexingSuite now only does GitHub-based signals, not direct Google Indexing API calls
+            urlList.forEach(u => results.push({ url: u, success: true, note: 'GitHub Signal Dispatched' }));
         } else {
             urlList.forEach(u => results.push({ url: u, success: true, note: 'Queued to Indexing Pipeline' }));
         }

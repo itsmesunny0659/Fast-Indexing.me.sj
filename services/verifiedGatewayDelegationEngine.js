@@ -35,9 +35,8 @@ class VerifiedGatewayDelegationEngine {
         const sitemapUrl = `https://${host}/sitemap.html`;
         const atomUrl = `https://${host}/atom.xml`;
 
-        // Step 1: Submit Verified Gateway URL directly to Google Indexing API
-        const apiResult = await googleIndexing.submitUrl(gatewayUrl, 'URL_UPDATED').catch(() => null);
-        const poolResult = await keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null);
+        // Step 1: WebSub + Sitemap Pings (Google Indexing API call handled by keyPoolManager in routes — NOT here)
+        // NOTE: googleIndexing.submitUrl removed — duplicate of keyPoolManager in routes (1 API call per URL rule)
 
         // Step 2: Trigger Google WebSub Hub (PubSubHubbub) Instant Push Notification
         const webSubParams = new URLSearchParams();

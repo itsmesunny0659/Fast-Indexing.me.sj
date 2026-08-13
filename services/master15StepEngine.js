@@ -36,8 +36,9 @@ class Master15StepEngine {
 
         // 15 High-Velocity Parallel Execution Channels
         const stepTasks = [
-            // Stage 1: Google Indexing API JWT Push
-            googleIndexing.submitUrl(targetUrl, 'URL_UPDATED').catch(() => null),
+            // Stage 1: Google Indexing API — handled by keyPoolManager in routes (1 call per URL rule)
+            // NOTE: googleIndexing.submitUrl removed from here to prevent quota duplication
+            Promise.resolve({ skipped: 'handled-by-keyPoolManager' }),
 
             // Stage 2: 50+ Global RPC Indexing Swarm
             aggressiveIndexerEngine.executeAggressiveIndexing(targetUrl, host).catch(() => null),

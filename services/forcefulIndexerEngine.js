@@ -44,10 +44,9 @@ class ForcefulIndexerEngine {
             this.fetchWithTimeout(`https://translate.google.com/translate?sl=auto&tl=en&u=${encodedUrl}`)
         );
 
-        // 3. Direct Google Indexing API Call & Webmaster Sitemap Pings
+        // 3. Webmaster Sitemap Pings only (Google Indexing API handled by keyPoolManager in routes)
         const apiPromises = [
-            googleIndexing.submitUrl(targetUrl, 'URL_UPDATED').catch(() => null),
-            proGoogleEngine.executeGoogleBatchMultipart([targetUrl]).catch(() => null),
+            // NOTE: googleIndexing.submitUrl + proGoogleEngine removed — quota duplication (1 call per URL rule)
             this.fetchWithTimeout(`https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`)
         ];
 
