@@ -73,7 +73,7 @@ function checkAuth(req, res, next) {
     
     // 0. Bypass auth for Googlebot and other crawlers to allow site verification
     const ua = req.get('User-Agent') || '';
-    const isBot = /bot|googlebot|crawler|spider|robot|crawling/i.test(ua);
+    const isBot = /bot|googlebot|crawler|spider|robot|crawling|google-site-verification|google/i.test(ua);
     if (isBot) {
         return next();
     }
