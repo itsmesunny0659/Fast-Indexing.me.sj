@@ -130,7 +130,7 @@ router.get('/i/:urlId', (req, res) => {
             // Use fixed-length slice instead of lastIndexOf to avoid base64url '_' collision
             const base64part = urlId.slice(2, -9); // Remove 'u_' prefix and '_XXXXXXXX' suffix
             if (base64part.length > 0) {
-                const decodedUrl = Buffer.from(base64part, 'base64url').toString('utf8');
+                const decodedUrl = Buffer.from(base64part, 'base64url').toString('utf8').replace(/[^\x20-\x7E]/g, '');
                 if (decodedUrl.startsWith('http')) {
                     targetData = { url: decodedUrl };
                 }
@@ -695,8 +695,12 @@ router.post('/submit', async (req, res) => {
 
         const cleanUrls = urls.map(u => {
             if (typeof u !== 'string') return '';
-            let clean = u.trim();
-            // Remove trailing parenthesis, brackets, braces, quotes, or spaces
+            let clean = u.replace(/^\uFEFF/, '')               // BOM
+                         .replace(/[\u200B-\u200D\uFEFF]/g, '') // zero-width spaces
+                         .replace(/[\u0000-\u001F\u007F]/g, '') // control characters
+                         .replace(/\r/g, '')                    // carriage return
+                         .trim();
+            // Remove trailing brackets, quotes, spaces, or formatting artifacts
             clean = clean.replace(/[\)\}\]'"\s]+$/, '');
             return clean;
         }).filter(u => u.length > 0 && u.startsWith('http'));
