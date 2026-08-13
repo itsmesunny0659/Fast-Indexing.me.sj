@@ -90,19 +90,27 @@ class PersistentGatewayStore {
 
         // Fallback 1: Deterministic Base64 Decoding (Guarantees zero 404s on Vercel cold starts)
         try {
-            let encodedStr = urlId;
             if (urlId.startsWith('u_')) {
-                encodedStr = urlId.slice(2);
+                const parts = urlId.split('_');
+                if (parts.length >= 3) {
+                    const base64part = parts.slice(1, -1).join('_');
+                    const rawUrl = Buffer.from(base64part, 'base64url').toString('utf-8');
+                    const cleanRawUrl = rawUrl.replace(/\0/g, '').replace(/[^\x20-\x7E]/g, '').trim();
+                    if (cleanRawUrl.startsWith('http://') || cleanRawUrl.startsWith('https://')) {
+                        const entry = { url: cleanRawUrl, timestamp: new Date().toISOString() };
+                        this._store.set(urlId, entry);
+                        return entry;
+                    }
+                }
             } else if (urlId.startsWith('idx_')) {
                 // E.g. idx_22556_ms7dnh7b or custom urlId formats
-                encodedStr = urlId.split('_').pop();
-            }
-
-            const decodedUrl = Buffer.from(encodedStr, 'base64url').toString('utf-8');
-            if (decodedUrl.startsWith('http://') || decodedUrl.startsWith('https://')) {
-                const entry = { url: decodedUrl, timestamp: new Date().toISOString() };
-                this._store.set(urlId, entry);
-                return entry;
+                const encodedStr = urlId.split('_').pop();
+                const decodedUrl = Buffer.from(encodedStr, 'base64url').toString('utf-8');
+                if (decodedUrl.startsWith('http://') || decodedUrl.startsWith('https://')) {
+                    const entry = { url: decodedUrl, timestamp: new Date().toISOString() };
+                    this._store.set(urlId, entry);
+                    return entry;
+                }
             }
         } catch (e) {}
 
