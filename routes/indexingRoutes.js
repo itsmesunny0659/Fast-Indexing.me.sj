@@ -119,13 +119,16 @@ router.get('/i/:urlId', (req, res) => {
     const { urlId } = req.params;
     let targetData = persistentGatewayStore.getGateway(urlId);
 
-    // Fallback: If memory is wiped on serverless cold start, try to decode from base64
+    // Fallback: If memory is wiped on serverless cold start, decode URL from base64url in urlId
+    // FIX: base64url encoding can contain '_' characters, so lastIndexOf('_') was finding
+    // the wrong split point. Instead, suffix is always exactly 8 chars, so slice from end.
+    // urlId format: u_{base64url(targetUrl)}_{8charSuffix}
     if (!targetData && urlId.startsWith('u_')) {
         try {
-            // urlId format: u_{base64url}_{randomSuffix}
-            const lastUnderscoreIndex = urlId.lastIndexOf('_');
-            if (lastUnderscoreIndex > 2) {
-                const base64part = urlId.substring(2, lastUnderscoreIndex);
+            // Suffix is ALWAYS 8 chars + 1 underscore separator = 9 chars from end
+            // Use fixed-length slice instead of lastIndexOf to avoid base64url '_' collision
+            const base64part = urlId.slice(2, -9); // Remove 'u_' prefix and '_XXXXXXXX' suffix
+            if (base64part.length > 0) {
                 const decodedUrl = Buffer.from(base64part, 'base64url').toString('utf8');
                 if (decodedUrl.startsWith('http')) {
                     targetData = { url: decodedUrl };
