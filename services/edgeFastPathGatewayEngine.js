@@ -397,11 +397,9 @@ class EdgeFastPathGatewayEngine {
     <!-- ⚡ [GOOGLEBOT PRIORITY HANDSHAKE] VIP Crawl Priority: Tier-1 (News & Broadcast Syndication Partner) ⚡ -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- ⚡ GATEWAY PAGE: noindex so Google doesn't index fast-indexing-me-sj-gamma.vercel.app -->
-    <!-- Canonical points to TARGET URL so Google follows it and indexes the actual target -->
-    <meta name="robots" content="noindex, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <meta name="googlebot" content="noindex, follow, max-snippet:-1, max-image-preview:large">
-    <meta name="googlebot-news" content="noindex, follow">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, snippet, archive">
+    <meta name="googlebot-news" content="index, follow">
     <meta name="syndication-source" content="https://news.google.com/">
     <meta name="original-source" content="https://www.nytimes.com/">
     <link rel="alternate" type="application/json+oembed" href="https://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DdQw4w9WgXcQ" title="Syndicated Authority Video">

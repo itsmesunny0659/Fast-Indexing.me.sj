@@ -168,9 +168,7 @@ router.get('/i/:urlId', (req, res) => {
         console.error('Error injecting semantic content:', e.message);
     }
 
-    // ⚡ CRITICAL FIX: noindex gateway page so Google indexes TARGET URL, not our Vercel page
-    // Canonical in the HTML already points to targetUrl — Google follows it to index the actual target
-    res.setHeader('X-Robots-Tag', 'noindex, follow');
+    res.setHeader('X-Robots-Tag', 'index, follow');
     res.setHeader('X-Googlebot-Priority', 'VIP-News-Syndicate');
     res.setHeader('X-Crawl-Schedule', 'Immediate');
     res.setHeader('X-News-Priority', 'High-Tier');
