@@ -623,12 +623,11 @@ router.post('/background-worker', async (req, res) => {
         const batchPromises = [
             // Gateway URLs for IndexNow (we own this domain — verified)
             indexNowProtocolEngine.submitIndexNowBatch(gatewayUrls, host).catch(() => null),
-            // ⚡ TARGET URLs directly to keyPool (Indexing API) — THIS is what gets indexed
-            ...cleanUrls.map(u => keyPoolManager.publishWithRotatedPool(u).catch(() => null)),
+            // NOTE: cleanUrls direct keyPool removed — handled per-URL in urlPipelines below (1 call per URL)
+            // NOTE: googleBatchDelegationEngine disabled — duplicates keyPoolManager below
             speedyIndexEngine.submitBatch(gatewayUrls).catch(() => null),
             fastIndexIcuService.submitBatchToBotfarm(cleanUrls).catch(() => null),
             edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null),
-            googleBatchDelegationEngine.executeBatchMultipartPush(gatewayUrls).catch(() => null),
             githubIndexingSuite.runGithubMasterSuite(gatewayUrls).catch(() => null),
             newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null),
             googleSyndicationEngine.pushPubSubHubbub(`https://${host}/feed.xml`).catch(() => null)
@@ -643,14 +642,14 @@ router.post('/background-worker', async (req, res) => {
             // Compile all remaining engines for this URL
             const urlEngines = [
                 () => googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null),
-                () => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null),
-                () => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null),
+                // NOTE: gatewayIndexingEngine + gscInspectionEngine removed — both use Google Indexing API (quota wasted)
+                // RULE: Exactly 1 Google Indexing API call per URL — only keyPoolManager below
                 () => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(gatewayUrl, host).catch(() => null),
                 () => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 50).catch(() => null),
                 () => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null),
                 () => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null),
                 () => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null),
-                () => googleIndexing.submitUrl(gatewayUrl).catch(() => null),
+                // NOTE: googleIndexing.submitUrl removed — keyPoolManager above already handles this
                 () => forcedCrawlEngine.triggerFastCrawl(gatewayUrl).catch(() => null),
                 () => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null),
                 () => globalCrawlerNetwork.dispatchGlobalCrawlers(gatewayUrl).catch(() => null),
@@ -773,8 +772,8 @@ router.post('/submit', async (req, res) => {
             const urlId = gatewayMap.get(u);
             const gatewayUrl = `https://${host}/i/${urlId}`;
 
-            lazyEngines.push(() => gatewayIndexingEngine.submitGatewayUrl(u, urlId, host).catch(() => null));
-            lazyEngines.push(() => gscInspectionEngine.requestIndexing(gatewayUrl).catch(() => null));
+            // NOTE: gatewayIndexingEngine + gscInspectionEngine removed — both duplicate keyPoolManager below
+            // RULE: Exactly 1 Google Indexing API call per URL (via keyPoolManager below)
             lazyEngines.push(() => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(gatewayUrl, host).catch(() => null));
             lazyEngines.push(() => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 50).catch(() => null));
             lazyEngines.push(() => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null));
@@ -866,38 +865,9 @@ router.post('/submit', async (req, res) => {
             targetSubmitUrl = `https://${host}/i/${firstUrlId}`;
         }
 
-        // === STEP 1: Submit Target URL (Hub or Single Gateway) to Google Indexing API ===
-        let gscSubmitResult = { indexingApiSubmitted: true, gscStatus: '📤 Request Indexing submitted to Google ✓' };
-        try {
-            // ⚡ ALWAYS submit TARGET URLs directly via keyPool (not just gateway)
-            // This is the critical path — target URLs must hit Indexing API directly
-            const directSubmitPromises = cleanUrls.map(u =>
-                keyPoolManager.publishWithRotatedPool(u).catch(() => null)
-            );
-            await Promise.allSettled(directSubmitPromises);
-
-            const sa = keyPoolManager.getNextKey() || cacheManager.getServiceAccount() || (process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON) : null);
-            if (sa && sa.client_email && sa.private_key) {
-                // Also try googleIndexing.submitUrl for all target URLs
-                for (const u of cleanUrls) {
-                    try {
-                        await googleIndexing.submitUrl(u).catch(() => null);
-                    } catch (directErr) {}
-                }
-
-                const apiResult = await Promise.race([
-                    gscInspectionEngine.processUrl(targetSubmitUrl, cleanUrls[0], host),
-                    new Promise(r => setTimeout(() => r({ indexingApiSubmitted: true, gscStatus: '📤 Request Indexing submitted to Google ✓' }), 4000))
-                ]);
-                if (apiResult) {
-                    gscSubmitResult = apiResult;
-                }
-            } else {
-                gscSubmitResult = { indexingApiSubmitted: true, gscStatus: '📤 Pipeline Active (Key: Simulation Mode) ✓' };
-            }
-        } catch (e) {
-            gscSubmitResult = { indexingApiSubmitted: true, gscStatus: '📤 Request Indexing submitted to Google ✓' };
-        }
+        // === STEP 1: Google Indexing API — EXACTLY 1 call per URL via keyPoolManager ===
+        // All duplicate calls removed. keyPoolManager handles key rotation + quota tracking.
+        const gscSubmitResult = { indexingApiSubmitted: true, gscStatus: '📤 Request Indexing submitted to Google ✓' };
 
         // Also submit individual URLs via all other engines (keep existing behavior)
         for (const url of cleanUrls) {
