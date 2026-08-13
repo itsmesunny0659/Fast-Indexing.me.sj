@@ -126,7 +126,11 @@ router.get('/i/:urlId', (req, res) => {
             const lastUnderscoreIndex = urlId.lastIndexOf('_');
             if (lastUnderscoreIndex > 2) {
                 const base64part = urlId.substring(2, lastUnderscoreIndex);
-                const base64 = base64part.replace(/-/g, '+').replace(/_/g, '/');
+                let base64 = base64part.replace(/-/g, '+').replace(/_/g, '/');
+                // Ensure proper base64 padding to prevent trailing unicode garbage characters
+                while (base64.length % 4 !== 0) {
+                    base64 += '=';
+                }
                 const decodedUrl = Buffer.from(base64, 'base64').toString('utf8');
                 if (decodedUrl.startsWith('http')) {
                     targetData = { url: decodedUrl };
