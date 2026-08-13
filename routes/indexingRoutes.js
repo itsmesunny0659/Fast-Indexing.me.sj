@@ -146,10 +146,14 @@ router.get('/i/:urlId', (req, res) => {
         try {
             // New Bulletproof Decoding Logic: urlId format is "u_BASE64URL_RANDOMSUFFIX"
             const parts = urlId.split('_');
-            if (parts.length >= 2) {
-                const base64part = parts[1]; // Get the base64 part directly
+            if (parts.length >= 3) {
+                // Base64Url natively contains '_' characters. 
+                // We must join all middle parts to avoid truncating the base64 string.
+                const base64part = parts.slice(1, -1).join('_'); 
                 const rawUrl = Buffer.from(base64part, 'base64url').toString('utf8');
-                const decodedUrl = sanitizeGatewayUrl(rawUrl);
+                // Remove trailing null bytes or garbage caused by padding issues
+                const cleanRawUrl = rawUrl.replace(/\0/g, ''); 
+                const decodedUrl = sanitizeGatewayUrl(cleanRawUrl);
                 if (decodedUrl && decodedUrl.startsWith('http')) {
                     targetData = { url: decodedUrl };
                 }
