@@ -115,5 +115,31 @@
     "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
     "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/myindexbot55%40myindexbot55.iam.gserviceaccount.com",
     "universe_domain": "googleapis.com"
+  },
+  {
+    "type": "service_account",
+    "project_id": "desitarikaindexing",
+    "private_key_id": "6e3d2bb68e1348932abcae8cecf1cf8e0c75422c",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCwEcvgpLlRLsFI\nUJrbMdl28I0x8IH9RcwHRWaBIcwlwCkRw2RBNrHz3pAaDSFWWeGeLW05xogYOM3m\nw64TX1ywIviJA8NdSbxrgIndT294uK7OgN7DK30YaEzGFvj2Efmu68hhquxly6Nr\nZ/AWA+RxFkAG7ctwUYD4PfMXS/bS40b9PZ568lweESoR85WImR7IS+RxO6yKQhzm\nbPIaZTSZq9JzsbTr6nArMEJmx72WacAjhvFpWB571NM2aDD36xgrABjuFnDxd0br\nYKzzeS7tkutZWNn8ToBhuNXv8J7CMVjrIXAtvls7le4qDxHItaDdkI0FBkoCGRK5\nlT4MIptbAgMBAAECggEABWxQgRdxyDXBdegnRoMb9W7mJz8G/sJMmeWIViF9XguA\nke+yKDp2c4V/OMSYxBK52uf/sKmtyj+adlyNAXaMroKVPY5XhFZGFT8wGX7ERAEK\npiLc00DrdhOYWC2fw3lWqg2dh9L+iKNW4dluURWtNQWzbFzP4rv2VfvkGR6Zq3GP\n/qK+b4oXZgcG+vYLiNrZNhX/lvvQOnXs1xhoqpjackHPfueRuGVVOsIfkKJOJTf/\nrsT3HzuL6w7gbDHtHGNZ7yegT+GEBretE10vOuLdOS+qlQc1YeG/aseQ6uMCxIdt\nOGB7MPO9Ke45DIJYomrzLQquHG7vSkqDZMztdYHeGQKBgQDVPjWJqCXNuG12QWdR\nPZR9gFHzHkVwW183xeDn128neZpC5EWh+UE/T2AAtqjvNViZcXZrQSlD0dEMC23M\nYgHlzgp3QWA0OWtViaEf0c4zx4RYNhOjMU2SUq+hjCU4KaJiZnmi0dcFORm18WNk\n48z6kn+X4mPj7d8svhIXGX4m9QKBgQDTX3emJjSbkkBtIFcXaUeVN1YUtZO+pZIl\n9Ii45IptA1LnnB8QvuLQnZnvt3EQidWO2DtAQPR/YMoJ/kSEzxLhPDgtskNZekWl\nqjS1ehNDrwMDQrKbrhJxqC/FakV/J/FH3EaPamU6jpKrYhDCLeIhvc5u+Fi5xv3z\nxCCHZzMnDwKBgBBs0kLgKMlHw2awcvzW+XERST6ovkCBSTxKiaBR/8XSoAc2/gYT\n5OqzenmTmD+UpFZtXum0AzGuH6QF3Vc41VyWGkhFSNu88H+OMlL5HiDu5UrGH40a\nZxc2N0ECQnuo+VELA6N+9kj4tPpGtZk30roaPqm8TmVoFSClI0+ULxthAoGBAL2B\neR9QX5gfDn4IIa0OqawBWb7lcJnbjeVTkQTbebP05+5ZDY0Q5v+MXQgLmmXufbY8\n7RpVYh+Vom5FNh8wHEgtmlx112YwdqLpr6oI0Z68GOJieQmUjlqyJGpFNhujrvHz\nbpuEE0/lpV/cYxQE2RnRN3RMWhftbZ+Qdm2PO9BHAoGBAJgD3oGhISz6Lo5G0U9P\n62PB3AOGI5UzbO4pizwDeLpuoltCme7gn1s0pwTVkAu09DHocS/9Ut5UfXxZbsmz\nmXInpAevljezVFy2i/dHAdluqMMRxqO3gDEIHqDO1YPxWp3xwYvnXig3znxQMtwK\neiYcX8TYksg98wQAVeX0O68u\n-----END PRIVATE KEY-----\n",
+    "client_email": "desitarikaindexing@desitarikaindexing.iam.gserviceaccount.com",
+    "client_id": "117358291051916236961",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/desitarikaindexing%40desitarikaindexing.iam.gserviceaccount.com",
+    "universe_domain": "googleapis.com"
+  },
+  {
+    "type": "service_account",
+    "project_id": "kyahaalhaibhaiji696901",
+    "private_key_id": "f22198b3364f09b0805af3cb2b24518905f2389d",
+    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDGGlISgWglIz5/\nDl1p/JbPzWAol6a8P22imhOmHNrvmUf98viyqyIpr1Qt1N5QOM7IeEW+59Sbw8zD\nNycJ0BYIrYlvxQhreWdS5OmAfFJffsxibf2GcstHSgreJJOIkzKi6HzAx07Nqi1+\nUFKI499rj4v0DBPlmKM7NVXkRZbOW9iXl8tA/a5l1W6iCz+SxHeVoE1ezV4OPbSA\nAmmptygjUY5oZ88EyItNDOhAKfVvx/Fe0HdHkmMWuVj45yZxbU1ufLiRbu1DX73P\nv/9qXar+qoTfF0w5vo/X3qbrKLmkhv6ghiQJ/JysMYvZ0Mo7UGc467ChDm14VGl/\nTmc7Ze57AgMBAAECggEAHWDT4Qit4CwM3ZzMv6YE24ZSh1KOGIazhJSi61SGJ1gs\n8/0vYpe8dkAZFL7nxS/XgqVLepc40WzFFgI82NiyG9FYe2nV6NJVP1bRRgupz52n\nQ8WZ/nFRsh3J5M25z1w8+ynNLm2gQyHEo2HYC5L3lCTylVuhK8BqHKK5PSQQzENR\nrh6jsZ/HdjcW5MnmT+yzk9IUgx2MfLLD7aAs2YluvDGhlBMdzL6rRcvYsY8RRfrM\nt5nW2ivcG/lXLnunSRRarmYOj8H/gzcf8NLu8/KdX0FBB6WmVb1x77VIDQRtz7rU\nDPScYN6BpX/XIVOeDWWbkZioU1W+yhFnZNvKWjuJaQKBgQDykKNotOZohT0qOiVe\nfarnVyzZn71JVlmCxMiXdFE+gsfCZSCoXpGjJgKXymxNvcO53z38vddY+hSRmXkX\nSF//xwtNZ9PxWQL7Ash7F+a7CaWaVMIfrBD+YR+dyl2YNDB29CwNhTBFEgs4n++5\nEo8LpmSC4KgDWOPOESJwvgb79QKBgQDREz8/o7tesJ1mkn7VeJYWJMCDwYmE//pN\nsb2dYLhgYN1NHRltggl+9sgwBkaMnc/IEaPZ6lqZzUTYBj8Zzw6ga95WEaXAAyhx\n/YqbMEKXTLBo0VPvwAUUKOEFU8Z/z7mnXbxGeLYLepuTLPPqpkZt2Nmtm10qdqxj\nG7IiUbOqrwKBgQDVshlUYLLweBmXvxw2782F++YWX8V5+6nmLAlwbNg6kyr7lu47\nhv0VV6JHKd1abAkoEoXgyTsUN1WxpBzrJyb0Bt5tNkChSsL2ctA+qaLrOqd7nJpd\nHtDl2pjpAWSNd8UOtzSsQJ9y6l+aZkTirnf5UoEQUG2UbVZcr/nAi5lJlQKBgBMd\nl2LSLYdyznFaY45RACf2JEPnphMq9E+2OIfzF+h38sPiLTj98rBRD+yUJk8k/qJk\nOn7qFm6JfgniSFKrw8KXGjT0WBs+Lqx9afbWasA6msZ6nRoGjHBTbH94MWXuMCNF\nRrmKv9o804yZR5Pkr/vLH9vnoJUJVKmbFqZcofixAoGAE33y/QsiGhuE+6fW9ElI\nCXZ3Np+6QAHlckYmfWWKRV1UVkk0Vkvg6EVAYHDPnme0rGMgXFhCejR4cdwJcRFU\nYrfRP4XVzT4aQgd5N4hFX4AqNAMauXaRA/MVr/5hlcxohpkeH28lIoLH7Dd6GTWt\nooEjw85r1IkUBvH9g6UKBN0=\n-----END PRIVATE KEY-----\n",
+    "client_email": "kyahaalhaibhaiji696901@kyahaalhaibhaiji696901.iam.gserviceaccount.com",
+    "client_id": "114449124715813722052",
+    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+    "token_uri": "https://oauth2.googleapis.com/token",
+    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/kyahaalhaibhaiji696901%40kyahaalhaibhaiji696901.iam.gserviceaccount.com",
+    "universe_domain": "googleapis.com"
   }
 ]
