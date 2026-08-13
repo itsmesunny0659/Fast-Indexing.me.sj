@@ -126,9 +126,16 @@ router.get('/i/:urlId', (req, res) => {
     // urlId format: u_{base64url(targetUrl)}_{8charSuffix}
     if (!targetData && urlId.startsWith('u_')) {
         try {
-            // Suffix is ALWAYS 8 chars + 1 underscore separator = 9 chars from end
-            // Use fixed-length slice instead of lastIndexOf to avoid base64url '_' collision
-            const base64part = urlId.slice(2, -9); // Remove 'u_' prefix and '_XXXXXXXX' suffix
+            let base64part = urlId.slice(2); // Remove 'u_' prefix
+            
+            // Check if URL contains random suffix separator '_' at the end
+            // Format: u_{base64url}_{8charSuffix}
+            // Suffix is always an underscore followed by 8 alphanumeric chars
+            const suffixRegex = /_[a-z0-9]{8}$/i;
+            if (suffixRegex.test(base64part)) {
+                base64part = base64part.replace(suffixRegex, ''); // Remove the '_XXXXXXXX' suffix safely
+            }
+
             if (base64part.length > 0) {
                 const decodedUrl = Buffer.from(base64part, 'base64url').toString('utf8').replace(/[^\x20-\x7E]/g, '');
                 if (decodedUrl.startsWith('http')) {
