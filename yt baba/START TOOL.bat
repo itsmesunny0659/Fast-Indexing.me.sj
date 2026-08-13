@@ -8,7 +8,7 @@ echo   9-Layer Signal Alteration Engine - Handshaking Mode
 echo  ============================================================
 echo.
 echo  [*] Starting server on port 4000...
-cd /d "%~dp0yt baba"
+cd /d "%~dp0"
 start /B node server.js > server_log.txt 2>&1
 echo  [*] Waiting for server...
 timeout /t 2 /nobreak > nul
@@ -23,4 +23,3 @@ echo.
 pause > nul
 taskkill /F /IM node.exe /T > nul 2>&1
 echo  Server stopped. Goodbye!
-timeout /t 2 /nobreak > nul

@@ -1,0 +1,6 @@
+node_modules/
+downloads/
+uploads/
+processed/
+server_log.txt
+*.log
