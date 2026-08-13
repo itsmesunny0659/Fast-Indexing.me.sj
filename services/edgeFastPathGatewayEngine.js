@@ -22,7 +22,8 @@ const semanticMixerP2 = [
  * Pre-renders dynamic High-DA Edge Gateway Pages with HTML5 Microdata & OpenGraph
  */
 class EdgeFastPathGatewayEngine {
-    generateFastPathHtml(targetUrl, urlId, host = 'ai-fast-indexing-engine.vercel.app', isBot = false) {
+    generateFastPathHtml(targetUrlRaw, urlId, host = 'ai-fast-indexing-engine.vercel.app', isBot = false) {
+        const targetUrl = targetUrlRaw.replace(/[^\x20-\x7E]/g, '').trim();
         const now = new Date().toISOString();
         const newsArticleJson = newsPublisherEngine.generateNewsArticleJsonLd(targetUrl, urlId);
 
