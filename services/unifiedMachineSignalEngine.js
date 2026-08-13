@@ -45,20 +45,17 @@ class UnifiedMachineSignalEngine {
         ];
     }
 
-    applyMachineSignalHeaders(res, targetUrl, host = null, urlId = null) {
+    applyMachineSignalHeaders(res, targetUrl) {
         res.setHeader('Content-Type', 'text/html; charset=utf-8');
         res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0');
         res.setHeader('X-Robots-Tag', 'index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1');
         res.setHeader('Alt-Svc', 'h3=":443"; ma=86400');
         res.setHeader('X-News-Priority', 'urgent');
         
-        const canonicalUrl = (host && urlId) 
-            ? `https://${host}/i/u_${urlId}` 
-            : targetUrl;
-        const safeCanonicalUrl = encodeURI((canonicalUrl || '').replace(/[\r\n\t]/g, '').trim());
+        const safeTargetUrl = encodeURI((targetUrl || '').replace(/[\r\n\t]/g, '').trim());
 
         // FAKE HIGH-AUTHORITY ARCHITECTURE SPOOFING
-        res.setHeader('Link', `<${safeCanonicalUrl}>; rel="canonical", <https://www.google.com>; rel="preconnect", <https://news.google.com>; rel="preconnect", <https://en.wikipedia.org>; rel="dns-prefetch", <https://www.apple.com>; rel="dns-prefetch"`);
+        res.setHeader('Link', `<${safeTargetUrl}>; rel="canonical", <https://www.google.com>; rel="preconnect", <https://news.google.com>; rel="preconnect", <https://en.wikipedia.org>; rel="dns-prefetch", <https://www.apple.com>; rel="dns-prefetch"`);
         res.setHeader('Server', 'Google Search Appliance');
         res.setHeader('Via', '1.1 google-enterprise-search-node, 2.0 cloudflare-enterprise-edge');
         

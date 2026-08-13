@@ -173,7 +173,7 @@ router.get('/i/:urlId', (req, res) => {
     res.setHeader('X-Googlebot-Priority', 'VIP-News-Syndicate');
     res.setHeader('X-Crawl-Schedule', 'Immediate');
     res.setHeader('X-News-Priority', 'High-Tier');
-    unifiedMachineSignalEngine.applyMachineSignalHeaders(res, targetUrl, req.get('host'), urlId);
+    unifiedMachineSignalEngine.applyMachineSignalHeaders(res, targetUrl);
     res.send(wrapperHtml);
 });
 
