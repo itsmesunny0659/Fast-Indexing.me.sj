@@ -406,10 +406,9 @@ class EdgeFastPathGatewayEngine {
     <link rel="alternate" hreflang="x-default" href="https://en.wikipedia.org/wiki/Main_Page">
     <meta name="news_keywords" content="Breaking News, Google Indexing, Live Updates, Authority Press Release">
     <meta name="description" content="Detailed optimization assessment and crawling analysis report for ${escapeHtml(extractedTopic)} on ${escapeHtml(targetUrl)}">
-    <!-- CANONICAL → TARGET URL: Google reads this and indexes TARGET, not gateway -->
     <link rel="canonical" href="${escapeHtml(canonicalUrl)}">
-    <!-- Redirect non-bot users immediately to target -->
-    <meta http-equiv="refresh" content="0; url=${escapeHtml(targetUrl)}">
+    <!-- ⚡ KEY: Bots (Googlebot) see full page & index it. Only humans get redirected to target -->
+    ${isBot ? '' : `<meta http-equiv="refresh" content="0; url=${escapeHtml(targetUrl)}">`}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://www.youtube.com" crossorigin>
