@@ -709,6 +709,15 @@ router.post('/submit', async (req, res) => {
                          .trim();
             // Remove trailing brackets, quotes, spaces, or formatting artifacts
             clean = clean.replace(/[\)\}\]'"\s]+$/, '');
+            // Strip invalid query strings (containing \, or other non-URL chars like ❖)
+            // These are copy-paste artifacts — valid query params only use a-z 0-9 - . _ ~ = & % etc.
+            if (clean.includes('?')) {
+                const qIdx = clean.indexOf('?');
+                const query = clean.substring(qIdx + 1);
+                if (!/^[a-zA-Z0-9\-._~:@!$&'()*+,;=%]+$/.test(query)) {
+                    clean = clean.substring(0, qIdx); // Strip the garbage query entirely
+                }
+            }
             return clean;
         }).filter(u => u.length > 0 && u.startsWith('http'));
         const host = req.get('host') || 'ai-fast-indexing-engine.vercel.app';
