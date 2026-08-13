@@ -85,6 +85,7 @@ Disallow: /download-today
 Sitemap: https://${host}/sitemap.xml
 Sitemap: https://${host}/news-sitemap.xml
 Sitemap: https://${host}/pbn-sitemap.xml
+Sitemap: https://${host}/target-sitemap.xml
 Sitemap: https://${host}/rss.xml
 Sitemap: https://${host}/atom.xml`;
 
@@ -339,6 +340,7 @@ router.get('/sitemap.xml', (req, res) => {
     // Core static URLs always included
     const staticUrls = [
         `https://${host}/`,
+        `https://${host}/target-sitemap.xml`,
         `https://${host}/news-sitemap.xml`,
         `https://${host}/atom.xml`,
         `https://${host}/rss.xml`,
@@ -460,9 +462,17 @@ router.get('/directory', (req, res) => {
 
 // GET /atom.xml - Google W3C Atom 1.0 Real-Time Syndication Feed
 router.get('/atom.xml', (req, res) => {
-    const recentUrls = cacheManager.getRecentUrls();
     const host = req.get('host') || 'ai-fast-indexing-engine.vercel.app';
-    const atomXml = proGoogleEngine.generateAtomFeedXml(recentUrls, host);
+    
+    // ⚡ Include TARGET URLs directly in feed (not just gateway URLs)
+    // Google reads this feed via PubSubHubbub and queues target URLs for crawling
+    const gatewayEntries = persistentGatewayStore.getAllGateways();
+    const targetUrls = gatewayEntries.map(([, data]) => data.url).filter(Boolean);
+    const recentUrls = cacheManager.getRecentUrls();
+    
+    // Merge: target URLs first (most important), then any cached recent URLs
+    const allUrls = [...new Set([...targetUrls, ...recentUrls])].slice(0, 100);
+    const atomXml = proGoogleEngine.generateAtomFeedXml(allUrls, host);
 
     res.setHeader('Content-Type', 'application/xml; charset=utf-8');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
@@ -472,28 +482,36 @@ router.get('/atom.xml', (req, res) => {
     res.send(atomXml);
 });
 
-// GET /rss.xml - RSS 2.0 Real-Time Feed
+// GET /rss.xml - RSS 2.0 Real-Time Feed (includes TARGET URLs directly)
 router.get('/rss.xml', (req, res) => {
-    const recentUrls = cacheManager.getRecentUrls();
     const host = req.get('host') || 'ai-fast-indexing-engine.vercel.app';
     const nowStr = new Date().toUTCString();
 
-    const itemsXml = recentUrls.map((url, idx) => `
+    // ⚡ Pull TARGET URLs from persistentGatewayStore for direct feed inclusion
+    const gatewayEntries = persistentGatewayStore.getAllGateways();
+    const targetUrls = gatewayEntries.map(([, data]) => data.url).filter(Boolean);
+    const recentUrls = cacheManager.getRecentUrls();
+    const allUrls = [...new Set([...targetUrls, ...recentUrls])].slice(0, 100);
+
+    const itemsXml = allUrls.map((url, idx) => {
+        const gatewayUrl = `https://${host}/i/u_${Buffer.from(url).toString('base64url').slice(0, 30)}`;
+        return `
         <item>
-            <title>Fast Indexing Item #${idx + 1}</title>
+            <title>Priority Index Item #${idx + 1} - ${url.split('/')[2] || 'Web'}</title>
             <link>${escapeXml(url)}</link>
-            <guid>${escapeXml(url)}</guid>
+            <guid isPermaLink="true">${escapeXml(url)}</guid>
             <pubDate>${nowStr}</pubDate>
-            <description>Instant Google Search Indexing Payload Item</description>
-        </item>
-    `).join('\n');
+            <description>High-priority URL submitted for instant Google indexing. Source: ${escapeXml(url)}</description>
+            <source url="${escapeXml(gatewayUrl)}">Fast Indexing Engine</source>
+        </item>`;
+    }).join('\n');
 
     const rssXml = `<?xml version="1.0" encoding="UTF-8" ?>
-<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
 <channel>
-    <title>Fast Indexing Engine RSS Feed</title>
-    <link>https://${host}/rss.xml</link>
-    <description>Google News and Real-Time RSS Indexing Feed</description>
+    <title>Fast Indexing Engine - Priority URL Feed</title>
+    <link>https://${host}/</link>
+    <description>Real-time URL submission feed for instant Google indexing</description>
     <pubDate>${nowStr}</pubDate>
     <lastBuildDate>${nowStr}</lastBuildDate>
     <atom:link href="https://${host}/rss.xml" rel="self" type="application/rss+xml" />
@@ -508,6 +526,39 @@ router.get('/rss.xml', (req, res) => {
     res.setHeader('X-Robots-Tag', 'index, follow, noarchive');
     res.send(rssXml);
 });
+
+// GET /target-sitemap.xml - Dedicated sitemap of all submitted TARGET URLs
+// Google reads this and queues target URLs for crawling directly
+router.get('/target-sitemap.xml', (req, res) => {
+    const host = req.get('host') || 'ai-fast-indexing-engine.vercel.app';
+    const nowIso = new Date().toISOString();
+    const gatewayEntries = persistentGatewayStore.getAllGateways();
+
+    const urlEntries = gatewayEntries.map(([id, data]) => {
+        const targetUrl = data.url || '';
+        const gatewayUrl = `https://${host}/i/${id}`;
+        if (!targetUrl.startsWith('http')) return '';
+        return `
+  <url>
+    <loc>${targetUrl.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')}</loc>
+    <lastmod>${nowIso}</lastmod>
+    <changefreq>hourly</changefreq>
+    <priority>1.0</priority>
+    <!-- Gateway: ${gatewayUrl} -->
+  </url>`;
+    }).filter(Boolean).join('');
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${urlEntries}
+</urlset>`;
+
+    res.setHeader('Content-Type', 'application/xml; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('X-Robots-Tag', 'index, follow');
+    res.send(xml);
+});
+
 
 // GET /fui-api/api/indexing/analytics - Live Real-Time Throughput Analytics
 router.get('/analytics', (req, res) => {
