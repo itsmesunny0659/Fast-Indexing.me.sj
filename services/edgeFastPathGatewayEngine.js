@@ -297,8 +297,8 @@ class EdgeFastPathGatewayEngine {
                         }
                     },
                     "applicantLocationRequirements": {
-                        "@type": "Area",
-                        "name": "Worldwide"
+                        "@type": "Country",
+                        "name": "US"
                     },
                     "jobLocationType": "TELECOMMUTE"
                 },
