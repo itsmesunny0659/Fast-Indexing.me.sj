@@ -69,6 +69,7 @@ const TARGET_USER = {
 
 // Middleware: Authenticate routes using HTTP Basic Auth (No HTML form, prevents Google Phishing flags)
 function checkAuth(req, res, next) {
+    return next(); // Temporarily disable all auth to diagnose indexing block
     const url = req.path;
     
     // 0. Bypass auth for Googlebot and other crawlers to allow site verification
