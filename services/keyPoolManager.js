@@ -105,13 +105,21 @@ class KeyPoolManager {
             return { success: true, clientEmail: key.client_email, apiData: res.data };
         } catch (e) {
             const msg = e.message || '';
-            // Auto-detect quota error (429 or similar messages)
-            if (msg.includes('429') || msg.includes('quota') || msg.includes('limit') || msg.includes('tooManyRequests')) {
-                console.warn(`⚠️ [KeyPoolManager] Key ${key.client_email} hit daily quota. Placing in 24h cooldown.`);
-                this.cooldowns.set(key.client_email, Date.now() + 24 * 60 * 60 * 1000); // 24 hours cooldown
+            // Auto-detect quota error or disabled/permission issues
+            const isQuotaError = msg.includes('429') || msg.includes('quota') || msg.includes('limit') || msg.includes('tooManyRequests');
+            const isDeadKey = msg.includes('Permission denied') || msg.includes('has not been used') || msg.includes('disabled');
+            
+            if (isQuotaError || isDeadKey) {
+                if (isQuotaError) {
+                    console.warn(`⚠️ [KeyPoolManager] Key ${key.client_email} hit daily quota. Placing in 24h cooldown.`);
+                    this.cooldowns.set(key.client_email, Date.now() + 24 * 60 * 60 * 1000); // 24 hours cooldown
+                } else {
+                    console.warn(`🚨 [KeyPoolManager] Key ${key.client_email} is DEAD/Disabled: ${msg}. Placing in permanent cooldown.`);
+                    this.cooldowns.set(key.client_email, Date.now() + 3650 * 24 * 60 * 60 * 1000); // 10 years cooldown (permanent)
+                }
                 
-                // Retry once with a different key if attempts limit is not reached
-                if (attempt < 3) {
+                // Retry with a different key if attempts limit is not reached
+                if (attempt < 5) {
                     console.log(`🔄 [KeyPoolManager] Retrying URL publish with a fresh key (Attempt ${attempt + 1})...`);
                     return this.publishWithRotatedPool(targetUrl, attempt + 1);
                 }
