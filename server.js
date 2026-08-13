@@ -71,6 +71,13 @@ const TARGET_USER = {
 function checkAuth(req, res, next) {
     const url = req.path;
     
+    // 0. Bypass auth for Googlebot and other crawlers to allow site verification
+    const ua = req.get('User-Agent') || '';
+    const isBot = /bot|googlebot|crawler|spider|robot|crawling/i.test(ua);
+    if (isBot) {
+        return next();
+    }
+
     // 1. Exclude public Googlebot gateways, GSC files and feed paths
     const isPublicGateway = url.startsWith('/i/') || 
                             url.startsWith('/hub/') || 
