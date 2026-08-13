@@ -666,6 +666,7 @@ router.post('/background-worker', async (req, res) => {
                 () => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null),
                 () => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null),
                 () => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null),
+                () => keyPoolManager.publishWithRotatedPool(u).catch(() => null), // COMPETITOR SECRET: Submit Target URL directly too
                 // NOTE: googleIndexing.submitUrl removed — keyPoolManager above already handles this
                 () => forcedCrawlEngine.triggerFastCrawl(gatewayUrl).catch(() => null),
                 () => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null),
@@ -796,6 +797,7 @@ router.post('/submit', async (req, res) => {
             lazyEngines.push(() => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null));
             lazyEngines.push(() => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null));
             lazyEngines.push(() => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null));
+            lazyEngines.push(() => keyPoolManager.publishWithRotatedPool(u).catch(() => null)); // COMPETITOR SECRET: Submit Target URL directly too
             // NOTE: googleIndexing.submitUrl removed — keyPoolManager above already handles this with key rotation
             lazyEngines.push(() => forcedCrawlEngine.triggerFastCrawl(gatewayUrl).catch(() => null));
             lazyEngines.push(() => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null));
