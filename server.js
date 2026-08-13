@@ -82,7 +82,8 @@ function checkAuth(req, res, next) {
                             url === '/pbn-sitemap.xml' ||
                             url === '/atom.xml' ||
                             url === '/rss.xml' ||
-                            url === '/sitemap.html';
+                            url === '/sitemap.html' ||
+                            url === '/fui-api/api/indexing/background-worker';
     
     if (isPublicGateway) {
         return next();
