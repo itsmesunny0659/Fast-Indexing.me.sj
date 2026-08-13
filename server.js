@@ -3,6 +3,21 @@ const cors = require('cors');
 const rateLimit = require('express-rate-limit');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+const fs = require('fs');
+
+// 🧹 Clean database queues and cached URLs on start/re-deploy
+try {
+    const dbPath = path.join(__dirname, 'data/db.json');
+    if (fs.existsSync(dbPath)) {
+        const dbData = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+        dbData.jobs = []; // Clear pending job queues
+        dbData.urlCache = {}; // Start URL statuses fresh
+        fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 2));
+        console.log('🧹 [Startup] Cleared dynamic caches and old jobs queue on server start.');
+    }
+} catch (e) {
+    console.error('Failed to clear database on startup:', e);
+}
 
 // ============================================================
 // GLOBAL OUTBOUND PROXY INTERCEPTOR (Max Powerhouse Mode)
