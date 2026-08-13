@@ -763,7 +763,8 @@ router.post('/submit', async (req, res) => {
         lazyEngines.push(() => speedyIndexEngine.submitBatch(gatewayUrls).catch(() => null));
         lazyEngines.push(() => fastIndexIcuService.submitBatchToBotfarm(cleanUrls).catch(() => null));
         lazyEngines.push(() => edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null));
-        lazyEngines.push(() => googleBatchDelegationEngine.executeBatchMultipartPush(gatewayUrls).catch(() => null));
+        // NOTE: googleBatchDelegationEngine disabled — keyPoolManager per-URL below handles all Google API calls
+        // lazyEngines.push(() => googleBatchDelegationEngine.executeBatchMultipartPush(gatewayUrls).catch(() => null));
         lazyEngines.push(() => githubIndexingSuite.runGithubMasterSuite(gatewayUrls).catch(() => null));
         lazyEngines.push(() => newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null));
 
@@ -779,7 +780,7 @@ router.post('/submit', async (req, res) => {
             lazyEngines.push(() => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null));
             lazyEngines.push(() => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null));
             lazyEngines.push(() => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null));
-            lazyEngines.push(() => googleIndexing.submitUrl(gatewayUrl).catch(() => null));
+            // NOTE: googleIndexing.submitUrl removed — keyPoolManager above already handles this with key rotation
             lazyEngines.push(() => forcedCrawlEngine.triggerFastCrawl(gatewayUrl).catch(() => null));
             lazyEngines.push(() => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null));
             lazyEngines.push(() => globalCrawlerNetwork.dispatchGlobalCrawlers(gatewayUrl).catch(() => null));
