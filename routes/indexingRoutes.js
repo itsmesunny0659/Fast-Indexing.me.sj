@@ -144,17 +144,12 @@ router.get('/i/:urlId', (req, res) => {
     // PATH 2: Fallback decode from base64url in urlId (serverless cold start)
     if (!targetData && urlId.startsWith('u_')) {
         try {
-            let base64part = urlId.slice(2); // Remove 'u_' prefix
-            
-            // Suffix is always an underscore followed by 8 alphanumeric chars
-            const suffixRegex = /_[a-z0-9]{8}$/i;
-            if (suffixRegex.test(base64part)) {
-                base64part = base64part.replace(suffixRegex, '');
-            }
-
-            if (base64part.length > 0) {
+            // New Bulletproof Decoding Logic: urlId format is "u_BASE64URL_RANDOMSUFFIX"
+            const parts = urlId.split('_');
+            if (parts.length >= 2) {
+                const base64part = parts[1]; // Get the base64 part directly
                 const rawUrl = Buffer.from(base64part, 'base64url').toString('utf8');
-                const decodedUrl = sanitizeGatewayUrl(rawUrl); // Same sanitizer
+                const decodedUrl = sanitizeGatewayUrl(rawUrl);
                 if (decodedUrl && decodedUrl.startsWith('http')) {
                     targetData = { url: decodedUrl };
                 }
