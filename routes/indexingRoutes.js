@@ -147,7 +147,7 @@ router.get('/i/:urlId', (req, res) => {
 
     // Detect Googlebot and update status in cacheManager for live dashboard proof
     const ua = req.get('User-Agent') || '';
-    const isBot = /bot|googlebot|crawler|spider|robot|crawling/i.test(ua);
+    const isBot = /bot|googlebot|crawler|spider|robot|crawling|google-site-verification|google|inspection|lighthouse/i.test(ua);
     if (isBot) {
         try {
             const currentStatus = cacheManager.getCachedUrlStatus(targetUrl) || {};
