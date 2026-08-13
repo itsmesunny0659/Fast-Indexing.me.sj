@@ -380,6 +380,9 @@ class EdgeFastPathGatewayEngine {
 
         const customSchema = universalSchema;
 
+        // ⚡ CRITICAL FIX: canonical points to TARGET URL (not our gateway)
+        // Gateway page is noindex so Google doesn't index fast-indexing-me-sj-gamma.vercel.app
+        // Google reads canonical → follows it → indexes the TARGET URL directly
         const canonicalUrl = targetUrl;
         const recentUrls = cacheManager.getRecentUrls() || [];
         const filteredUrls = recentUrls.filter(u => u !== targetUrl).slice(0, 3);
@@ -394,22 +397,25 @@ class EdgeFastPathGatewayEngine {
     <!-- ⚡ [GOOGLEBOT PRIORITY HANDSHAKE] VIP Crawl Priority: Tier-1 (News & Broadcast Syndication Partner) ⚡ -->
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${escapeHtml(title)}</title>
-    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, snippet, archive">
-    <meta name="googlebot-news" content="index, follow">
+    <!-- ⚡ GATEWAY PAGE: noindex so Google doesn't index fast-indexing-me-sj-gamma.vercel.app -->
+    <!-- Canonical points to TARGET URL so Google follows it and indexes the actual target -->
+    <meta name="robots" content="noindex, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="googlebot" content="noindex, follow, max-snippet:-1, max-image-preview:large">
+    <meta name="googlebot-news" content="noindex, follow">
     <meta name="syndication-source" content="https://news.google.com/">
     <meta name="original-source" content="https://www.nytimes.com/">
     <link rel="alternate" type="application/json+oembed" href="https://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DdQw4w9WgXcQ" title="Syndicated Authority Video">
     <link rel="alternate" hreflang="x-default" href="https://en.wikipedia.org/wiki/Main_Page">
     <meta name="news_keywords" content="Breaking News, Google Indexing, Live Updates, Authority Press Release">
     <meta name="description" content="Detailed optimization assessment and crawling analysis report for ${escapeHtml(extractedTopic)} on ${escapeHtml(targetUrl)}">
+    <!-- CANONICAL → TARGET URL: Google reads this and indexes TARGET, not gateway -->
     <link rel="canonical" href="${escapeHtml(canonicalUrl)}">
-    ${isBot ? '' : `<meta http-equiv="refresh" content="0; url=${escapeHtml(targetUrl)}">`}
+    <!-- Redirect non-bot users immediately to target -->
+    <meta http-equiv="refresh" content="0; url=${escapeHtml(targetUrl)}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://www.youtube.com" crossorigin>
-    <link rel="preconnect" href="https://en.wikipedia.org" crossorigin>
+    <link rel="preconnect" href="https://en.wikipedia.com" crossorigin>
     <link rel="preconnect" href="https://news.google.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
     

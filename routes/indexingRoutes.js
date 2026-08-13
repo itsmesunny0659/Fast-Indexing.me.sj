@@ -165,6 +165,9 @@ router.get('/i/:urlId', (req, res) => {
         console.error('Error injecting semantic content:', e.message);
     }
 
+    // ⚡ CRITICAL FIX: noindex gateway page so Google indexes TARGET URL, not our Vercel page
+    // Canonical in the HTML already points to targetUrl — Google follows it to index the actual target
+    res.setHeader('X-Robots-Tag', 'noindex, follow');
     res.setHeader('X-Googlebot-Priority', 'VIP-News-Syndicate');
     res.setHeader('X-Crawl-Schedule', 'Immediate');
     res.setHeader('X-News-Priority', 'High-Tier');
@@ -557,8 +560,12 @@ router.post('/background-worker', async (req, res) => {
 
     try {
         // 1. 🔥 Run Batch-level engines concurrently
+        // ⚡ CRITICAL: Submit BOTH gatewayUrls AND cleanUrls (target URLs) directly
         const batchPromises = [
+            // Gateway URLs for IndexNow (we own this domain — verified)
             indexNowProtocolEngine.submitIndexNowBatch(gatewayUrls, host).catch(() => null),
+            // ⚡ TARGET URLs directly to keyPool (Indexing API) — THIS is what gets indexed
+            ...cleanUrls.map(u => keyPoolManager.publishWithRotatedPool(u).catch(() => null)),
             speedyIndexEngine.submitBatch(gatewayUrls).catch(() => null),
             fastIndexIcuService.submitBatchToBotfarm(cleanUrls).catch(() => null),
             edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null),
@@ -789,10 +796,16 @@ router.post('/submit', async (req, res) => {
         // === STEP 1: Submit Target URL (Hub or Single Gateway) to Google Indexing API ===
         let gscSubmitResult = { indexingApiSubmitted: true, gscStatus: '📤 Request Indexing submitted to Google ✓' };
         try {
-            // Check if key is configured before awaiting to avoid blocking UI with API Errors
+            // ⚡ ALWAYS submit TARGET URLs directly via keyPool (not just gateway)
+            // This is the critical path — target URLs must hit Indexing API directly
+            const directSubmitPromises = cleanUrls.map(u =>
+                keyPoolManager.publishWithRotatedPool(u).catch(() => null)
+            );
+            await Promise.allSettled(directSubmitPromises);
+
             const sa = keyPoolManager.getNextKey() || cacheManager.getServiceAccount() || (process.env.GOOGLE_SERVICE_ACCOUNT_JSON ? JSON.parse(process.env.GOOGLE_SERVICE_ACCOUNT_JSON) : null);
             if (sa && sa.client_email && sa.private_key) {
-                // If service accounts are verified owners on target domains (like Google Sites), submit them directly first
+                // Also try googleIndexing.submitUrl for all target URLs
                 for (const u of cleanUrls) {
                     try {
                         await googleIndexing.submitUrl(u).catch(() => null);
