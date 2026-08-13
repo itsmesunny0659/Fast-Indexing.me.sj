@@ -137,7 +137,17 @@ router.get('/i/:urlId', (req, res) => {
             }
 
             if (base64part.length > 0) {
-                const decodedUrl = Buffer.from(base64part, 'base64url').toString('utf8').replace(/[^\x20-\x7E]/g, '');
+                // Step 1: Decode and strip non-printable / non-ASCII characters
+                let decodedUrl = Buffer.from(base64part, 'base64url').toString('utf8').replace(/[^\x20-\x7E]/g, '');
+                // Step 2: Strip invalid query strings (copy-paste garbage like ?s\❖z❖ → ?s\z after step 1 still has backslash)
+                // Valid URL query params only: a-z A-Z 0-9 - . _ ~ : @ ! $ & ' ( ) * + , ; = %
+                if (decodedUrl.includes('?')) {
+                    const qIdx = decodedUrl.indexOf('?');
+                    const query = decodedUrl.substring(qIdx + 1);
+                    if (!query || !/^[a-zA-Z0-9\-._~:@!$&'()*+,;=%]+$/.test(query)) {
+                        decodedUrl = decodedUrl.substring(0, qIdx); // strip garbage query
+                    }
+                }
                 if (decodedUrl.startsWith('http')) {
                     targetData = { url: decodedUrl };
                 }
