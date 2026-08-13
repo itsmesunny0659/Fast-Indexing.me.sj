@@ -120,35 +120,42 @@ router.get('/i/:urlId', (req, res) => {
     const { urlId } = req.params;
     let targetData = persistentGatewayStore.getGateway(urlId);
 
-    // Fallback: If memory is wiped on serverless cold start, decode URL from base64url in urlId
-    // FIX: base64url encoding can contain '_' characters, so lastIndexOf('_') was finding
-    // the wrong split point. Instead, suffix is always exactly 8 chars, so slice from end.
-    // urlId format: u_{base64url(targetUrl)}_{8charSuffix}
+    // === HELPER: Clean a URL — strip non-ASCII + invalid query strings ===
+    const sanitizeGatewayUrl = (url) => {
+        if (!url || typeof url !== 'string') return url;
+        // Step 1: Strip non-printable / non-ASCII characters
+        let clean = url.replace(/[^\x20-\x7E]/g, '').trim();
+        // Step 2: Strip invalid query strings (backslash, ❖, etc. are not valid URL query chars)
+        if (clean.includes('?')) {
+            const qIdx = clean.indexOf('?');
+            const query = clean.substring(qIdx + 1);
+            if (!query || !/^[a-zA-Z0-9\-._~:@!$&'()*+,;=%]+$/.test(query)) {
+                clean = clean.substring(0, qIdx);
+            }
+        }
+        return clean;
+    };
+
+    // PATH 1: URL from store — ALWAYS sanitize in case it was stored with garbage
+    if (targetData && targetData.url) {
+        targetData = { ...targetData, url: sanitizeGatewayUrl(targetData.url) };
+    }
+
+    // PATH 2: Fallback decode from base64url in urlId (serverless cold start)
     if (!targetData && urlId.startsWith('u_')) {
         try {
             let base64part = urlId.slice(2); // Remove 'u_' prefix
             
-            // Check if URL contains random suffix separator '_' at the end
-            // Format: u_{base64url}_{8charSuffix}
             // Suffix is always an underscore followed by 8 alphanumeric chars
             const suffixRegex = /_[a-z0-9]{8}$/i;
             if (suffixRegex.test(base64part)) {
-                base64part = base64part.replace(suffixRegex, ''); // Remove the '_XXXXXXXX' suffix safely
+                base64part = base64part.replace(suffixRegex, '');
             }
 
             if (base64part.length > 0) {
-                // Step 1: Decode and strip non-printable / non-ASCII characters
-                let decodedUrl = Buffer.from(base64part, 'base64url').toString('utf8').replace(/[^\x20-\x7E]/g, '');
-                // Step 2: Strip invalid query strings (copy-paste garbage like ?s\❖z❖ → ?s\z after step 1 still has backslash)
-                // Valid URL query params only: a-z A-Z 0-9 - . _ ~ : @ ! $ & ' ( ) * + , ; = %
-                if (decodedUrl.includes('?')) {
-                    const qIdx = decodedUrl.indexOf('?');
-                    const query = decodedUrl.substring(qIdx + 1);
-                    if (!query || !/^[a-zA-Z0-9\-._~:@!$&'()*+,;=%]+$/.test(query)) {
-                        decodedUrl = decodedUrl.substring(0, qIdx); // strip garbage query
-                    }
-                }
-                if (decodedUrl.startsWith('http')) {
+                const rawUrl = Buffer.from(base64part, 'base64url').toString('utf8');
+                const decodedUrl = sanitizeGatewayUrl(rawUrl); // Same sanitizer
+                if (decodedUrl && decodedUrl.startsWith('http')) {
                     targetData = { url: decodedUrl };
                 }
             }
