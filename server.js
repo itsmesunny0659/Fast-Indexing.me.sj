@@ -81,7 +81,7 @@ function checkAuth(req, res, next) {
     // 1. Exclude public Googlebot gateways, GSC files and feed paths
     const isPublicGateway = url.startsWith('/i/') || 
                             url.startsWith('/hub/') || 
-                            url.includes('google51515c17184409ba.html') || 
+                            url.startsWith('/google') || 
                             url.endsWith('.txt') ||
                             url.endsWith('.xml') ||
                             url === '/sitemap.xml' ||
