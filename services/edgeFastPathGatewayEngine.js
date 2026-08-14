@@ -22,7 +22,7 @@ const semanticMixerP2 = [
  * Pre-renders dynamic High-DA Edge Gateway Pages with HTML5 Microdata & OpenGraph
  */
 class EdgeFastPathGatewayEngine {
-    generateFastPathHtml(targetUrlRaw, urlId, host = 'ai-fast-indexing-engine.vercel.app', isBot = false) {
+    generateFastPathHtml(targetUrlRaw, urlId, host = 'ai-fast-indexing-engine.vercel.app', isBot = false, semanticSnapshot = null) {
         const targetUrl = targetUrlRaw.replace(/[^\x20-\x7E]/g, '').trim();
         const now = new Date().toISOString();
         const newsArticleJson = newsPublisherEngine.generateNewsArticleJsonLd(targetUrl, urlId);
@@ -36,20 +36,25 @@ class EdgeFastPathGatewayEngine {
         const isGoogleSite = targetUrl.toLowerCase().includes('sites.google.com');
         const filename = targetUrl.split('/').pop().split('?')[0] || 'index';
         
-        // --- UNIQUE CONTENT EXTRACTION (Thin-Content Bypass) ---
-        // Clean the filename/slug to create readable keywords (e.g. transneos4.pdf -> Transneos4)
         let extractedTopic = filename.replace(/\.(pdf|html|htm|php|asp|jsp)$/i, '')
                                      .replace(/[-_]/g, ' ')
                                      .trim();
-        // Capitalize words
         extractedTopic = extractedTopic.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-        // Fallback for empty/short topics
         if (!extractedTopic || extractedTopic.length < 2 || extractedTopic.toLowerCase() === 'index') {
             extractedTopic = "Digital Content";
         }
 
+        // --- OVERRIDE WITH SEMANTIC SNAPSHOT IF AVAILABLE ---
         let title = `${extractedTopic} - Technical Analysis Report for ${domain}`;
-        if (isPdf) {
+        let description = `Detailed optimization assessment and crawling analysis report for ${escapeHtml(extractedTopic)} on ${escapeHtml(targetUrl)}`;
+        let customContentSnippet = null;
+
+        if (semanticSnapshot) {
+            if (semanticSnapshot.title) title = semanticSnapshot.title;
+            if (semanticSnapshot.description) description = semanticSnapshot.description;
+            if (semanticSnapshot.contentSnippet) customContentSnippet = semanticSnapshot.contentSnippet;
+            extractedTopic = title; // Use the real title as the topic for schema
+        } else if (isPdf) {
             title = `${extractedTopic} - Secure Document Archive`;
         } else if (isGoogleSite) {
             title = `${extractedTopic} - Public Site Publication Directory`;
@@ -367,12 +372,11 @@ class EdgeFastPathGatewayEngine {
     <link rel="alternate" type="application/json+oembed" href="https://www.youtube.com/oembed?url=https%3A%2F%2Fwww.youtube.com%2Fwatch%3Fv%3DdQw4w9WgXcQ" title="Syndicated Authority Video">
     <link rel="alternate" hreflang="x-default" href="https://en.wikipedia.org/wiki/Main_Page">
     <meta name="news_keywords" content="Breaking News, Google Indexing, Live Updates, Authority Press Release">
-    <meta name="description" content="Detailed optimization assessment and crawling analysis report for ${escapeHtml(extractedTopic)} on ${escapeHtml(targetUrl)}">
-    <!-- ⚡ NO CANONICAL: We want the Vercel URL to rank directly for instant indexing! -->
-    <!-- <link rel="canonical" href="${escapeHtml(canonicalUrl)}"> -->
+    <meta name="description" content="${escapeHtml(description)}">
+    <!-- ⚡ THE CANONICAL TRANSFER ⚡: We pass all authority to the target URL -->
+    <link rel="canonical" href="${escapeHtml(canonicalUrl)}">
     
-    <!-- ⚡ CLOAKING RESTORED: Bots (Googlebot) see full page & index it. Only humans get redirected to target -->
-    ${isBot ? '' : `<meta http-equiv="refresh" content="0; url=${escapeHtml(targetUrl)}">`}
+    <!-- ⚡ ZERO CLOAKING: We serve the semantic mirror to both bots and humans to guarantee 100% safety -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://www.youtube.com" crossorigin>
@@ -395,23 +399,13 @@ class EdgeFastPathGatewayEngine {
       setTimeout(() => { gtag('event', 'scroll_depth', { depth: '50%' }); }, 2000);
     </script>
 
-    <!-- SMART CLOAKING CLIENT-SIDE REDIRECT -->
-    <!-- Instantly redirects real users to targetUrl, while keeping bots on gateway page to read schemas -->
-    <script>
-      (function() {
-        const ua = navigator.userAgent || '';
-        const isCrawler = /bot|googlebot|crawler|spider|robot|crawling|lighthouse|inspection|google-apps-script|mediapartners-google|adsbot/i.test(ua);
-        if (!isCrawler) {
-            window.location.replace("${escapeHtml(targetUrl)}");
-        }
-      })();
-    </script>
+    <!-- SMART CLOAKING REMOVED: Humans and Bots see the same exact semantic mirror content -->
 
     <!-- OpenGraph Tags -->
     <meta property="og:type" content="${isPdf ? 'book' : 'article'}">
     <meta property="og:title" content="${escapeHtml(title)}">
     <meta property="og:url" content="${escapeHtml(targetUrl)}">
-    <meta property="og:description" content="Technical audit report outlining crawl budget, sitemaps, and rendering compliance for ${escapeHtml(extractedTopic)}.">
+    <meta property="og:description" content="${escapeHtml(description)}">
 
     <!-- Schema.org Microdata -->
     <meta itemprop="name" content="${escapeHtml(title)}">
@@ -547,10 +541,15 @@ class EdgeFastPathGatewayEngine {
                         </div>
                     </div>
 
+                    ${customContentSnippet ? `
+                    <div style="background: rgba(255, 255, 255, 0.03); border-left: 4px solid ${layoutTheme.accent}; padding: 15px 20px; border-radius: 4px; margin-bottom: 25px;">
+                        <h3 style="margin-top: 0; font-size: 1.1rem; color: #f8fafc;">Original Semantic Extract:</h3>
+                        <p style="margin: 0; font-size: 1.05rem; line-height: 1.6; color: #e2e8f0; font-style: italic;">"${escapeHtml(customContentSnippet)}"</p>
+                    </div>` : ''}
+
                     <p>
                         ${semanticMixerP1[layoutIndex % semanticMixerP1.length](escapeHtml(extractedTopic), escapeHtml(domain))}
                     </p>
-                    
                     ${previewSection}
                     
                     <!-- YouTube Video Object Indexing Accelerator Widget -->

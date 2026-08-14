@@ -195,10 +195,7 @@ router.get('/i/:urlId', (req, res) => {
         
     }
 
-    // === ADVANCED DIRECT INDEXING TECHNIQUE (Competitor Bypass) ===
-    // Instead of serving a cloaked HTML page (which Google caught), 
-    // we use a clean HTTP 301 Redirect. 
-    // This transfers 100% of the VIP Indexing API priority directly to the target URL.
+    // === PRO-LEVEL SEMANTIC MIRROR (Reverse Proxy Canonical Hack) ===
     res.setHeader('X-Robots-Tag', 'index, follow');
     res.setHeader('X-Googlebot-Priority', 'VIP-News-Syndicate');
     res.setHeader('X-Crawl-Schedule', 'Immediate');
@@ -207,8 +204,18 @@ router.get('/i/:urlId', (req, res) => {
     
     unifiedMachineSignalEngine.applyMachineSignalHeaders(res, targetUrl);
     
-    // HTTP 301 Moved Permanently forces Googlebot to instantly index the destination.
-    res.redirect(301, targetUrl);
+    const semanticSnapshot = gatewayData.semanticSnapshot || null;
+    let wrapperHtml = edgeFastPathGatewayEngine.generateFastPathHtml(targetUrl, urlId, req.get('host'), isBot, semanticSnapshot);
+    
+    // Inject semantic content dynamically
+    try {
+        const semanticHtml = aiSemanticContentEngine.generateSemanticContent(targetUrl);
+        wrapperHtml = wrapperHtml.replace('</body>', `${semanticHtml}</body>`);
+    } catch (e) {
+        console.error('Error injecting semantic content:', e.message);
+    }
+    
+    res.send(wrapperHtml);
 });
 
 // GET /hub/:hubId - Single Hub Page: contains ALL submitted URLs as do-follow links
@@ -794,16 +801,32 @@ router.post('/submit', async (req, res) => {
         cleanUrls.forEach(u => residentCrawlerDaemon.broadcastUrlToResidentCrawlers(u));
         bulkJsonSchemaEngine.processBulkJsonBatch(cleanUrls);
 
-        // Pre-generate Gateway URLs for all inputs (needed for IndexNow ownership verification)
+        // Pre-generate Gateway URLs for all inputs and Fetch Semantic Snapshots
         const gatewayMap = new Map();
         const gatewayUrls = [];
-        for (const u of cleanUrls) {
+        const stealthScraperEngine = require('../services/stealthScraperEngine');
+        
+        // Concurrently fetch all semantic snapshots for speed
+        const snapshotPromises = cleanUrls.map(u => stealthScraperEngine.fetchSemanticSnapshot(u));
+        const snapshots = await Promise.allSettled(snapshotPromises);
+
+        for (let i = 0; i < cleanUrls.length; i++) {
+            const u = cleanUrls[i];
+            const snapshotResult = snapshots[i];
+            const semanticSnapshot = snapshotResult.status === 'fulfilled' && snapshotResult.value ? snapshotResult.value : null;
+
             const randomSuffix = Math.random().toString(36).substring(2, 10);
             const urlId = 'u_' + Buffer.from(u).toString('base64url') + '_' + randomSuffix;
             gatewayMap.set(u, urlId);
             const gUrl = `https://${host}/i/${urlId}`;
             gatewayUrls.push(gUrl);
-            persistentGatewayStore.setGateway(urlId, { url: u, timestamp: new Date().toISOString() });
+            
+            // Save semantic snapshot along with the URL
+            persistentGatewayStore.setGateway(urlId, { 
+                url: u, 
+                timestamp: new Date().toISOString(),
+                semanticSnapshot 
+            });
         }
 
         // === ALL HEAVY NETWORK ENGINES — stored as lazy factories ===
