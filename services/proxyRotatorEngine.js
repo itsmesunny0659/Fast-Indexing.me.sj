@@ -131,7 +131,7 @@ class ProxyRotatorEngine {
         }
     }
 
-    async executeSafeRequest(url, options = {}, timeoutMs = 3000, maxRetries = 3) {
+    async executeSafeRequest(url, options = {}, timeoutMs = 3000, maxRetries = 1) {
         if (!this.GAS_PROXY_URL && !this.CF_PROXY_URL) {
             console.log(`[EliteProxy] ⚠️ Proxies not configured. Executing direct native fetch for: ${url}`);
             try {

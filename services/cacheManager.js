@@ -62,7 +62,9 @@ class CacheManager {
                 recentUrls: this.data.recentUrls,
                 urlCache: this.data.urlCache,
                 serviceAccount: this.data.serviceAccount,
-                serviceAccountPool: this.data.serviceAccountPool
+                serviceAccountPool: this.data.serviceAccountPool,
+                globalIdCounter: this.data.globalIdCounter,
+                hubCounter: this.data.hubCounter
             };
             fs.writeFileSync(DATA_FILE, JSON.stringify(merged, null, 2));
         } catch (e) {
@@ -120,6 +122,12 @@ class CacheManager {
         if (this.data.jobs.length > 50) {
             this.data.jobs = this.data.jobs.slice(0, 50);
         }
+        this.saveData();
+    }
+
+    updateCounters(counters) {
+        if (counters.globalIdCounter) this.data.globalIdCounter = counters.globalIdCounter;
+        if (counters.hubCounter) this.data.hubCounter = counters.hubCounter;
         this.saveData();
     }
 

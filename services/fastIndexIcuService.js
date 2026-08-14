@@ -5,7 +5,7 @@
  */
 class FastIndexIcuService {
     constructor() {
-        this.apiKey = '2P28PAFPX7GGLYK8V846FVKA@';
+        this.apiKey = process.env.FAST_INDEX_API_KEY || '2P28PAFPX7GGLYK8V846FVKA@';
         this.apiUrl = 'https://fast-index.icu/botfarms/api.php';
     }
 
@@ -15,6 +15,11 @@ class FastIndexIcuService {
         try {
             const res = await fetch(url, { ...options, signal: controller.signal });
             clearTimeout(id);
+            // Parse json to validate response
+            if (res.ok) {
+                const data = await res.json().catch(() => null);
+                if (data && data.status === 'error') return { ok: false };
+            }
             return res;
         } catch (e) {
             clearTimeout(id);

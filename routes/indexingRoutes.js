@@ -54,8 +54,18 @@ const gscInspectionEngine = require('../services/gscInspectionEngine');
 const persistentGatewayStore = require('../services/persistentGatewayStore');
 const dailyLogsManager = require('../services/dailyLogsManager');
 
+// Load persistent counter from db.json to avoid ID resets on cold starts
 let globalIdCounter = 22550;
 let hubCounter = 10000;
+try {
+    const _dbPath = require('path').join(__dirname, '../data/db.json');
+    const _fs = require('fs');
+    if (_fs.existsSync(_dbPath)) {
+        const _d = JSON.parse(_fs.readFileSync(_dbPath, 'utf-8'));
+        if (_d.globalIdCounter && _d.globalIdCounter > globalIdCounter) globalIdCounter = _d.globalIdCounter;
+        if (_d.hubCounter && _d.hubCounter > hubCounter) hubCounter = _d.hubCounter;
+    }
+} catch(e) { /* use defaults */ }
 
 // Helper function to escape HTML special characters
 function escapeHtml(str) {
@@ -961,6 +971,8 @@ router.post('/submit', async (req, res) => {
         };
 
         cacheManager.saveJobResult(jobId, responseData);
+        cacheManager.updateCounters({ globalIdCounter, hubCounter });
+        
         return res.json(responseData);
     } catch (error) {
         console.error('Error in /submit:', error);
