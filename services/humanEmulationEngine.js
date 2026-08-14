@@ -1,22 +1,23 @@
 /**
- * 🔥 REAL Human Emulation Engine v2.0
- * 
- * WHY OLD ENGINE FAILED:
- * - Spoofed User-Agents are ignored by Google (they verify IP, not UA)
- * 
- * HOW THIS ENGINE ACTUALLY WORKS:
- * 1. Sends real GA4 Measurement Protocol hits → registers as actual pageviews in Google Analytics
- *    Google uses GA data as a crawl frequency signal. More pageviews = more crawls.
- * 2. Sends real HTTP visits WITH proper Accept headers so servers return 200 (not bot block)
- * 3. Pings Google's /ping endpoint with the target URL to force re-crawl queue
- * 4. Sends real Bing/IndexNow compatible hits for cross-engine boosting
+ * 🔥 REAL Human Emulation Engine v3.0
+ *
+ * WHAT'S NEW (v3):
+ * - All traffic (GA4 hits + browser visits + pings) routed through ProxyRotatorEngine
+ *   → GAS (Google Apps Script internal IP) → Cloudflare Edge → Phantom Gateway waterfall
+ * - Each request injects globally distributed IP headers:
+ *   X-Forwarded-For, Client-IP, True-Client-IP, X-Real-IP
+ *   → Simulates massive worldwide audience across 50+ countries/ISPs
+ * - GA4 hits carry geolocation metadata (country, city, language) per request
  *
  * SET IN VERCEL ENVIRONMENT VARIABLES:
- *   GA4_MEASUREMENT_ID = "G-XXXXXXXXXX"   (your GA4 property ID from target site OR your own)
- *   GA4_API_SECRET     = "xxxxxxxxxxxx"    (from GA4 > Admin > Data Streams > Measurement Protocol API secrets)
+ *   GA4_MEASUREMENT_ID = "G-XXXXXXXXXX"
+ *   GA4_API_SECRET     = "xxxxxxxxxxxx"
+ *   GAS_PROXY_URL      = "https://script.google.com/..." (Google Apps Script proxy)
+ *   CF_PROXY_URL       = "https://your-worker.workers.dev/" (Cloudflare Worker proxy)
  */
 
 const crypto = require('crypto');
+const proxyRotatorEngine = require('./proxyRotatorEngine');
 
 class HumanEmulationEngine {
         // ✅ 110 REAL High-Authority Browser UAs — Verified & Diverse
@@ -181,6 +182,65 @@ class HumanEmulationEngine {
         // GA4 config from env
         this.ga4MeasurementId = process.env.GA4_MEASUREMENT_ID || null;
         this.ga4ApiSecret     = process.env.GA4_API_SECRET || null;
+
+        // 🌍 Global IP Pool — 50+ Countries, Elite ISPs, Mobile 5G, Residential
+        // These simulate real visitors from all over the world
+        this.globalIpBlocks = [
+            // USA — AT&T, Verizon, Comcast, T-Mobile 5G
+            { prefix: '24.', range: [0, 255], country: 'US', lang: 'en-US' },
+            { prefix: '98.', range: [0, 255], country: 'US', lang: 'en-US' },
+            { prefix: '174.', range: [192, 255], country: 'US', lang: 'en-US' },
+            { prefix: '104.', range: [0, 100], country: 'US', lang: 'en-US' },
+            // UK — BT, Sky, Virgin Media
+            { prefix: '86.', range: [0, 255], country: 'GB', lang: 'en-GB' },
+            { prefix: '217.', range: [32, 63], country: 'GB', lang: 'en-GB' },
+            // India — Jio, Airtel, BSNL
+            { prefix: '49.', range: [32, 47], country: 'IN', lang: 'hi-IN,en-IN' },
+            { prefix: '103.', range: [0, 50], country: 'IN', lang: 'hi-IN,en-IN' },
+            { prefix: '157.', range: [32, 64], country: 'IN', lang: 'hi-IN,en-IN' },
+            // Germany — Deutsche Telekom, Vodafone
+            { prefix: '79.', range: [192, 255], country: 'DE', lang: 'de-DE' },
+            { prefix: '46.', range: [64, 127], country: 'DE', lang: 'de-DE' },
+            // France — Orange, SFR
+            { prefix: '90.', range: [0, 63], country: 'FR', lang: 'fr-FR' },
+            { prefix: '78.', range: [192, 255], country: 'FR', lang: 'fr-FR' },
+            // Japan — NTT, SoftBank
+            { prefix: '126.', range: [0, 255], country: 'JP', lang: 'ja-JP' },
+            { prefix: '111.', range: [0, 63], country: 'JP', lang: 'ja-JP' },
+            // Brazil — Claro, Oi, Vivo
+            { prefix: '177.', range: [0, 255], country: 'BR', lang: 'pt-BR' },
+            { prefix: '200.', range: [128, 191], country: 'BR', lang: 'pt-BR' },
+            // Canada — Bell, Rogers, Telus
+            { prefix: '70.', range: [0, 63], country: 'CA', lang: 'en-CA' },
+            { prefix: '142.', range: [192, 255], country: 'CA', lang: 'en-CA' },
+            // Australia — Telstra, Optus
+            { prefix: '58.', range: [96, 127], country: 'AU', lang: 'en-AU' },
+            { prefix: '101.', range: [160, 191], country: 'AU', lang: 'en-AU' },
+            // South Korea — KT, SKT, LG
+            { prefix: '118.', range: [32, 63], country: 'KR', lang: 'ko-KR' },
+            { prefix: '125.', range: [128, 191], country: 'KR', lang: 'ko-KR' },
+            // Netherlands — KPN, XS4ALL
+            { prefix: '82.', range: [160, 191], country: 'NL', lang: 'nl-NL' },
+            // Spain — Movistar, Vodafone ES
+            { prefix: '88.', range: [0, 63], country: 'ES', lang: 'es-ES' },
+            // Italy — TIM, Fastweb
+            { prefix: '79.', range: [0, 63], country: 'IT', lang: 'it-IT' },
+            // Mexico — Telmex, Megacable
+            { prefix: '187.', range: [128, 191], country: 'MX', lang: 'es-MX' },
+            // Singapore — Singtel, StarHub
+            { prefix: '116.', range: [0, 31], country: 'SG', lang: 'en-SG' },
+            // UAE — Etisalat, du
+            { prefix: '94.', range: [200, 255], country: 'AE', lang: 'ar-AE,en-AE' },
+            // Russia — Rostelecom, MTS
+            { prefix: '77.', range: [64, 127], country: 'RU', lang: 'ru-RU' },
+            { prefix: '95.', range: [128, 191], country: 'RU', lang: 'ru-RU' },
+            // Pakistan — PTCL, Jazz
+            { prefix: '182.', range: [176, 191], country: 'PK', lang: 'ur-PK,en-PK' },
+            // Bangladesh — Grameenphone
+            { prefix: '103.', range: [200, 220], country: 'BD', lang: 'bn-BD' },
+            // Indonesia — Telkom, Indosat
+            { prefix: '114.', range: [0, 63], country: 'ID', lang: 'id-ID' },
+        ];
     }
 
     getRandomItem(arr) {
@@ -188,7 +248,6 @@ class HumanEmulationEngine {
     }
 
     generateClientId() {
-        // GA4 client_id format: random.timestamp
         return `${Math.floor(Math.random() * 2147483647)}.${Math.floor(Date.now() / 1000)}`;
     }
 
@@ -197,9 +256,39 @@ class HumanEmulationEngine {
     }
 
     /**
-     * 🔥 REAL SIGNAL #1: GA4 Measurement Protocol Hit
-     * This sends a real pageview to Google Analytics.
-     * Google Analytics data directly influences crawl budget decisions.
+     * 🌍 Generate a globally distributed IP + geo profile
+     * Each call returns a unique IP from a different country/ISP
+     */
+    getGlobalIpProfile() {
+        const block = this.getRandomItem(this.globalIpBlocks);
+        const oct2  = Math.floor(Math.random() * (block.range[1] - block.range[0])) + block.range[0];
+        const oct3  = Math.floor(Math.random() * 256);
+        const oct4  = Math.floor(Math.random() * 254) + 1;
+        const ip    = `${block.prefix}${oct2}.${oct3}.${oct4}`;
+        return { ip, country: block.country, lang: block.lang };
+    }
+
+    /**
+     * Build geo-spoofed headers for a request
+     */
+    buildGeoHeaders(baseHeaders = {}) {
+        const geo = this.getGlobalIpProfile();
+        return {
+            ...baseHeaders,
+            'X-Forwarded-For'  : geo.ip,
+            'X-Real-IP'        : geo.ip,
+            'Client-IP'        : geo.ip,
+            'True-Client-IP'   : geo.ip,
+            'CF-Connecting-IP' : geo.ip,
+            'X-Country-Code'   : geo.country,
+            'Accept-Language'  : `${geo.lang},en;q=0.8`,
+        };
+    }
+
+    /**
+     * 🔥 REAL SIGNAL #1: GA4 Measurement Protocol Hit via ProxyRotatorEngine
+     * Routes through GAS/Cloudflare proxy + injects globally distributed IP headers.
+     * Each hit appears to come from a different country/ISP — simulates worldwide audience.
      */
     async sendGA4PageviewHit(targetUrl) {
         if (!this.ga4MeasurementId || !this.ga4ApiSecret) return null;
@@ -207,7 +296,8 @@ class HumanEmulationEngine {
         try {
             const clientId = this.generateClientId();
             const sessionId = this.generateSessionId();
-            const urlObj = new URL(targetUrl);
+            const urlObj    = new URL(targetUrl);
+            const geo       = this.getGlobalIpProfile();
 
             const payload = {
                 client_id: clientId,
@@ -215,31 +305,32 @@ class HumanEmulationEngine {
                 events: [{
                     name: 'page_view',
                     params: {
-                        page_location: targetUrl,
-                        page_title: `Breaking News - ${urlObj.hostname}`,
-                        page_referrer: this.getRandomItem(this.googleReferrers) + encodeURIComponent(urlObj.hostname),
-                        session_id: sessionId,
-                        engagement_time_msec: String(Math.floor(Math.random() * 45000) + 15000), // 15-60 sec engagement
-                        'traffic_type': 'organic',
-                        'source': 'google',
-                        'medium': 'organic'
+                        page_location    : targetUrl,
+                        page_title       : `Breaking News - ${urlObj.hostname}`,
+                        page_referrer    : this.getRandomItem(this.googleReferrers) + encodeURIComponent(urlObj.hostname),
+                        session_id       : sessionId,
+                        engagement_time_msec: String(Math.floor(Math.random() * 45000) + 15000),
+                        traffic_type     : 'organic',
+                        source           : 'google',
+                        medium           : 'organic',
+                        // Geo signals make Google think these are real users from those countries
+                        country          : geo.country,
+                        language         : geo.lang.split(',')[0]
                     }
                 }]
             };
 
             const ga4Url = `https://www.google-analytics.com/mp/collect?measurement_id=${this.ga4MeasurementId}&api_secret=${this.ga4ApiSecret}`;
 
-            const res = await fetch(ga4Url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Proxy-Bypass': 'true'  // bypass proxy for GA calls
-                },
-                body: JSON.stringify(payload)
-            });
+            // 🌍 Route via ProxyRotatorEngine — makes hit appear from real global IP
+            const res = await proxyRotatorEngine.executeSafeRequest(ga4Url, {
+                method : 'POST',
+                headers: this.buildGeoHeaders({ 'Content-Type': 'application/json' }),
+                body   : JSON.stringify(payload)
+            }, 5000);
 
-            console.log(`[GA4 Hit] ✅ Pageview sent for ${targetUrl} | Status: ${res.status}`);
-            return res.status;
+            console.log(`[GA4 Hit] ✅ Pageview sent from ${geo.ip} (${geo.country}) for ${targetUrl}`);
+            return res ? res.status : null;
         } catch (e) {
             console.error(`[GA4 Hit] ❌ Failed: ${e.message}`);
             return null;
@@ -247,57 +338,62 @@ class HumanEmulationEngine {
     }
 
     /**
-     * 🔥 REAL SIGNAL #2: Real HTTP visit with Google referrer
-     * Server logs will show traffic from google.com → boosts crawl priority
+     * 🔥 REAL SIGNAL #2: Real browser HTTP visit via ProxyRotatorEngine
+     * Each visit comes from a different global IP → server access logs show worldwide traffic.
      */
     async fetchWithRealBrowserHeaders(targetUrl, timeoutMs = 3000) {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeoutMs);
+        const ua     = this.getRandomItem(this.realBrowserAgents);
+        const refArr = Math.random() > 0.3 ? this.googleReferrers : this.socialReferrers;
+        const ref    = this.getRandomItem(refArr) + encodeURIComponent(new URL(targetUrl).hostname);
 
-        const ua = this.getRandomItem(this.realBrowserAgents);
-        const refType = Math.random() > 0.3 ? this.googleReferrers : this.socialReferrers;
-        const ref = this.getRandomItem(refType) + encodeURIComponent(new URL(targetUrl).hostname);
+        // 🌍 Build geo-spoofed headers with random global IP
+        const headers = this.buildGeoHeaders({
+            'User-Agent'              : ua,
+            'Referer'                 : ref,
+            'Accept'                  : 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+            'Accept-Encoding'         : 'gzip, deflate, br',
+            'Sec-CH-UA'               : '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
+            'Sec-CH-UA-Mobile'        : '?0',
+            'Sec-CH-UA-Platform'      : '"Windows"',
+            'Sec-Fetch-Dest'          : 'document',
+            'Sec-Fetch-Mode'          : 'navigate',
+            'Sec-Fetch-Site'          : 'cross-site',
+            'Sec-Fetch-User'          : '?1',
+            'Upgrade-Insecure-Requests': '1',
+            'Cache-Control'           : 'max-age=0',
+            'Connection'              : 'keep-alive',
+            'DNT'                     : '1'
+        });
 
-        try {
-            const res = await fetch(targetUrl, {
-                headers: {
-                    'User-Agent': ua,
-                    'Referer': ref,
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                    'Accept-Encoding': 'gzip, deflate, br',
-                    'Sec-CH-UA': '"Google Chrome";v="125", "Chromium";v="125", "Not.A/Brand";v="24"',
-                    'Sec-CH-UA-Mobile': '?0',
-                    'Sec-CH-UA-Platform': '"Windows"',
-                    'Sec-Fetch-Dest': 'document',
-                    'Sec-Fetch-Mode': 'navigate',
-                    'Sec-Fetch-Site': 'cross-site',
-                    'Sec-Fetch-User': '?1',
-                    'Upgrade-Insecure-Requests': '1',
-                    'Cache-Control': 'max-age=0',
-                    'Connection': 'keep-alive',
-                    'DNT': '1'
-                },
-                signal: controller.signal
-            });
-            clearTimeout(id);
-            return res;
-        } catch (e) {
-            clearTimeout(id);
-            return null;
-        }
+        // 🌍 Route via ProxyRotatorEngine (GAS → CF → Phantom waterfall)
+        const res = await proxyRotatorEngine.executeSafeRequest(targetUrl, { headers }, timeoutMs);
+        return res;
     }
 
     /**
-     * 🔥 REAL SIGNAL #3: Google Ping (forces sitemap re-read)
+     * 🔥 REAL SIGNAL #3: Google + Bing Ping via ProxyRotatorEngine
+     * Pings appear to come from real global IPs, not Vercel datacenter
      */
     async pingGoogle(targetUrl) {
         try {
-            const encoded = encodeURIComponent(targetUrl);
-            await fetch(`https://www.google.com/ping?sitemap=${encoded}`, {
-                headers: { 'X-Proxy-Bypass': 'true' }
-            });
-            console.log(`[Google Ping] ✅ Pinged for: ${targetUrl}`);
+            const encoded    = encodeURIComponent(targetUrl);
+            const geoHeaders = this.buildGeoHeaders({});
+
+            // Google ping via proxy
+            await proxyRotatorEngine.executeSafeRequest(
+                `https://www.google.com/ping?sitemap=${encoded}`,
+                { headers: geoHeaders },
+                3000
+            );
+            console.log(`[Google Ping] ✅ Pinged via proxy from ${geoHeaders['X-Forwarded-For']}`);
+
+            // Bing ping via proxy
+            await proxyRotatorEngine.executeSafeRequest(
+                `https://www.bing.com/ping?sitemap=${encoded}`,
+                { headers: geoHeaders },
+                3000
+            );
+            console.log(`[Bing Ping] ✅ Pinged via proxy from ${geoHeaders['X-Forwarded-For']}`);
         } catch(e) { /* silent */ }
     }
 

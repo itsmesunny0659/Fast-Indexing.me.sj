@@ -1,17 +1,15 @@
 /**
- * 🔥 Multi-Bot Swarm Engine v2.0 - REAL INDEXING SIGNALS
- *
- * WHY OLD ENGINE FAILED:
- * - Spoofing Googlebot UA does NOTHING. Google verifies its own crawlers by IP (66.249.x.x).
- *   Any server receiving a fake "Googlebot" UA from a random IP will ignore or block it.
+ * 🔥 Multi-Bot Swarm Engine v3.0 - PROXY ROTATOR INTEGRATION
  *
  * HOW THIS WORKS NOW:
  * 1. Sends hits to REAL indexing services / web archives that actually crawl the URL
- * 2. Pings MULTIPLE real search engines (Bing, Yandex, Baidu, DuckDuckGo)
- * 3. Submits to real web archive crawlers (Wayback Machine, Archive.org)
- * 4. Triggers real prerender/cache services that are indexed by Google
- * 5. Sends Google Trends-style signals via Measurement Protocol
+ * 2. All traffic routed through ProxyRotatorEngine (GAS -> CF -> Phantom)
+ * 3. Injects globally distributed IP headers (X-Forwarded-For, Client-IP)
+ * 4. Pings MULTIPLE real search engines (Bing, Yandex, Google)
+ * 5. Submits to real web archive crawlers (Wayback Machine)
+ * 6. Triggers IndexNow API endpoints
  */
+const proxyRotatorEngine = require('./proxyRotatorEngine');
 class MultiBotSwarmEngine {
     constructor() {
         // Real indexing & archive endpoints that ACTUALLY crawl submitted URLs
@@ -48,54 +46,87 @@ class MultiBotSwarmEngine {
         ];
     }
 
+        // 🌍 Global IP Pool for Swarm Geo-Spoofing
+        this.globalIpBlocks = [
+            { prefix: '24.', range: [0, 255], country: 'US', lang: 'en-US' },
+            { prefix: '86.', range: [0, 255], country: 'GB', lang: 'en-GB' },
+            { prefix: '49.', range: [32, 47], country: 'IN', lang: 'hi-IN,en-IN' },
+            { prefix: '79.', range: [192, 255], country: 'DE', lang: 'de-DE' },
+            { prefix: '90.', range: [0, 63], country: 'FR', lang: 'fr-FR' },
+            { prefix: '126.', range: [0, 255], country: 'JP', lang: 'ja-JP' },
+            { prefix: '177.', range: [0, 255], country: 'BR', lang: 'pt-BR' },
+            { prefix: '70.', range: [0, 63], country: 'CA', lang: 'en-CA' },
+            { prefix: '58.', range: [96, 127], country: 'AU', lang: 'en-AU' },
+        ];
+    }
+
     getRandomUA() {
         return this.realUAs[Math.floor(Math.random() * this.realUAs.length)];
     }
 
+    getRandomItem(arr) {
+        return arr[Math.floor(Math.random() * arr.length)];
+    }
+
+    getGlobalIpProfile() {
+        const block = this.getRandomItem(this.globalIpBlocks);
+        const oct2  = Math.floor(Math.random() * (block.range[1] - block.range[0])) + block.range[0];
+        const oct3  = Math.floor(Math.random() * 256);
+        const oct4  = Math.floor(Math.random() * 254) + 1;
+        const ip    = `${block.prefix}${oct2}.${oct3}.${oct4}`;
+        return { ip, country: block.country, lang: block.lang };
+    }
+
+    buildGeoHeaders(baseHeaders = {}) {
+        const geo = this.getGlobalIpProfile();
+        return {
+            ...baseHeaders,
+            'X-Forwarded-For'  : geo.ip,
+            'X-Real-IP'        : geo.ip,
+            'Client-IP'        : geo.ip,
+            'True-Client-IP'   : geo.ip,
+            'CF-Connecting-IP' : geo.ip,
+            'X-Country-Code'   : geo.country,
+            'Accept-Language'  : `${geo.lang},en;q=0.8`,
+        };
+    }
+
     async fetchSilent(url, options = {}, timeoutMs = 4000) {
-        const controller = new AbortController();
-        const id = setTimeout(() => controller.abort(), timeoutMs);
         try {
-            const res = await fetch(url, { ...options, signal: controller.signal });
-            clearTimeout(id);
+            // 🌍 Route through ProxyRotatorEngine instead of direct fetch
+            const res = await proxyRotatorEngine.executeSafeRequest(url, options, timeoutMs);
             return res;
         } catch (e) {
-            clearTimeout(id);
             return null;
         }
     }
 
     /**
      * 🔥 REAL SIGNAL: Ping all search engine sitemap endpoints
-     * These are official endpoints — Google, Bing, Yandex all read them.
      */
     async pingAllSearchEngines(targetUrl) {
         const encoded = encodeURIComponent(targetUrl);
         const pings = this.sitemapPingUrls.map(base =>
             this.fetchSilent(`${base}${encoded}`, {
-                headers: { 'User-Agent': this.getRandomUA(), 'X-Proxy-Bypass': 'true' }
+                headers: this.buildGeoHeaders({ 'User-Agent': this.getRandomUA() })
             }, 3000)
         );
         const results = await Promise.allSettled(pings);
-        console.log(`[MultiBotSwarm] ✅ Search engine pings sent for: ${targetUrl}`);
+        console.log(`[MultiBotSwarm] ✅ Search engine pings sent via proxy for: ${targetUrl}`);
         return results;
     }
 
     /**
      * 🔥 REAL SIGNAL: Submit to Wayback Machine (archive.org)
-     * Google trusts archive.org. If your URL is saved there, Google indexes it faster.
      */
     async saveToWaybackMachine(targetUrl) {
         try {
             const res = await this.fetchSilent(`https://web.archive.org/save/${targetUrl}`, {
                 method: 'GET',
-                headers: {
-                    'User-Agent': this.getRandomUA(),
-                    'X-Proxy-Bypass': 'true'
-                }
+                headers: this.buildGeoHeaders({ 'User-Agent': this.getRandomUA() })
             }, 8000);
             if (res) {
-                console.log(`[WaybackMachine] ✅ Saved: ${targetUrl} | Status: ${res.status}`);
+                console.log(`[WaybackMachine] ✅ Saved via proxy: ${targetUrl} | Status: ${res.status}`);
             }
             return res;
         } catch (e) {
@@ -109,7 +140,6 @@ class MultiBotSwarmEngine {
      */
     async submitToRealIndexers(targetUrl) {
         const endpoints = [
-            // IndexNow-compatible endpoints (Bing, Yandex officially support this)
             {
                 url: 'https://api.indexnow.org/indexnow',
                 method: 'POST',
@@ -119,9 +149,8 @@ class MultiBotSwarmEngine {
                     keyLocation: `${targetUrl}`,
                     urlList: [targetUrl]
                 }),
-                headers: { 'Content-Type': 'application/json', 'X-Proxy-Bypass': 'true' }
+                headers: this.buildGeoHeaders({ 'Content-Type': 'application/json' })
             },
-            // Bing IndexNow direct
             {
                 url: 'https://www.bing.com/indexnow',
                 method: 'POST',
@@ -130,7 +159,7 @@ class MultiBotSwarmEngine {
                     key: '5e9b2a8d4f1c7e3a6b0d9f2e5a8c1b4d',
                     urlList: [targetUrl]
                 }),
-                headers: { 'Content-Type': 'application/json', 'X-Proxy-Bypass': 'true' }
+                headers: this.buildGeoHeaders({ 'Content-Type': 'application/json' })
             }
         ];
 
@@ -143,7 +172,7 @@ class MultiBotSwarmEngine {
         );
 
         const results = await Promise.allSettled(tasks);
-        console.log(`[MultiBotSwarm] ✅ Real indexer submissions done for: ${targetUrl}`);
+        console.log(`[MultiBotSwarm] ✅ Real indexer proxy submissions done for: ${targetUrl}`);
         return results;
     }
 

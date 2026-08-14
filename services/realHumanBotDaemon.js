@@ -42,6 +42,19 @@ class RealHumanBotDaemon {
         // GA4 config
         this.ga4MeasurementId = process.env.GA4_MEASUREMENT_ID || null;
         this.ga4ApiSecret     = process.env.GA4_API_SECRET || null;
+
+        // 🌍 Global IP Pool for Daemon Geo-Spoofing
+        this.globalIpBlocks = [
+            { prefix: '24.', range: [0, 255], country: 'US', lang: 'en-US' },
+            { prefix: '86.', range: [0, 255], country: 'GB', lang: 'en-GB' },
+            { prefix: '49.', range: [32, 47], country: 'IN', lang: 'hi-IN,en-IN' },
+            { prefix: '79.', range: [192, 255], country: 'DE', lang: 'de-DE' },
+            { prefix: '90.', range: [0, 63], country: 'FR', lang: 'fr-FR' },
+            { prefix: '126.', range: [0, 255], country: 'JP', lang: 'ja-JP' },
+            { prefix: '177.', range: [0, 255], country: 'BR', lang: 'pt-BR' },
+            { prefix: '70.', range: [0, 63], country: 'CA', lang: 'en-CA' },
+            { prefix: '58.', range: [96, 127], country: 'AU', lang: 'en-AU' },
+        ];
     }
 
     getRandomItem(arr) {
@@ -52,13 +65,34 @@ class RealHumanBotDaemon {
      * Generates a random IP address to simulate global rotating proxy
      */
     getProxyIP() {
-        // Elite Residential & 5G Mobile ISP IP Blocks (AT&T, Verizon, T-Mobile, Comcast, Spectrum)
-        const firstOctets = [24, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 97, 98, 99, 104, 107, 108, 173, 174];
-        const octet1 = firstOctets[Math.floor(Math.random() * firstOctets.length)];
-        const octet2 = Math.floor(Math.random() * 256);
-        const octet3 = Math.floor(Math.random() * 256);
-        const octet4 = Math.floor(Math.random() * 254) + 1; // 1-254
-        return `${octet1}.${octet2}.${octet3}.${octet4}`;
+        const block = this.getRandomItem(this.globalIpBlocks);
+        const oct2  = Math.floor(Math.random() * (block.range[1] - block.range[0])) + block.range[0];
+        const oct3  = Math.floor(Math.random() * 256);
+        const oct4  = Math.floor(Math.random() * 254) + 1;
+        return `${block.prefix}${oct2}.${oct3}.${oct4}`;
+    }
+
+    getGlobalIpProfile() {
+        const block = this.getRandomItem(this.globalIpBlocks);
+        const oct2  = Math.floor(Math.random() * (block.range[1] - block.range[0])) + block.range[0];
+        const oct3  = Math.floor(Math.random() * 256);
+        const oct4  = Math.floor(Math.random() * 254) + 1;
+        const ip    = `${block.prefix}${oct2}.${oct3}.${oct4}`;
+        return { ip, country: block.country, lang: block.lang };
+    }
+
+    buildGeoHeaders(baseHeaders = {}) {
+        const geo = this.getGlobalIpProfile();
+        return {
+            ...baseHeaders,
+            'X-Forwarded-For'  : geo.ip,
+            'X-Real-IP'        : geo.ip,
+            'Client-IP'        : geo.ip,
+            'True-Client-IP'   : geo.ip,
+            'CF-Connecting-IP' : geo.ip,
+            'X-Country-Code'   : geo.country,
+            'Accept-Language'  : `${geo.lang},en;q=0.8`,
+        };
     }
 
     /**
@@ -116,34 +150,34 @@ class RealHumanBotDaemon {
             const encoded = encodeURIComponent(targetUrl);
 
             const tasks = [
-                // ✅ Signal 1: Real browser HTTP visit with Google referrer
+                // ✅ Signal 1: Real browser HTTP visit with Google referrer via proxy
                 proxyRotatorEngine.executeSafeRequest(targetUrl, {
-                    headers: {
+                    headers: this.buildGeoHeaders({
                         'User-Agent': ua,
                         'Referer': ref,
                         'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                        'Accept-Language': 'en-US,en;q=0.9',
                         'Sec-Fetch-Dest': 'document',
                         'Sec-Fetch-Mode': 'navigate',
                         'Sec-Fetch-Site': 'cross-site',
                         'Upgrade-Insecure-Requests': '1'
-                    }
+                    })
                 }, 2000),
 
-                // ✅ Signal 2: Google sitemap ping
-                fetch(`https://www.google.com/ping?sitemap=${encoded}`, {
-                    headers: { 'User-Agent': ua, 'X-Proxy-Bypass': 'true' }
-                }).catch(() => null),
+                // ✅ Signal 2: Google sitemap ping via proxy
+                proxyRotatorEngine.executeSafeRequest(`https://www.google.com/ping?sitemap=${encoded}`, {
+                    headers: this.buildGeoHeaders({ 'User-Agent': ua })
+                }, 2000),
 
-                // ✅ Signal 3: Bing sitemap ping
-                fetch(`https://www.bing.com/ping?sitemap=${encoded}`, {
-                    headers: { 'User-Agent': ua, 'X-Proxy-Bypass': 'true' }
-                }).catch(() => null)
+                // ✅ Signal 3: Bing sitemap ping via proxy
+                proxyRotatorEngine.executeSafeRequest(`https://www.bing.com/ping?sitemap=${encoded}`, {
+                    headers: this.buildGeoHeaders({ 'User-Agent': ua })
+                }, 2000)
             ];
 
-            // ✅ Signal 4: GA4 Measurement Protocol pageview (if configured)
+            // ✅ Signal 4: GA4 Measurement Protocol pageview (if configured) via proxy
             if (this.ga4MeasurementId && this.ga4ApiSecret) {
                 const clientId = `${Math.floor(Math.random() * 2147483647)}.${Math.floor(Date.now() / 1000)}`;
+                const geo = this.getGlobalIpProfile();
                 const ga4Payload = {
                     client_id: clientId,
                     events: [{
@@ -151,16 +185,18 @@ class RealHumanBotDaemon {
                         params: {
                             page_location: targetUrl,
                             page_referrer: ref,
-                            engagement_time_msec: String(Math.floor(Math.random() * 30000) + 10000)
+                            engagement_time_msec: String(Math.floor(Math.random() * 30000) + 10000),
+                            country: geo.country,
+                            language: geo.lang.split(',')[0]
                         }
                     }]
                 };
                 tasks.push(
-                    fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${this.ga4MeasurementId}&api_secret=${this.ga4ApiSecret}`, {
+                    proxyRotatorEngine.executeSafeRequest(`https://www.google-analytics.com/mp/collect?measurement_id=${this.ga4MeasurementId}&api_secret=${this.ga4ApiSecret}`, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json', 'X-Proxy-Bypass': 'true' },
+                        headers: this.buildGeoHeaders({ 'Content-Type': 'application/json' }),
                         body: JSON.stringify(ga4Payload)
-                    }).catch(() => null)
+                    }, 2000)
                 );
             }
 
