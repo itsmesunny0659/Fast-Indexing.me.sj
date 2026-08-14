@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 
 // Required modules for URL processing
-const googleIndexingApiRotator = require('../services/googleIndexingApiRotator');
+const keyPoolManager = require('../services/keyPoolManager');
 const humanEmulationEngine = require('../services/humanEmulationEngine');
-// Include any other specific engines you want to run purely in the background per URL
+const indexNowProtocolEngine = require('../services/indexNowProtocolEngine');
+const googleSyndicationEngine = require('../services/googleSyndicationEngine');
+const stealthScraperEngine = require('../services/stealthScraperEngine');
 
 /**
  * POST /api/queue-worker
@@ -21,22 +23,29 @@ router.post('/queue-worker', async (req, res) => {
 
         console.log(`[QStash Worker] 🛠️ Processing Job ${jobId} | URL: ${url}`);
 
-        // Run the heavy lifting processes that normally timeout Vercel
+        // 🚀 THE SECRET TO 1-MINUTE INDEXING: 301 GATEWAY BYPASS
+        // Submitting a 3rd party URL to Google API throws a 403 Permission Denied.
+        // Fast-indexing tools submit a URL on their OWN verified domain (gatewayUrl) 
+        // which instantly 301 redirects Googlebot to the target URL!
+        const gscResult = await keyPoolManager.publishWithRotatedPool(gatewayUrl);
         
-        // 1. Google Indexing API submission (Instant Indexing)
-        const gscResult = await googleIndexingApiRotator.submitUrl(url, 'URL_UPDATED');
-        
-        // 2. Headless Browser Emulation (Puppeteer bypass)
-        // (Assuming you'll update humanEmulationEngine to actually use puppeteer next)
-        const emulationResult = await humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl || url, 1);
+        // 🔥 Execute all secondary fast-indexing pings concurrently
+        const pingPromises = [
+            indexNowProtocolEngine.submitIndexNowBatch([gatewayUrl], req.get('host') || 'ai-fast-indexing-engine.vercel.app').catch(() => null),
+            googleSyndicationEngine.pushInstantSyndication(gatewayUrl).catch(() => null),
+            stealthScraperEngine.fetchSemanticSnapshot(url).catch(() => null), // Puppeteer Headless emulation
+            humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl || url, 1).catch(() => null)
+        ];
 
-        console.log(`[QStash Worker] ✅ Successfully processed ${url}`);
+        await Promise.allSettled(pingPromises);
+
+        console.log(`[QStash Worker] ✅ Successfully processed 301 Gateway Indexing for ${url}`);
         
         res.status(200).json({ 
             success: true, 
             url,
-            gscResult,
-            emulationResult
+            gatewayUrl,
+            gscResult
         });
 
     } catch (error) {
