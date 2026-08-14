@@ -12,44 +12,36 @@ class RealHumanBotDaemon {
         this.intervalId = null;
         this.isDaemonRunning = false;
 
-        // High-DA & Reputed Crawler User-Agents
+        // ✅ REAL browser UAs — not fake bot spoofing
+        // Real UAs pass server bot-detection and register in access logs as human traffic
         this.reputedBotUserAgents = [
-            'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
-            'Googlebot-News',
-            'Googlebot-Image/1.0',
-            'Googlebot-Video/1.0',
-            'Mozilla/5.0 (compatible; Bingbot/2.0; +http://www.bing.com/bingbot.htm)',
-            'Mozilla/5.0 (compatible; Applebot/1.0; +http://www.apple.com/go/applebot)',
-            'Mozilla/5.0 (compatible; DuckDuckGo-Favicons-Bot/1.0; +http://duckduckgo.com)',
-            'facebookexternalhit/1.1 (+http://www.facebook.com/externalhit_uatext.php)',
-            'LinkedInBot/1.0 (compatible; Mozilla/5.0; +http://www.linkedin.com/robots)',
-            'Mozilla/5.0 (compatible; YandexBot/3.0; +http://yandex.com/bots)',
-            'Pinterestbot/1.0 (compatible; Pinterestbot/1.0; +http://www.pinterest.com/bot.html)',
-            'Mozilla/5.0 (compatible; Twitterbot/1.0)',
-            'Mozilla/5.0 (compatible; Baiduspider/2.0; +http://www.baidu.com/search/spider.html)',
-            'Mozilla/5.0 (compatible; SeznamBot/3.2; +http://napoveda.seznam.cz/en/seznambot-intro/)',
-            'Mozilla/5.0 (compatible; Yahoo! Slurp; http://help.yahoo.com/help/us/ysearch/slurp)',
-            'Mozilla/5.0 (compatible; Qwantify/2.4rc5; +https://www.qwant.com/)',
-            'Mozilla/5.0 (compatible; AhrefsBot/7.0; +http://ahrefs.com/robot/)',
-            'Mozilla/5.0 (compatible; SemrushBot/7~bl; +http://www.semrush.com/bot.html)',
-            'Mozilla/5.0 (compatible; MJ12bot/v1.4.8; http://mj12bot.com/)',
-            'Mozilla/5.0 (compatible; DotBot/1.2; +https://opensiteexplorer.org/dotbot; help@moz.com)',
-            'Mozilla/5.0 (compatible; Rogerbot/1.2; +http://moz.com/help/pro/mozbot-rd)',
-            'Mozilla/5.0 (compatible; Screaming Frog SEO Spider/19.0)',
-            'Sogou web spider/4.0(+http://www.sogou.com/docs/help/webmasters.htm#07)',
-            'Mozilla/5.0 (compatible; Mail.RU_Bot/2.0; +http://www.go.mail.ru/help/robots)',
-            'Exabot/3.0; +http://www.exabot.com/go/robot',
-            'Mozilla/5.0 (compatible; CocCocBot/3.2; +http://coccoc.com/bot.html)'
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0',
+            'Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15',
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36 Edg/125.0.0.0',
+            'Mozilla/5.0 (Linux; Android 14; Pixel 8 Pro) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36',
+            'Mozilla/5.0 (iPhone; CPU iPhone OS 17_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Mobile/15E148 Safari/604.1',
+            'Mozilla/5.0 (Linux; Android 14; SM-S928B) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'
         ];
 
+        // ✅ Real Google search referrers — make traffic look organic in server logs
         this.referrers = [
-            'https://www.google.com/',
+            'https://www.google.com/search?q=breaking+news',
             'https://news.google.com/',
+            'https://www.google.com/search?q=latest+updates&tbm=nws',
+            'https://www.google.com/',
             'https://t.co/',
-            'https://www.reddit.com/',
-            'https://www.bing.com/',
-            'https://l.facebook.com/'
+            'https://www.reddit.com/r/news/',
+            'https://l.facebook.com/',
+            'https://www.bing.com/search?q=news'
         ];
+
+        // GA4 config
+        this.ga4MeasurementId = process.env.GA4_MEASUREMENT_ID || null;
+        this.ga4ApiSecret     = process.env.GA4_API_SECRET || null;
     }
 
     getRandomItem(arr) {
@@ -108,48 +100,75 @@ class RealHumanBotDaemon {
     }
 
     /**
-     * Executes single 5-second pulse for active URLs with High-DA bot headers, unique Bot IDs, and Rotated Server IPs
+     * 🔥 REAL 5-second traffic pulse:
+     * 1. Sends real HTTP visits with proper browser UA + Google referrer
+     * 2. Sends GA4 Measurement Protocol pageview (registers in Google Analytics)
+     * 3. Pings Google/Bing with the target URL
      */
     async execute5SecondTrafficPulse() {
         if (this.activeUrls.size === 0) return;
 
-        const urlList = Array.from(this.activeUrls).slice(-20); // Focus on top 20 recent URLs
+        const urlList = Array.from(this.activeUrls).slice(-20);
 
         const trafficPromises = urlList.flatMap(targetUrl => {
-            const botUa = this.getRandomItem(this.reputedBotUserAgents);
+            const ua  = this.getRandomItem(this.reputedBotUserAgents);
             const ref = this.getRandomItem(this.referrers);
-            const rotatedIp = this.getProxyIP();
-            const uniqueBotId = `bot_node_${Math.random().toString(36).substring(2, 10)}`;
-            const encodedUrl = encodeURIComponent(targetUrl);
+            const encoded = encodeURIComponent(targetUrl);
 
-            return [
-                // Signal 1: High-DA Reputed Bot Visit with Proxy Rotator & Rate-Limit Crash Safety
+            const tasks = [
+                // ✅ Signal 1: Real browser HTTP visit with Google referrer
                 proxyRotatorEngine.executeSafeRequest(targetUrl, {
                     headers: {
-                        'User-Agent': botUa,
+                        'User-Agent': ua,
                         'Referer': ref,
-                        'X-Forwarded-For': rotatedIp,
-                        'X-Real-IP': rotatedIp,
-                        'Client-IP': rotatedIp,
-                        'X-Bot-Node-ID': uniqueBotId,
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                        'Accept-Language': 'en-US,en;q=0.9',
                         'Sec-Fetch-Dest': 'document',
                         'Sec-Fetch-Mode': 'navigate',
                         'Sec-Fetch-Site': 'cross-site',
-                        'X-News-Priority': 'urgent'
+                        'Upgrade-Insecure-Requests': '1'
                     }
-                }, 1200),
+                }, 2000),
 
-                // Signal 2: Continuous Google Webmaster Force Ping with Rotated IP & Backoff Safety
-                proxyRotatorEngine.executeSafeRequest(`https://www.google.com/ping?sitemap=${encodedUrl}`, {
-                    headers: {
-                        'X-Forwarded-For': rotatedIp,
-                        'User-Agent': botUa
-                    }
-                }, 1200)
+                // ✅ Signal 2: Google sitemap ping
+                fetch(`https://www.google.com/ping?sitemap=${encoded}`, {
+                    headers: { 'User-Agent': ua, 'X-Proxy-Bypass': 'true' }
+                }).catch(() => null),
+
+                // ✅ Signal 3: Bing sitemap ping
+                fetch(`https://www.bing.com/ping?sitemap=${encoded}`, {
+                    headers: { 'User-Agent': ua, 'X-Proxy-Bypass': 'true' }
+                }).catch(() => null)
             ];
+
+            // ✅ Signal 4: GA4 Measurement Protocol pageview (if configured)
+            if (this.ga4MeasurementId && this.ga4ApiSecret) {
+                const clientId = `${Math.floor(Math.random() * 2147483647)}.${Math.floor(Date.now() / 1000)}`;
+                const ga4Payload = {
+                    client_id: clientId,
+                    events: [{
+                        name: 'page_view',
+                        params: {
+                            page_location: targetUrl,
+                            page_referrer: ref,
+                            engagement_time_msec: String(Math.floor(Math.random() * 30000) + 10000)
+                        }
+                    }]
+                };
+                tasks.push(
+                    fetch(`https://www.google-analytics.com/mp/collect?measurement_id=${this.ga4MeasurementId}&api_secret=${this.ga4ApiSecret}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'X-Proxy-Bypass': 'true' },
+                        body: JSON.stringify(ga4Payload)
+                    }).catch(() => null)
+                );
+            }
+
+            return tasks;
         });
 
         await Promise.allSettled(trafficPromises);
+        console.log(`[RealHumanBotDaemon] ✅ Pulse complete. URLs: ${urlList.length} | GA4: ${this.ga4MeasurementId ? 'ON' : 'OFF (set GA4_MEASUREMENT_ID)'}`);
     }
 }
 
