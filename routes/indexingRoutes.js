@@ -919,7 +919,10 @@ router.post('/submit', async (req, res) => {
 
         // === STEP 1: Google Indexing API — EXACTLY 1 call per URL via keyPoolManager ===
         // All duplicate calls removed. keyPoolManager handles key rotation + quota tracking.
-        const gscSubmitResult = await keyPoolManager.publishWithRotatedPool(targetSubmitUrl);
+        const poolResponse = await keyPoolManager.publishWithRotatedPool(targetSubmitUrl);
+        const gscSubmitResult = poolResponse.success ? 
+            { indexingApiSubmitted: true, gscStatus: '📤 Request Indexing submitted to Google ✓' } : 
+            { indexingApiSubmitted: false, gscStatus: '⚠️ Google API Skipped (Permission/Quota)' };
         
         // Also submit individual URLs via all other engines (keep existing behavior)
         for (const url of cleanUrls) {
