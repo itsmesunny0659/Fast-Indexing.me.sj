@@ -368,9 +368,11 @@ class EdgeFastPathGatewayEngine {
     <link rel="alternate" hreflang="x-default" href="https://en.wikipedia.org/wiki/Main_Page">
     <meta name="news_keywords" content="Breaking News, Google Indexing, Live Updates, Authority Press Release">
     <meta name="description" content="Detailed optimization assessment and crawling analysis report for ${escapeHtml(extractedTopic)} on ${escapeHtml(targetUrl)}">
-    <link rel="canonical" href="${escapeHtml(canonicalUrl)}">
-    <!-- ⚡ KEY: Allow Googlebot to naturally follow the redirect to pass the API authority to the target -->
-    <meta http-equiv="refresh" content="0; url=${escapeHtml(targetUrl)}">
+    <!-- ⚡ NO CANONICAL: We want the Vercel URL to rank directly for instant indexing! -->
+    <!-- <link rel="canonical" href="${escapeHtml(canonicalUrl)}"> -->
+    
+    <!-- ⚡ CLOAKING RESTORED: Bots (Googlebot) see full page & index it. Only humans get redirected to target -->
+    ${isBot ? '' : `<meta http-equiv="refresh" content="0; url=${escapeHtml(targetUrl)}">`}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://www.youtube.com" crossorigin>
