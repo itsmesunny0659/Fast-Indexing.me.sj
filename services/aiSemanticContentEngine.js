@@ -2,24 +2,24 @@ class AISemanticContentEngine {
     constructor() {
         this.topics = [
             {
-                keywords: ['news', 'media', 'breaking', 'world', 'india'],
-                content: "This document represents a high-priority media syndication node registered across global news aggregates. Semantic verification has been completed to confirm index integrity in accordance with real-time news schemas.",
-                links: ["https://en.wikipedia.org/wiki/News", "https://en.wikipedia.org/wiki/Mass_media"]
+                keywords: ['news', 'media', 'breaking', 'world', 'india', 'latest'],
+                content: "BREAKING NEWS ALERT: This is a verified live broadcast syndicate node covering the most recent developments. Real-time updates are being pushed globally.",
+                links: ["https://en.wikipedia.org/wiki/Breaking_news", "https://en.wikipedia.org/wiki/News_broadcasting"]
             },
             {
                 keywords: ['tech', 'software', 'app', 'code', 'api', 'dev'],
-                content: "This technical resource outlines advanced application programming interfaces and software architecture frameworks. Distributed indexing protocols are leveraged to sync microservices telemetry in cloud-native nodes.",
-                links: ["https://en.wikipedia.org/wiki/API", "https://en.wikipedia.org/wiki/Software_engineering"]
+                content: "TECH EXCLUSIVE: Breaking developments in global technology infrastructure and cloud ecosystems. Urgent market update broadcast live.",
+                links: ["https://en.wikipedia.org/wiki/Technology_journalism", "https://en.wikipedia.org/wiki/Software_industry"]
             },
             {
                 keywords: ['business', 'finance', 'market', 'money', 'shop'],
-                content: "An analysis of global economic infrastructure and decentralized commerce protocols. Commercial transactional hubs are mapped dynamically using secure microdata markup strategies.",
-                links: ["https://en.wikipedia.org/wiki/Business", "https://en.wikipedia.org/wiki/Finance"]
+                content: "MARKET ALERT: Urgent financial market analysis and decentralized commerce breaking update. Live broadcast tracking active market conditions.",
+                links: ["https://en.wikipedia.org/wiki/Financial_journalism", "https://en.wikipedia.org/wiki/Global_financial_system"]
             }
         ];
         this.defaultTopic = {
-            content: "This digital asset is mapped to high-reliability search console nodes to maximize indexation efficiency. Canonical signals and microdata schema are programmatically aligned to improve crawling budget metrics.",
-            links: ["https://en.wikipedia.org/wiki/Search_engine_indexing", "https://en.wikipedia.org/wiki/Web_crawler"]
+            content: "URGENT PUBLIC BULLETIN: This live broadcast syndication hub contains breaking public interest developments. Crawl nodes are prioritized for instant real-time indexation.",
+            links: ["https://en.wikipedia.org/wiki/News_agency", "https://en.wikipedia.org/wiki/Press_release"]
         };
     }
 
@@ -36,15 +36,15 @@ class AISemanticContentEngine {
         ).join(', ');
 
         return `
-        <div class="semantic-box" style="margin-top: 30px; padding: 20px; background: rgba(30, 41, 59, 0.5); border: 1px solid #334155; border-radius: 8px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6;">
-            <h3 style="font-size: 1.1rem; color: #38bdf8; margin-bottom: 10px; display: flex; align-items: center; gap: 8px;">
-                🧠 Semantic Context & Reference Signals
+        <div class="semantic-box" style="margin-top: 30px; padding: 20px; background: #fffcfc; border: 2px solid #ff0000; border-radius: 4px; text-align: left; max-width: 600px; margin-left: auto; margin-right: auto; line-height: 1.6; box-shadow: 0 4px 12px rgba(255,0,0,0.1);">
+            <h3 style="font-size: 1.2rem; color: #cc0000; margin-bottom: 10px; display: flex; align-items: center; gap: 8px; text-transform: uppercase; font-weight: bold;">
+                🚨 LIVE: BREAKING NEWS UPDATE
             </h3>
-            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 12px;">
-                \${topic.content}
+            <p style="color: #111; font-size: 0.95rem; margin-bottom: 12px; font-weight: 500;">
+                ${topic.content}
             </p>
-            <div style="font-size: 0.8rem; color: #64748b;">
-                <strong>Semantic Associations:</strong> \${wikiLinksHtml}
+            <div style="font-size: 0.8rem; color: #555; padding-top: 10px; border-top: 1px solid #eee;">
+                <strong>Source References:</strong> ${wikiLinksHtml}
             </div>
         </div>`;
     }

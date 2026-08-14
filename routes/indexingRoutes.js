@@ -207,6 +207,10 @@ router.get('/i/:urlId', (req, res) => {
     res.setHeader('X-Googlebot-Priority', 'VIP-News-Syndicate');
     res.setHeader('X-Crawl-Schedule', 'Immediate');
     res.setHeader('X-News-Priority', 'High-Tier');
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Last-Modified', new Date().toUTCString());
     unifiedMachineSignalEngine.applyMachineSignalHeaders(res, targetUrl);
     res.send(wrapperHtml);
 });

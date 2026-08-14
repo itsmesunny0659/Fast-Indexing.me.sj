@@ -108,94 +108,64 @@ class EdgeFastPathGatewayEngine {
         };
 
         if (layoutIndex === 0) {
-            // YouTube Theme
+            // BBC World News Theme
             layoutTheme = {
-                name: 'YouTube',
-                bg: '#0f0f0f',
-                cardBg: '#1f1f1f',
-                border: '1px solid #2d2d2d',
-                text: '#f1f1f1',
-                accent: '#ff0000',
-                btnBg: 'linear-gradient(135deg, #ff0000, #cc0000)',
-                btnShadow: 'rgba(255, 0, 0, 0.2)',
-                headerLogo: '🎥 YouTube Creator Network Node',
-                tag1: 'YouTube Video Object',
-                tag2: 'Crawl Priority'
+                name: 'BBC Global',
+                bg: '#ffffff',
+                cardBg: '#f6f6f6',
+                border: '1px solid #b80000',
+                text: '#141414',
+                accent: '#b80000',
+                btnBg: 'linear-gradient(135deg, #b80000, #ff0000)',
+                btnShadow: 'rgba(184, 0, 0, 0.3)',
+                headerLogo: '🌍 GLOBAL NEWS SYNDICATE - BREAKING',
+                tag1: 'Live Updates',
+                tag2: 'World News'
             };
         } else if (layoutIndex === 1) {
-            // Wikipedia Theme
+            // CNN / Aaj Tak Breaking Theme
             layoutTheme = {
-                name: 'Wikipedia',
-                bg: '#f6f6f6',
-                cardBg: '#ffffff',
-                border: '1px solid #a2a9b1',
-                text: '#202122',
-                accent: '#3366cc',
-                btnBg: 'linear-gradient(135deg, #3366cc, #4477dd)',
-                btnShadow: 'rgba(51, 102, 204, 0.2)',
-                headerLogo: '📚 Wikipedia Archive Project Node',
-                tag1: 'Wikipedia Reference',
-                tag2: 'Academic Publication'
+                name: 'Breaking News',
+                bg: '#000000',
+                cardBg: '#1e1e1e',
+                border: '1px solid #ff0000',
+                text: '#ffffff',
+                accent: '#ff0000',
+                btnBg: 'linear-gradient(135deg, #cc0000, #ff3333)',
+                btnShadow: 'rgba(255, 0, 0, 0.4)',
+                headerLogo: '🚨 BREAKING NEWS ALERT',
+                tag1: 'Developing Story',
+                tag2: 'Top Story'
             };
         } else if (layoutIndex === 2) {
-            // Medium Theme
+            // Bloomberg / Financial Press Release Theme
             layoutTheme = {
-                name: 'Medium',
+                name: 'Financial Times',
+                bg: '#fcfaf6',
+                cardBg: '#ffffff',
+                border: '1px solid #233446',
+                text: '#111111',
+                accent: '#ff6600',
+                btnBg: 'linear-gradient(135deg, #ff6600, #ff8833)',
+                btnShadow: 'rgba(255, 102, 0, 0.2)',
+                headerLogo: '📈 MARKET PRESS RELEASE',
+                tag1: 'Financial News',
+                tag2: 'Exclusive'
+            };
+        } else {
+            // ABP / Local News Broadcast Theme
+            layoutTheme = {
+                name: 'Live Broadcast',
                 bg: '#ffffff',
-                cardBg: '#f9f9f9',
-                border: '1px solid #e6e6e6',
-                text: '#292929',
-                accent: '#1a8917',
-                btnBg: 'linear-gradient(135deg, #1a8917, #22a21e)',
-                btnShadow: 'rgba(26, 137, 23, 0.2)',
-                headerLogo: '✍️ Medium Technical Network Hub',
-                tag1: 'Medium Story',
-                tag2: 'SEO Analytics Audit'
-            };
-        } else if (layoutIndex === 3) {
-            // Reddit Theme
-            layoutTheme = {
-                name: 'Reddit',
-                bg: '#0b1416',
-                cardBg: '#1a282d',
-                border: '1px solid #34464c',
-                text: '#d7dadc',
-                accent: '#ff4500',
-                btnBg: 'linear-gradient(135deg, #ff4500, #e03d00)',
-                btnShadow: 'rgba(255, 69, 0, 0.2)',
-                headerLogo: '💬 Reddit Public Discussion Archive',
-                tag1: 'Reddit Thread',
-                tag2: 'User QA Directory'
-            };
-        } else if (layoutIndex === 4) {
-            // Goodreads Theme
-            layoutTheme = {
-                name: 'Goodreads',
-                bg: '#f4f1ea',
-                cardBg: '#ffffff',
-                border: '1px solid #d8d4c7',
-                text: '#333333',
-                accent: '#76553f',
-                btnBg: 'linear-gradient(135deg, #76553f, #946f56)',
-                btnShadow: 'rgba(118, 85, 63, 0.2)',
-                headerLogo: '📖 Goodreads Literature Catalog System',
-                tag1: 'Goodreads Page',
-                tag2: 'Digital Book Archive'
-            };
-        } else if (layoutIndex === 5) {
-            // LinkedIn Theme
-            layoutTheme = {
-                name: 'LinkedIn',
-                bg: '#f3f2ef',
-                cardBg: '#ffffff',
-                border: '1px solid #e0e0e0',
-                text: '#191919',
-                accent: '#0a66c2',
-                btnBg: 'linear-gradient(135deg, #0a66c2, #0077b5)',
-                btnShadow: 'rgba(10, 102, 194, 0.2)',
-                headerLogo: '👔 LinkedIn Pulse Professional Feed',
-                tag1: 'LinkedIn Pulse',
-                tag2: 'Corporate Audit Node'
+                cardBg: '#fafafa',
+                border: '1px solid #1c3d72',
+                text: '#222222',
+                accent: '#1c3d72',
+                btnBg: 'linear-gradient(135deg, #1c3d72, #295eb0)',
+                btnShadow: 'rgba(28, 61, 114, 0.3)',
+                headerLogo: '📡 LIVE BROADCAST STREAM',
+                tag1: 'Live',
+                tag2: 'Just In'
             };
         }
 
@@ -323,15 +293,6 @@ class EdgeFastPathGatewayEngine {
                     "description": "Live indexing broadcast feed triggering instant crawl.",
                     "coverageStartTime": now,
                     "coverageEndTime": new Date(Date.now() + 2 * 60 * 60 * 1000).toISOString(),
-                    "liveBlogUpdate": [
-                        {
-                            "@type": "BlogPosting",
-                            "headline": `Crawler Node Dispatched for ${extractedTopic}`,
-                            "datePublished": now
-                        }
-                    ]
-                },
-                {
                     "@type": "FAQPage",
                     "mainEntity": [
                         {
