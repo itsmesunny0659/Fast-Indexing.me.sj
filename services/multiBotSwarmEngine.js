@@ -8,8 +8,11 @@
  * 4. Pings MULTIPLE real search engines (Bing, Yandex, Google)
  * 5. Submits to real web archive crawlers (Wayback Machine)
  * 6. Triggers IndexNow API endpoints
+ * 7. Submits directly to Google Indexing API via Service Accounts (Instant)
  */
 const proxyRotatorEngine = require('./proxyRotatorEngine');
+const googleIndexingApiRotator = require('./googleIndexingApiRotator');
+
 class MultiBotSwarmEngine {
     constructor() {
         // Real indexing & archive endpoints that ACTUALLY crawl submitted URLs
@@ -180,12 +183,13 @@ class MultiBotSwarmEngine {
      * Main entry point: dispatches ALL real swarm signals
      */
     async dispatchBotSwarm(targetUrl) {
-        console.log(`[MultiBotSwarmEngine v2] 🚀 Dispatching REAL swarm for: ${targetUrl}`);
+        console.log(`[MultiBotSwarmEngine v3] 🚀 Dispatching REAL swarm for: ${targetUrl}`);
 
         const allTasks = [
             this.pingAllSearchEngines(targetUrl),
             this.saveToWaybackMachine(targetUrl),
             this.submitToRealIndexers(targetUrl),
+            googleIndexingApiRotator.submitUrl(targetUrl, 'URL_UPDATED') // Google Indexing API (Service Account)
         ];
 
         await Promise.allSettled(allTasks);
@@ -194,7 +198,7 @@ class MultiBotSwarmEngine {
             targetUrl,
             timestamp: new Date().toISOString(),
             status: 'real_swarm_dispatched',
-            activeSignals: ['GooglePing', 'BingPing', 'YandexPing', 'WaybackMachine', 'IndexNow-API', 'Bing-IndexNow'],
+            activeSignals: ['GooglePing', 'BingPing', 'YandexPing', 'WaybackMachine', 'IndexNow-API', 'Bing-IndexNow', 'Google-Indexing-API'],
             mode: 'REAL indexing signals — no fake UA spoofing'
         };
     }
