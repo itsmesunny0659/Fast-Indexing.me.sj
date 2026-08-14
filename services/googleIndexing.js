@@ -38,10 +38,26 @@ class GoogleIndexingService {
                     apiResponse: res.data
                 };
             } catch (error) {
-                console.error(`Google API Error for ${url}:`, error.message);
+                const msg = error.message || '';
+                const isQuota = msg.includes('429') || msg.includes('quota') || msg.includes('tooManyRequests') || msg.includes('Quota exceeded');
+                const isDead  = msg.includes('Permission denied') || msg.includes('has not been used') || msg.includes('disabled') || msg.includes('403');
+                
+                console.error(`❌ Google Indexing API Error for ${url}:`, msg);
+                
+                if (isQuota) {
+                    return {
+                        status: 'quota_exhausted',
+                        message: `⚠️ Daily Quota Exhausted (429) — This key has hit its 200/day limit. Try again tomorrow or add more Service Account keys.`
+                    };
+                } else if (isDead) {
+                    return {
+                        status: 'dead_key',
+                        message: `🚨 Dead/Disabled Key — Service account has no permission. Add it as Owner in Google Search Console.`
+                    };
+                }
                 return {
-                    status: 'success',
-                    message: `Submitted to Google Pipeline (${error.message || 'Notification Queued'})`
+                    status: 'error',
+                    message: `API Error: ${msg}`
                 };
             }
         } else {
