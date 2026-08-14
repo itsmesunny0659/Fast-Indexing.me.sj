@@ -869,7 +869,8 @@ router.post('/submit', async (req, res) => {
             if (req.headers.cookie) {
                 headers['cookie'] = req.headers.cookie;
             }
-            fetch(`https://${host}/fui-api/api/indexing/background-worker`, {
+            const protocol = host.includes('localhost') ? 'http' : 'https';
+            fetch(`${protocol}://${host}/fui-api/api/indexing/background-worker`, {
                 method: 'POST',
                 headers,
                 body: JSON.stringify({
@@ -918,8 +919,8 @@ router.post('/submit', async (req, res) => {
 
         // === STEP 1: Google Indexing API — EXACTLY 1 call per URL via keyPoolManager ===
         // All duplicate calls removed. keyPoolManager handles key rotation + quota tracking.
-        const gscSubmitResult = { indexingApiSubmitted: true, gscStatus: '📤 Request Indexing submitted to Google ✓' };
-
+        const gscSubmitResult = await keyPoolManager.publishWithRotatedPool(targetSubmitUrl);
+        
         // Also submit individual URLs via all other engines (keep existing behavior)
         for (const url of cleanUrls) {
             globalIdCounter++;
