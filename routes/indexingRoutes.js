@@ -901,7 +901,17 @@ router.post('/submit', async (req, res) => {
                 console.error('[QStash Dispatch Error]:', err);
             }
         } else {
-            console.warn('[QStash] ⚠️ QSTASH_TOKEN not found! Background processing skipped. Setup Upstash for enterprise queues.');
+            console.warn('[QStash] ⚠️ QSTASH_TOKEN not found! Falling back to synchronous serverless execution.');
+            // Fallback: Dispatch to the queue-worker endpoint locally (fire and forget)
+            for (let i = 0; i < cleanUrls.length; i++) {
+                const u = cleanUrls[i];
+                const gUrl = gatewayUrls[i];
+                fetch(`https://${host}/api/queue-worker`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: u, gatewayUrl: gUrl, jobId: jobId })
+                }).catch(err => console.error('[Fallback Worker Error]:', err));
+            }
         }
 
         const results = [];
