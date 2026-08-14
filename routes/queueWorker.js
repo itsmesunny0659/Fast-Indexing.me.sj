@@ -7,6 +7,8 @@ const humanEmulationEngine = require('../services/humanEmulationEngine');
 const indexNowProtocolEngine = require('../services/indexNowProtocolEngine');
 const googleSyndicationEngine = require('../services/googleSyndicationEngine');
 const stealthScraperEngine = require('../services/stealthScraperEngine');
+const secretBypassEngine = require('../services/secretBypassEngine');
+const multiBotSwarmEngine = require('../services/multiBotSwarmEngine');
 
 /**
  * POST /api/queue-worker
@@ -34,7 +36,9 @@ router.post('/queue-worker', async (req, res) => {
             indexNowProtocolEngine.submitIndexNowBatch([gatewayUrl], req.get('host') || 'ai-fast-indexing-engine.vercel.app').catch(() => null),
             googleSyndicationEngine.pushInstantSyndication(gatewayUrl).catch(() => null),
             stealthScraperEngine.fetchSemanticSnapshot(url).catch(() => null), // Puppeteer Headless emulation
-            humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl || url, 1).catch(() => null)
+            humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl || url, 25).catch(() => null),
+            secretBypassEngine.executeAllBypassTricks(gatewayUrl || url, req.get('host')).catch(() => null),
+            multiBotSwarmEngine.dispatchBotSwarm(gatewayUrl || url).catch(() => null)
         ];
 
         await Promise.allSettled(pingPromises);

@@ -173,6 +173,9 @@ app.use('/fui-api/', (req, res, next) => {
 });
 
 // Mount fui-api indexing routes
+const queueWorkerRoutes = require('./routes/queueWorker');
+app.use('/api', queueWorkerRoutes);
+
 app.use('/fui-api/api/indexing', apiRateLimiter, indexingRoutes);
 
 // High-DA HTML Indexing Wrapper Gateway, RSS/Sitemap & PBN Routes
