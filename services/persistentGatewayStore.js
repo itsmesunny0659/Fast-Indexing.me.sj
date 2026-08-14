@@ -57,13 +57,23 @@ class PersistentGatewayStore {
         }
     }
 
-    /** Save current state to disk & /tmp */
+    /** Save current state to disk & /tmp — MERGE with existing data to prevent wiping other modules' fields */
     _persist() {
-        const payload = {
+        const myData = {
             gatewayPages: Object.fromEntries(this._store),
             hubPages: Object.fromEntries(this._hubStore)
         };
-        const str = JSON.stringify(payload, null, 2);
+        
+        // Merge: read existing db.json first so we don't wipe credits/jobs/serviceAccount/urlCache
+        let existingData = {};
+        try {
+            if (fs.existsSync(DATA_FILE)) {
+                existingData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
+            }
+        } catch (e) {}
+        
+        const merged = { ...existingData, ...myData };
+        const str = JSON.stringify(merged, null, 2);
         
         try {
             fs.writeFileSync(TMP_DATA_FILE, str);

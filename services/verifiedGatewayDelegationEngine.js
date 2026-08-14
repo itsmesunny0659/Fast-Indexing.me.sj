@@ -62,7 +62,7 @@ class VerifiedGatewayDelegationEngine {
             targetUrl,
             gatewayUrl,
             status: 'verified_gateway_indexing_executed',
-            googleApiDirectSubmitted: !!apiResult,
+            googleApiDirectSubmitted: false, // handled by keyPoolManager in routes
             webSubPushDispatched: true,
             timestamp: new Date().toISOString()
         };

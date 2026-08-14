@@ -5,15 +5,17 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const fs = require('fs');
 
-// 🧹 Clean database queues and cached URLs on start/re-deploy
+// 🧹 Clean ONLY jobs queue and urlCache on start — preserve keys, gateways, and all other data
 try {
     const dbPath = path.join(__dirname, 'data/db.json');
     if (fs.existsSync(dbPath)) {
         const dbData = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
-        dbData.jobs = []; // Clear pending job queues
-        dbData.urlCache = {}; // Start URL statuses fresh
+        dbData.jobs = [];       // Clear pending job queues only
+        dbData.urlCache = {};   // Clear URL status cache only
+        // IMPORTANT: Do NOT touch serviceAccount, serviceAccountPool, credits, gatewayPages, hubPages
+        // Writing back with a merge — only update the fields we explicitly cleared
         fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 2));
-        console.log('🧹 [Startup] Cleared dynamic caches and old jobs queue on server start.');
+        console.log('🧹 [Startup] Cleared jobs queue and urlCache. Keys, gateways, and credits preserved.');
     }
 } catch (e) {
     console.error('Failed to clear database on startup:', e);

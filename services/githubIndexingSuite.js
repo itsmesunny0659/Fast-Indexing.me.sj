@@ -44,32 +44,45 @@ class GithubIndexingSuite {
 
     /**
      * Technique 2: IndexNow Multi-Host Bulk Payload Manager
+     * Groups URLs by their own hostname for correct host matching
      */
     async executeIndexNowBulk(urlList) {
         if (urlList.length === 0) return { repoPattern: 'IndexNow Bulk API', submitted: 0 };
 
-        const firstUrl = new URL(urlList[0]);
-        const host = firstUrl.hostname;
         const key = '8a7b9c0d1e2f3a4b5c6d7e8f9a0b1c2d';
 
-        const payload = {
-            host: host,
-            key: key,
-            keyLocation: `https://${host}/${key}.txt`,
-            urlList: urlList
-        };
+        // Group URLs by hostname — IndexNow requires host to match URLs in urlList
+        const byHost = {};
+        urlList.forEach(url => {
+            try {
+                const hostname = new URL(url).hostname;
+                if (!byHost[hostname]) byHost[hostname] = [];
+                byHost[hostname].push(url);
+            } catch (e) { /* skip invalid URLs */ }
+        });
 
-        const pingPromises = this.indexNowHosts.map(h => 
-            proxyRotatorEngine.executeSafeRequest(`https://${h}/indexnow`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json; charset=utf-8' },
-                body: JSON.stringify(payload)
-            }, 2500, 2)
-        );
+        const pingPromises = [];
+        for (const [hostname, urls] of Object.entries(byHost)) {
+            const payload = {
+                host: hostname,
+                key: key,
+                keyLocation: `https://${hostname}/${key}.txt`,
+                urlList: urls
+            };
+            this.indexNowHosts.forEach(h => {
+                pingPromises.push(
+                    proxyRotatorEngine.executeSafeRequest(`https://${h}/indexnow`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json; charset=utf-8' },
+                        body: JSON.stringify(payload)
+                    }, 2500, 2)
+                );
+            });
+        }
 
         await Promise.allSettled(pingPromises);
 
-        return { repoPattern: 'GitHub IndexNow Bulk API Repo', host, urlCount: urlList.length, success: true };
+        return { repoPattern: 'GitHub IndexNow Bulk API Repo', hostCount: Object.keys(byHost).length, urlCount: urlList.length, success: true };
     }
 
     /**

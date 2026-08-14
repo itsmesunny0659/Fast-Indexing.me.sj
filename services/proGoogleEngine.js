@@ -26,45 +26,16 @@ class ProGoogleEngine {
     }
 
     /**
-     * Top 2% Secret #1: Google Indexing API Multipart Batch Ingestion
+     * Google Indexing API Batch — SKIPPED (requires OAuth2 Bearer token not available here)
+     * All Google Indexing API calls are handled by keyPoolManager in routes (1 per URL with rotation)
      */
     async executeGoogleBatchMultipart(urls) {
-        console.log(`[ProGoogleEngine] Executing Google Multipart Batch Ingestion for ${urls.length} URLs`);
-
-        const boundary = `===============${Date.now()}==`;
-        let bodyParts = '';
-
-        urls.forEach((targetUrl, idx) => {
-            bodyParts += `--${boundary}\r\n`;
-            bodyParts += `Content-Type: application/http\r\n`;
-            bodyParts += `Content-ID: <item${idx + 1}>\r\n\r\n`;
-            bodyParts += `POST /v3/urlNotifications:publish HTTP/1.1\r\n`;
-            bodyParts += `Content-Type: application/json\r\n\r\n`;
-            bodyParts += JSON.stringify({ url: targetUrl, type: 'URL_UPDATED' }) + `\r\n`;
-        });
-        bodyParts += `--${boundary}--\r\n`;
-
-        try {
-            await this.fetchWithTimeout(this.googleBatchEndpoint, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': `multipart/mixed; boundary="${boundary}"`
-                },
-                body: bodyParts
-            }, 2500);
-
-            return {
-                method: 'Google Indexing API Multipart Batch (indexing.googleapis.com/batch)',
-                batchSize: urls.length,
-                success: true
-            };
-        } catch (e) {
-            return {
-                method: 'Google Indexing API Multipart Batch',
-                batchSize: urls.length,
-                success: true
-            };
-        }
+        console.log(`[ProGoogleEngine] Skipping batch multipart — keyPoolManager handles all Google API calls with auth.`);
+        return {
+            method: 'Google Indexing API Multipart Batch (skipped — no auth)',
+            batchSize: urls.length,
+            note: 'Handled by keyPoolManager in routes with proper JWT auth'
+        };
     }
 
     /**

@@ -349,7 +349,31 @@ router.post('/key-pool', (req, res) => {
 
 // GET /fui-api/api/indexing/key-pool/stats - View Rotated Key Pool Stats
 router.get('/key-pool/stats', (req, res) => {
-    res.json(keyPoolManager.getPoolStats());
+    const stats = keyPoolManager.getPoolStats();
+    // Also expose which keys are in cooldown for debugging
+    const cooldownDetails = [];
+    keyPoolManager.cooldowns.forEach((expiry, email) => {
+        const remaining = Math.max(0, expiry - Date.now());
+        cooldownDetails.push({
+            email,
+            expiresAt: new Date(expiry).toISOString(),
+            remainingHours: Math.round(remaining / 1000 / 60 / 60)
+        });
+    });
+    res.json({ ...stats, cooldownDetails });
+});
+
+// POST /fui-api/api/indexing/key-pool/reset-cooldowns - Reset all key cooldowns (emergency fix)
+router.post('/key-pool/reset-cooldowns', (req, res) => {
+    const before = keyPoolManager.cooldowns.size;
+    keyPoolManager.cooldowns.clear();
+    keyPoolManager.currentIndex = 0;
+    console.log(`[KeyPool] 🔄 All cooldowns reset by admin. Keys freed: ${before}`);
+    res.json({
+        success: true,
+        message: `✅ Cooldowns cleared! ${before} key(s) freed from cooldown. All ${keyPoolManager.getPoolStats().totalKeys} keys now active.`,
+        poolStats: keyPoolManager.getPoolStats()
+    });
 });
 
 // GET /sitemap.xml - Main XML Sitemap (Standard W3C Sitemap Protocol)

@@ -46,7 +46,25 @@ class CacheManager {
             if (!fs.existsSync(dir)) {
                 fs.mkdirSync(dir, { recursive: true });
             }
-            fs.writeFileSync(DATA_FILE, JSON.stringify(this.data, null, 2));
+            // MERGE FIX: Read existing file first to preserve gatewayPages/hubPages
+            // written by persistentGatewayStore — do NOT blindly overwrite them
+            let existingData = {};
+            try {
+                if (fs.existsSync(DATA_FILE)) {
+                    existingData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf-8'));
+                }
+            } catch (e) { /* ignore parse errors */ }
+
+            const merged = {
+                ...existingData,          // preserve gatewayPages, hubPages etc.
+                credits: this.data.credits,
+                jobs: this.data.jobs,
+                recentUrls: this.data.recentUrls,
+                urlCache: this.data.urlCache,
+                serviceAccount: this.data.serviceAccount,
+                serviceAccountPool: this.data.serviceAccountPool
+            };
+            fs.writeFileSync(DATA_FILE, JSON.stringify(merged, null, 2));
         } catch (e) {
             // Memory mode on Vercel read-only filesystem
         }

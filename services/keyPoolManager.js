@@ -114,8 +114,8 @@ class KeyPoolManager {
                     console.warn(`⚠️ [KeyPoolManager] Key ${key.client_email} hit daily quota. Placing in 24h cooldown.`);
                     this.cooldowns.set(key.client_email, Date.now() + 24 * 60 * 60 * 1000); // 24 hours cooldown
                 } else {
-                    console.warn(`🚨 [KeyPoolManager] Key ${key.client_email} is DEAD/Disabled: ${msg}. Placing in permanent cooldown.`);
-                    this.cooldowns.set(key.client_email, Date.now() + 3650 * 24 * 60 * 60 * 1000); // 10 years cooldown (permanent)
+                    console.warn(`🚨 [KeyPoolManager] Key ${key.client_email} permission error: ${msg}. Placing in 36h cooldown.`);
+                    this.cooldowns.set(key.client_email, Date.now() + 1.5 * 24 * 60 * 60 * 1000); // 36 hours (1.5 days)
                 }
                 
                 // Retry with a different key if attempts limit is not reached
