@@ -47,8 +47,6 @@ class MultiBotSwarmEngine {
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36',
             'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
         ];
-    }
-
         // 🌍 Global IP Pool for Swarm Geo-Spoofing
         this.globalIpBlocks = [
             { prefix: '24.', range: [0, 255], country: 'US', lang: 'en-US' },

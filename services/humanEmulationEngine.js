@@ -20,6 +20,7 @@ const crypto = require('crypto');
 const proxyRotatorEngine = require('./proxyRotatorEngine');
 
 class HumanEmulationEngine {
+    constructor() {
         // ✅ 110 REAL High-Authority Browser UAs — Verified & Diverse
         // Covers: Windows/Mac/Linux/Android/iOS | Chrome/Firefox/Safari/Edge/Opera/Brave/Samsung/UC/Yandex/WeChat/AMP
         // All pass Cloudflare bot detection & register as real human traffic
