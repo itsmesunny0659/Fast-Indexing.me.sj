@@ -107,18 +107,24 @@ class KeyPoolManager {
             const msg = e.message || '';
             // Auto-detect quota error or disabled/permission issues
             const isQuotaError = msg.includes('429') || msg.includes('quota') || msg.includes('limit') || msg.includes('tooManyRequests');
-            const isDeadKey = msg.includes('Permission denied') || msg.includes('has not been used') || msg.includes('disabled');
+            const isDeadKey = msg.includes('has not been used') || msg.includes('disabled');
+            const isPermissionError = msg.includes('Permission denied');
             
-            if (isQuotaError || isDeadKey) {
+            if (isQuotaError || isDeadKey || isPermissionError) {
                 if (isQuotaError) {
                     console.warn(`⚠️ [KeyPoolManager] Key ${key.client_email} hit daily quota. Placing in 24h cooldown.`);
                     this.cooldowns.set(key.client_email, Date.now() + 24 * 60 * 60 * 1000); // 24 hours cooldown
-                } else {
-                    console.warn(`🚨 [KeyPoolManager] Key ${key.client_email} permission error: ${msg}. Placing in 36h cooldown.`);
-                    this.cooldowns.set(key.client_email, Date.now() + 1.5 * 24 * 60 * 60 * 1000); // 36 hours (1.5 days)
+                } else if (isDeadKey) {
+                    console.warn(`🚨 [KeyPoolManager] Key ${key.client_email} is disabled/dead. Placing in 36h cooldown.`);
+                    this.cooldowns.set(key.client_email, Date.now() + 1.5 * 24 * 60 * 60 * 1000); // 36 hours cooldown
+                } else if (isPermissionError) {
+                    console.warn(`🛑 [KeyPoolManager] Domain not verified for key ${key.client_email}: ${msg}. Skipping retry to protect pool.`);
+                    // DO NOT put key on cooldown - it is perfectly fine for other verified domains!
+                    // DO NOT retry with another key - it will just fail again and waste time.
+                    return { success: false, clientEmail: key.client_email, error: 'Domain not verified in GSC for this Service Account.' };
                 }
                 
-                // Retry with a different key if attempts limit is not reached
+                // Retry with a different key ONLY if it was a quota error or dead key
                 if (attempt < 5) {
                     console.log(`🔄 [KeyPoolManager] Retrying URL publish with a fresh key (Attempt ${attempt + 1})...`);
                     return this.publishWithRotatedPool(targetUrl, attempt + 1);
