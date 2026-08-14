@@ -195,27 +195,14 @@ router.get('/i/:urlId', (req, res) => {
         
     }
 
-    // === PRO-LEVEL SEMANTIC MIRROR (Reverse Proxy Canonical Hack) ===
+    // === 301 PERMANENT REDIRECT TO TARGET URL ===
+    // This forces Googlebot and all human traffic to instantly land on the third-party site.
+    // 301 passes maximum SEO juice, making Google see the sudden traffic burst on the target site.
     res.setHeader('X-Robots-Tag', 'index, follow');
-    res.setHeader('X-Googlebot-Priority', 'VIP-News-Syndicate');
-    res.setHeader('X-Crawl-Schedule', 'Immediate');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
     
-    unifiedMachineSignalEngine.applyMachineSignalHeaders(res, targetUrl);
-    
-    const semanticSnapshot = gatewayData.semanticSnapshot || null;
-    let wrapperHtml = edgeFastPathGatewayEngine.generateFastPathHtml(targetUrl, urlId, req.get('host'), isBot, semanticSnapshot);
-    
-    // Inject semantic content dynamically
-    try {
-        const semanticHtml = aiSemanticContentEngine.generateSemanticContent(targetUrl);
-        wrapperHtml = wrapperHtml.replace('</body>', `${semanticHtml}</body>`);
-    } catch (e) {
-        console.error('Error injecting semantic content:', e.message);
-    }
-    
-    res.send(wrapperHtml);
+    // Send the 301 redirect
+    return res.redirect(301, targetUrl);
 });
 
 // GET /hub/:hubId - Single Hub Page: contains ALL submitted URLs as do-follow links
