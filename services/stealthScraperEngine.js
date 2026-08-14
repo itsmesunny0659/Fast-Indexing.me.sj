@@ -1,5 +1,5 @@
-const axios = require('axios');
-const cheerio = require('cheerio');
+const puppeteer = require('puppeteer-core');
+const chromium = require('@sparticuz/chromium');
 
 class StealthScraperEngine {
     constructor() {
@@ -19,70 +19,72 @@ class StealthScraperEngine {
     async fetchSemanticSnapshot(url) {
         if (!url || !url.startsWith('http')) return null;
 
+        let browser = null;
         try {
-            console.log(`[StealthScraper] Initiating fetch for: ${url}`);
+            console.log(`[StealthScraper] Initiating Puppeteer fetch for: ${url}`);
             
-            const response = await axios.get(url, {
-                headers: {
-                    'User-Agent': this.getRandomUserAgent(),
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-                    'Accept-Language': 'en-US,en;q=0.9',
-                    'Cache-Control': 'max-age=0',
-                    'Upgrade-Insecure-Requests': '1',
-                    'Sec-Fetch-Dest': 'document',
-                    'Sec-Fetch-Mode': 'navigate',
-                    'Sec-Fetch-Site': 'none',
-                    'Sec-Fetch-User': '?1'
-                },
-                timeout: 8000, // Fast timeout, we don't want to block the submit flow
-                maxRedirects: 3
+            // Serverless Puppeteer Config using Sparticuz Chromium
+            browser = await puppeteer.launch({
+                args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
+                defaultViewport: chromium.defaultViewport,
+                executablePath: await chromium.executablePath(),
+                headless: chromium.headless,
+                ignoreHTTPSErrors: true,
             });
 
-            if (response.status !== 200) {
-                console.warn(`[StealthScraper] Non-200 status for ${url}: ${response.status}`);
-                return null;
-            }
-
-            const html = response.data;
-            const $ = cheerio.load(html);
-
-            // Extract core semantic elements
-            let title = $('title').text().trim();
-            if (!title) title = $('h1').first().text().trim();
-            if (!title) title = 'High Authority Indexing Target';
-
-            let description = $('meta[name="description"]').attr('content') || '';
-            if (!description) description = $('meta[property="og:description"]').attr('content') || '';
+            const page = await browser.newPage();
+            await page.setUserAgent(this.getRandomUserAgent());
             
-            // Extract the first few paragraphs for the content snippet (to make it look real)
-            let contentSnippet = '';
-            $('p').slice(0, 3).each((i, el) => {
-                const text = $(el).text().trim();
-                if (text.length > 20) {
-                    contentSnippet += text + ' ';
+            // Block heavy resources for speed
+            await page.setRequestInterception(true);
+            page.on('request', (req) => {
+                if (['image', 'stylesheet', 'font', 'media'].includes(req.resourceType())) {
+                    req.abort();
+                } else {
+                    req.continue();
                 }
             });
 
-            // Clean up the snippet
-            contentSnippet = contentSnippet.trim().substring(0, 600); // Keep it concise but substantial
-            
-            if (!description) {
-                description = contentSnippet.substring(0, 150) + (contentSnippet.length > 150 ? '...' : '');
-            }
+            // Navigate and wait for DOM
+            await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 8000 });
+
+            // Extract semantic data directly from the DOM
+            const snapshotData = await page.evaluate(() => {
+                let title = document.querySelector('title')?.innerText.trim() || document.querySelector('h1')?.innerText.trim() || 'High Authority Indexing Target';
+                
+                let descMeta = document.querySelector('meta[name="description"]') || document.querySelector('meta[property="og:description"]');
+                let description = descMeta ? descMeta.getAttribute('content') : '';
+
+                let paragraphs = Array.from(document.querySelectorAll('p'))
+                                      .map(p => p.innerText.trim())
+                                      .filter(text => text.length > 20)
+                                      .slice(0, 3)
+                                      .join(' ');
+                
+                let contentSnippet = paragraphs.substring(0, 600);
+                if (!description) {
+                    description = contentSnippet.substring(0, 150) + (contentSnippet.length > 150 ? '...' : '');
+                }
+
+                return { title, description, contentSnippet };
+            });
 
             const snapshot = {
-                title,
-                description,
-                contentSnippet: contentSnippet || `Detailed analysis and semantic information regarding ${title}.`,
+                ...snapshotData,
+                contentSnippet: snapshotData.contentSnippet || `Detailed analysis and semantic information regarding ${snapshotData.title}.`,
                 scrapedAt: new Date().toISOString()
             };
 
-            console.log(`[StealthScraper] Successfully scraped snapshot for: ${url}`);
+            console.log(`[StealthScraper] ✅ Successfully scraped snapshot via Puppeteer for: ${url}`);
             return snapshot;
 
         } catch (error) {
-            console.warn(`[StealthScraper] Failed to fetch ${url}: ${error.message}`);
-            return null; // Silent fail, we will fallback to generic data
+            console.warn(`[StealthScraper] ⚠️ Failed to fetch ${url} via Puppeteer: ${error.message}`);
+            return null;
+        } finally {
+            if (browser !== null) {
+                await browser.close();
+            }
         }
     }
 }

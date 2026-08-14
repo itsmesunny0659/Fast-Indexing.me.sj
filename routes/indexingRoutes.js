@@ -1,5 +1,13 @@
 const express = require('express');
 const router = express.Router();
+const { Client } = require("@upstash/qstash");
+
+// Initialize QStash Client
+// Provide a dummy token if not set so it doesn't crash locally, 
+// but it requires a real token in Vercel to work.
+const qstash = new Client({
+  token: process.env.QSTASH_TOKEN || "dummy_token_requires_setup",
+});
 const cacheManager = require('../services/cacheManager');
 const googleIndexing = require('../services/googleIndexing');
 const sitemapParser = require('../services/sitemapParser');
@@ -868,31 +876,32 @@ router.post('/submit', async (req, res) => {
 
         const gatewayMapData = Array.from(gatewayMap.entries());
 
-        // Fire the background tasks asynchronously via a serverless HTTP loopback trigger
-        // This prevents Vercel from freezing the background promises after the submit response returns!
-        const fetch = globalThis.fetch;
-        if (typeof fetch === 'function') {
-            const headers = { 
-                'Content-Type': 'application/json',
-                'X-Proxy-Bypass': 'true'
-            };
-            if (req.headers.cookie) {
-                headers['cookie'] = req.headers.cookie;
+        // Fire the background tasks asynchronously via Upstash QStash!
+        // This solves the Vercel 10s/60s timeout limit. QStash will HTTP POST to our queue-worker one-by-one.
+        if (process.env.QSTASH_TOKEN) {
+            try {
+                // Dispatch each URL as a separate job to the queue
+                for (let i = 0; i < cleanUrls.length; i++) {
+                    const u = cleanUrls[i];
+                    const gUrl = gatewayUrls[i];
+                    
+                    await qstash.publishJSON({
+                        url: `https://${host}/api/queue-worker`,
+                        body: {
+                            url: u,
+                            gatewayUrl: gUrl,
+                            jobId: jobId
+                        },
+                        retries: 3, // Auto-retry if Vercel fails
+                        delay: i * 2 // Stagger requests by 2 seconds to avoid slamming our own server
+                    });
+                }
+                console.log(`[QStash] ✅ Dispatched ${cleanUrls.length} URLs to background queue.`);
+            } catch (err) {
+                console.error('[QStash Dispatch Error]:', err);
             }
-            const protocol = host.includes('localhost') ? 'http' : 'https';
-            fetch(`${protocol}://${host}/fui-api/api/indexing/background-worker`, {
-                method: 'POST',
-                headers,
-                body: JSON.stringify({
-                    cleanUrls,
-                    gatewayUrls,
-                    gatewayMapData,
-                    host,
-                    jobId
-                })
-            }).catch((err) => console.error('[Loopback Trigger Error]:', err));
         } else {
-            console.error('[Loopback Trigger Error]: native fetch not supported in this runtime');
+            console.warn('[QStash] ⚠️ QSTASH_TOKEN not found! Background processing skipped. Setup Upstash for enterprise queues.');
         }
 
         const results = [];
