@@ -7,15 +7,19 @@ const fs = require('fs');
 
 // 🧹 Clean ONLY jobs queue and urlCache on start — preserve keys, gateways, and all other data
 try {
-    const dbPath = path.join(__dirname, 'data/db.json');
-    if (fs.existsSync(dbPath)) {
-        const dbData = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
-        dbData.jobs = [];       // Clear pending job queues only
-        dbData.urlCache = {};   // Clear URL status cache only
-        // IMPORTANT: Do NOT touch serviceAccount, serviceAccountPool, credits, gatewayPages, hubPages
-        // Writing back with a merge — only update the fields we explicitly cleared
-        fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 2));
-        console.log('🧹 [Startup] Cleared jobs queue and urlCache. Keys, gateways, and credits preserved.');
+    if (!process.env.VERCEL) {
+        const dbPath = path.join(__dirname, 'data/db.json');
+        if (fs.existsSync(dbPath)) {
+            const dbData = JSON.parse(fs.readFileSync(dbPath, 'utf-8'));
+            dbData.jobs = [];       // Clear pending job queues only
+            dbData.urlCache = {};   // Clear URL status cache only
+            // IMPORTANT: Do NOT touch serviceAccount, serviceAccountPool, credits, gatewayPages, hubPages
+            // Writing back with a merge — only update the fields we explicitly cleared
+            fs.writeFileSync(dbPath, JSON.stringify(dbData, null, 2));
+            console.log('🧹 [Startup] Cleared jobs queue and urlCache. Keys, gateways, and credits preserved.');
+        }
+    } else {
+        console.log('⚡ [Startup] Vercel environment detected. Skipping local file system writes.');
     }
 } catch (e) {
     console.error('Failed to clear database on startup:', e);
@@ -199,11 +203,13 @@ app.get('*', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-    console.log(`====================================================`);
-    console.log(`🚀 AI Fast Indexing Engine is running on port ${PORT}`);
-    console.log(`🌐 Dashboard UI: http://localhost:${PORT}`);
-    console.log(`====================================================`);
-});
+if (!process.env.VERCEL) {
+    app.listen(PORT, () => {
+        console.log(`====================================================`);
+        console.log(`🚀 AI Fast Indexing Engine is running on port ${PORT}`);
+        console.log(`🌐 Dashboard UI: http://localhost:${PORT}`);
+        console.log(`====================================================`);
+    });
+}
 
 module.exports = app;

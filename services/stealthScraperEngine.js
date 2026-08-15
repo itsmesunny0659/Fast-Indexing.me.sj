@@ -27,7 +27,9 @@ class StealthScraperEngine {
             browser = await puppeteer.launch({
                 args: [...chromium.args, '--hide-scrollbars', '--disable-web-security'],
                 defaultViewport: chromium.defaultViewport,
-                executablePath: await chromium.executablePath(),
+                executablePath: process.env.VERCEL 
+                    ? await chromium.executablePath('https://github.com/Sparticuz/chromium/releases/download/v119.0.2/chromium-v119.0.2-pack.tar')
+                    : await chromium.executablePath(),
                 headless: chromium.headless,
                 ignoreHTTPSErrors: true,
             });
