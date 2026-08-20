@@ -290,7 +290,7 @@ class ProxyRotatorEngine {
         }
     }
 
-    async executeSafeRequest(url, options = {}, timeoutMs = 3000, maxRetries = 2) {
+    async executeSafeRequest(url, options = {}, timeoutMs = 1200, maxRetries = 1) {
         let attempts = 0;
         
         while (attempts < maxRetries) {

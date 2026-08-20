@@ -822,96 +822,38 @@ router.post('/submit', async (req, res) => {
                 timestamp: new Date().toISOString(),
                 semanticSnapshot 
             });
-        }
-
-        // === ALL HEAVY NETWORK ENGINES — stored as lazy factories ===
-        // Batch-level engines
-        // FIX: Submit our Gateway URLs to IndexNow, so the API key matches the domain.
-        lazyEngines.push(() => indexNowProtocolEngine.submitIndexNowBatch(gatewayUrls, host).catch(() => null));
-        lazyEngines.push(() => speedyIndexEngine.submitBatch(gatewayUrls).catch(() => null));
-        lazyEngines.push(() => fastIndexIcuService.submitBatchToBotfarm(cleanUrls).catch(() => null));
-        lazyEngines.push(() => edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null));
-        // NOTE: googleBatchDelegationEngine disabled — keyPoolManager per-URL below handles all Google API calls
-        // lazyEngines.push(() => googleBatchDelegationEngine.executeBatchMultipartPush(gatewayUrls).catch(() => null));
-        lazyEngines.push(() => githubIndexingSuite.runGithubMasterSuite(gatewayUrls).catch(() => null));
-        lazyEngines.push(() => newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null));
-
-        // Per-URL engines (stored lazily)
-        for (const u of cleanUrls) {
-            const urlId = gatewayMap.get(u);
-            const gatewayUrl = `https://${host}/i/${urlId}`;
-
-            // NOTE: gatewayIndexingEngine + gscInspectionEngine removed — both duplicate keyPoolManager below
-            // RULE: Exactly 1 Google Indexing API call per URL (via keyPoolManager below)
-            lazyEngines.push(() => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(gatewayUrl, host).catch(() => null));
-            lazyEngines.push(() => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 50).catch(() => null));
-            lazyEngines.push(() => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null));
-            lazyEngines.push(() => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null));
-            lazyEngines.push(() => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null));
-            // NOTE: googleIndexing.submitUrl removed — keyPoolManager above already handles this with key rotation
-            lazyEngines.push(() => forcedCrawlEngine.triggerFastCrawl(gatewayUrl).catch(() => null));
-            lazyEngines.push(() => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null));
-            lazyEngines.push(() => globalCrawlerNetwork.dispatchGlobalCrawlers(gatewayUrl).catch(() => null));
-            lazyEngines.push(() => allWorldIndexerNetwork.broadcastToAllWorldIndexers(gatewayUrl).catch(() => null));
-            lazyEngines.push(() => googleSyndicationEngine.pushInstantSyndication(gatewayUrl).catch(() => null));
-            lazyEngines.push(() => megaPubSubEngine.dispatchMegaPubSub(gatewayUrl).catch(() => null));
-            lazyEngines.push(() => multiBotSwarmEngine.dispatchBotSwarm(gatewayUrl).catch(() => null));
-            lazyEngines.push(() => pbnSyndicationEngine.syndicateToPbn(gatewayUrl, host).catch(() => null));
-            lazyEngines.push(() => openSourceCrawlingSuite.executeAllOpenSourceCrawlers(gatewayUrl).catch(() => null));
-            lazyEngines.push(() => principalIndexingEngine.executePrincipalIndexing(gatewayUrl).catch(() => null));
-            lazyEngines.push(() => scrapyEngine.crawlTargetUrl(gatewayUrl).catch(() => null));
-            lazyEngines.push(() => secretBypassEngine.executeAllBypassTricks(gatewayUrl, host).catch(() => null));
-            lazyEngines.push(() => enterpriseCrawlPipeline.executeFullPipeline(gatewayUrl).catch(() => null));
-            lazyEngines.push(() => fastTrackHandshakeEngine.executeFastTrackHandshake(gatewayUrl, host).catch(() => null));
-            lazyEngines.push(() => forcefulIndexerEngine.executeForcefulIndexing(gatewayUrl, host).catch(() => null));
-            lazyEngines.push(() => ultraFast60SecEngine.execute60SecUltraFastTrigger(u, host, gatewayUrl).catch(() => null));
-            lazyEngines.push(() => aggressiveIndexerEngine.executeAggressiveIndexing(gatewayUrl, host).catch(() => null));
-            lazyEngines.push(() => thirdPartyIndexerEngine.indexThirdPartyUrl(gatewayUrl, host).catch(() => null));
-            lazyEngines.push(() => master15StepEngine.execute15StepPipeline(gatewayUrl, host).catch(() => null));
-            // 🔓 INTELLIGENT BYPASS ENGINE — handles 403/blocked/temp URLs via 5-layer bypass
-            lazyEngines.push(() => intelligentBypassEngine.executeFullBypass(gatewayUrl, host).catch(() => null));
-        }
-
         const jobId = `job_${Date.now()}`;
-
         const gatewayMapData = Array.from(gatewayMap.entries());
 
         // Fire the background tasks asynchronously via Upstash QStash!
-        // This solves the Vercel 10s/60s timeout limit. QStash will HTTP POST to our queue-worker one-by-one.
+        // This solves the Vercel 10s/60s timeout limit. QStash will HTTP POST to our background-worker route.
+        const workerPayload = {
+            cleanUrls,
+            gatewayUrls,
+            gatewayMapData,
+            host,
+            jobId
+        };
+
         if (process.env.QSTASH_TOKEN) {
             try {
-                // Dispatch each URL as a separate job to the queue
-                for (let i = 0; i < cleanUrls.length; i++) {
-                    const u = cleanUrls[i];
-                    const gUrl = gatewayUrls[i];
-                    
-                    await qstash.publishJSON({
-                        url: `https://${host}/api/queue-worker`,
-                        body: {
-                            url: u,
-                            gatewayUrl: gUrl,
-                            jobId: jobId
-                        },
-                        retries: 3, // Auto-retry if Vercel fails
-                        delay: i * 2 // Stagger requests by 2 seconds to avoid slamming our own server
-                    });
-                }
-                console.log(`[QStash] ✅ Dispatched ${cleanUrls.length} URLs to background queue.`);
+                await qstash.publishJSON({
+                    url: `https://${host}/fui-api/api/indexing/background-worker`,
+                    body: workerPayload,
+                    retries: 3 // Auto-retry if Vercel fails
+                });
+                console.log(`[QStash] ✅ Dispatched ${cleanUrls.length} URLs to background worker queue.`);
             } catch (err) {
                 console.error('[QStash Dispatch Error]:', err);
             }
         } else {
-            console.warn('[QStash] ⚠️ QSTASH_TOKEN not found! Falling back to synchronous serverless execution.');
-            // Fallback: Dispatch to the queue-worker endpoint locally (fire and forget)
-            for (let i = 0; i < cleanUrls.length; i++) {
-                const u = cleanUrls[i];
-                const gUrl = gatewayUrls[i];
-                fetch(`https://${host}/api/queue-worker`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ url: u, gatewayUrl: gUrl, jobId: jobId })
-                }).catch(err => console.error('[Fallback Worker Error]:', err));
-            }
+            console.warn('[QStash] ⚠️ QSTASH_TOKEN not found! Falling back to asynchronous serverless execution.');
+            // Fallback: Dispatch to the background-worker endpoint locally (fire and forget)
+            fetch(`https://${host}/fui-api/api/indexing/background-worker`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(workerPayload)
+            }).catch(err => console.error('[Fallback Worker Error]:', err));
         }
 
         const results = [];
