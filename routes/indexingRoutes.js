@@ -822,6 +822,8 @@ router.post('/submit', async (req, res) => {
                 timestamp: new Date().toISOString(),
                 semanticSnapshot 
             });
+        } // ADDED MISSING BRACE HERE
+
         const jobId = `job_${Date.now()}`;
         const gatewayMapData = Array.from(gatewayMap.entries());
 
