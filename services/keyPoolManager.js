@@ -4,6 +4,8 @@
  * Features a dynamic 24-hour cooldown tracker for keys that return 429 Quota limits.
  */
 const { google } = require('googleapis');
+const fs = require('fs');
+const path = require('path');
 
 class KeyPoolManager {
     constructor() {
@@ -11,6 +13,40 @@ class KeyPoolManager {
         this.currentIndex = 0;
         // Cooldown Map stores client_email -> timestamp of cooldown expiry
         this.cooldowns = new Map();
+        
+        // Auto-load local keys on startup
+        this.loadLocalKeys();
+    }
+
+    /**
+     * Loads JSON keys from the service_accounts directory automatically
+     */
+    loadLocalKeys() {
+        try {
+            const keysDir = path.join(process.cwd(), 'service_accounts');
+            if (fs.existsSync(keysDir)) {
+                const files = fs.readdirSync(keysDir);
+                let loadedCount = 0;
+                for (const file of files) {
+                    if (file.endsWith('.json')) {
+                        const filePath = path.join(keysDir, file);
+                        const fileData = fs.readFileSync(filePath, 'utf-8');
+                        const jsonKey = JSON.parse(fileData);
+                        if (jsonKey.client_email && jsonKey.private_key) {
+                            this.keyPool.push(jsonKey);
+                            loadedCount++;
+                        }
+                    }
+                }
+                if (loadedCount > 0) {
+                    console.log(`[KeyPoolManager] 📂 Successfully auto-loaded ${loadedCount} JSON keys from service_accounts/ directory.`);
+                }
+            } else {
+                console.log(`[KeyPoolManager] ⚠️ service_accounts folder not found.`);
+            }
+        } catch (e) {
+            console.error(`[KeyPoolManager] ❌ Error loading local keys:`, e.message);
+        }
     }
 
     /**

@@ -701,8 +701,8 @@ router.post('/background-worker', async (req, res) => {
                 () => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 50).catch(() => null),
                 () => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null),
                 () => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null),
-                () => keyPoolManager.publishWithRotatedPool(gatewayUrl).catch(() => null),
-                // NOTE: googleIndexing.submitUrl removed — keyPoolManager above already handles this
+                // RULE: Exactly 1 Google Indexing API call per URL (already handled in /submit)
+                // NOTE: googleIndexing.submitUrl and keyPoolManager removed here to prevent double pinging
                 () => forcedCrawlEngine.triggerFastCrawl(gatewayUrl).catch(() => null),
                 () => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null),
                 () => globalCrawlerNetwork.dispatchGlobalCrawlers(gatewayUrl).catch(() => null),
