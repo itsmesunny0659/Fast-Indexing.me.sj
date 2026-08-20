@@ -134,7 +134,7 @@ router.get('/google:code.html', (req, res) => {
 });
 
 // GET /i/:urlId - High-DA HTML Indexing Gateway Page with Full Machine Signal Suite
-router.get('/i/:urlId', (req, res) => {
+router.get('/i/:urlId', async (req, res) => {
     const { urlId } = req.params;
     let targetData = persistentGatewayStore.getGateway(urlId);
 
@@ -203,14 +203,76 @@ router.get('/i/:urlId', (req, res) => {
         
     }
 
-    // === 301 PERMANENT REDIRECT TO TARGET URL ===
-    // This forces Googlebot and all human traffic to instantly land on the third-party site.
-    // 301 passes maximum SEO juice, making Google see the sudden traffic burst on the target site.
+    // === SERVER-SIDE CANONICAL ENGINE (Cloaking Alternative) ===
     res.setHeader('X-Robots-Tag', 'index, follow');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
+
+    let pageTitle = targetUrl;
+    let pageDesc = "Target payload optimized for fast Google indexing via Canonical Syndication.";
+
+    // Attempt to fetch real metadata to build a perfect semantic shell
+    try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s max to prevent blocking
+        const fetchRes = await fetch(targetUrl, { 
+            headers: { 
+                'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+                'X-Proxy-Bypass': 'true' // Bypass our own proxy rotator for speed
+            },
+            signal: controller.signal 
+        });
+        clearTimeout(timeoutId);
+        
+        if (fetchRes.ok) {
+            const htmlText = await fetchRes.text();
+            const titleMatch = htmlText.match(/<title[^>]*>([^<]+)<\/title>/i);
+            if (titleMatch && titleMatch[1]) pageTitle = titleMatch[1].trim();
+            const descMatch = htmlText.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i) || 
+                              htmlText.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["']/i);
+            if (descMatch && descMatch[1]) pageDesc = descMatch[1].trim();
+        }
+    } catch (e) {
+        // Fast fallback if target site blocks us or times out
+        console.log(`[CanonicalEngine] Metadata fetch fallback for ${targetUrl}`);
+    }
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHtml(pageTitle)}</title>
     
-    // Send the 301 redirect
-    return res.redirect(301, targetUrl);
+    <!-- THE ULTIMATE CANONICAL SIGNAL -->
+    <link rel="canonical" href="${escapeHtml(targetUrl)}" />
+    
+    <meta name="description" content="${escapeHtml(pageDesc)}">
+    <meta property="og:title" content="${escapeHtml(pageTitle)}">
+    <meta property="og:url" content="${escapeHtml(targetUrl)}">
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    
+    <!-- Meta Refresh Fallback -->
+    <meta http-equiv="refresh" content="3;url=${escapeHtml(targetUrl)}">
+    
+    <style>
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #ffffff; }
+        iframe { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+    <!-- Full Screen Iframe for Human Passthrough -->
+    <iframe src="${escapeHtml(targetUrl)}" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
+    
+    <!-- JS Redirect Fallback -->
+    <script>
+        setTimeout(function() {
+            window.location.replace("${escapeHtml(targetUrl)}");
+        }, 3000);
+    </script>
+</body>
+</html>`;
+
+    return res.send(html);
 });
 
 // GET /hub/:hubId - Single Hub Page: contains ALL submitted URLs as do-follow links
