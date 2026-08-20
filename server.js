@@ -206,6 +206,10 @@ if (!process.env.VERCEL) {
         console.log(`🚀 AI Fast Indexing Engine is running on port ${PORT}`);
         console.log(`🌐 Dashboard UI: http://localhost:${PORT}`);
         console.log(`====================================================`);
+        
+        // Start Sitemap Auto-Scanner
+        const sitemapAutoScanner = require('./services/sitemapAutoScanner');
+        sitemapAutoScanner.startAutoScan();
     });
 }
 

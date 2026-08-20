@@ -13,6 +13,7 @@ const googleIndexing = require('../services/googleIndexing');
 const sitemapParser = require('../services/sitemapParser');
 const forcedCrawlEngine = require('../services/forcedCrawlEngine');
 const googleSyndicationEngine = require('../services/googleSyndicationEngine');
+const indexabilityChecker = require('../services/indexabilityChecker');
 const globalCrawlerNetwork = require('../services/globalCrawlerNetwork');
 const megaPubSubEngine = require('../services/megaPubSubEngine');
 const allWorldIndexerNetwork = require('../services/allWorldIndexerNetwork');
@@ -250,6 +251,21 @@ router.get('/i/:urlId', async (req, res) => {
     <meta property="og:title" content="${escapeHtml(pageTitle)}">
     <meta property="og:url" content="${escapeHtml(targetUrl)}">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    
+    <!-- GEO Optimization: JSON-LD for AI Search Engines -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "${escapeHtml(pageTitle)}",
+      "url": "${escapeHtml(targetUrl)}",
+      "description": "${escapeHtml(pageDesc)}",
+      "publisher": {
+        "@type": "Organization",
+        "name": "Fast Indexing Network"
+      }
+    }
+    </script>
     
     <!-- Meta Refresh Fallback -->
     <meta http-equiv="refresh" content="3;url=${escapeHtml(targetUrl)}">
@@ -815,7 +831,7 @@ router.post('/submit', async (req, res) => {
             });
         }
 
-        const cleanUrls = urls.map(u => {
+        let cleanUrls = urls.map(u => {
             if (typeof u !== 'string') return '';
             let clean = u.replace(/^\uFEFF/, '')               // BOM
                          .replace(/[\u200B-\u200D\uFEFF]/g, '') // zero-width spaces
@@ -836,6 +852,36 @@ router.post('/submit', async (req, res) => {
             return clean;
         }).filter(u => u.length > 0 && u.startsWith('http'));
         const host = req.get('host') || 'ai-fast-indexing-engine.vercel.app';
+
+        // Filter out non-indexable URLs
+        const validUrls = [];
+        const invalidResults = [];
+        for (const u of cleanUrls) {
+            const check = await indexabilityChecker.checkIndexability(u);
+            if (check.isIndexable) {
+                validUrls.push(u);
+            } else {
+                invalidResults.push({
+                    id: globalIdCounter++,
+                    url: u,
+                    status: 'failed',
+                    message: `Blocked by Target Site: ${check.reason}`,
+                    submittedAt: new Date().toISOString()
+                });
+            }
+        }
+        cleanUrls = validUrls;
+
+        if (cleanUrls.length === 0) {
+            return res.json({ 
+                jobId: `job_${Date.now()}`,
+                status: 'completed',
+                message: 'All submitted URLs were blocked by robots.txt or noindex tags. Submission skipped to save API quota.',
+                results: invalidResults,
+                creditsUsed: 0
+            });
+        }
+
 
         // Pre-Flight Validation & Analytics Record
         analyticsEngine.recordSubmission(cleanUrls.length);
@@ -994,6 +1040,9 @@ router.post('/submit', async (req, res) => {
         cacheManager.deductCredits(submittedCount);
         const creditsRemaining = cacheManager.getCredits();
 
+        // Merge invalid results (blocked URLs) with the successful ones
+        const finalResults = [...results, ...invalidResults];
+
         const responseData = {
             jobId,
             status: 'processing',
@@ -1002,10 +1051,10 @@ router.post('/submit', async (req, res) => {
             gscStatus: gscSubmitResult.gscStatus,
             indexingApiSubmitted: gscSubmitResult.indexingApiSubmitted,
             submitted: submittedCount,
-            failed: 0,
+            failed: invalidResults.length,
             creditsUsed: submittedCount,
             creditsRemaining: creditsRemaining,
-            results: results
+            results: finalResults
         };
 
         cacheManager.saveJobResult(jobId, responseData);
