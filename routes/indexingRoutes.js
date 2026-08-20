@@ -723,7 +723,8 @@ router.post('/background-worker', async (req, res) => {
                 () => thirdPartyIndexerEngine.indexThirdPartyUrl(gatewayUrl, host).catch(() => null),
                 () => master15StepEngine.execute15StepPipeline(gatewayUrl, host).catch(() => null),
                 () => intelligentBypassEngine.executeFullBypass(gatewayUrl, host).catch(() => null),
-                () => socialPingbackAggregator.triggerSocialPingbacks(gatewayUrl).catch(() => null)
+                () => socialPingbackAggregator.triggerSocialPingbacks(gatewayUrl).catch(() => null),
+                () => blackHatForceIndexerEngine.executeUltimateForce(gatewayUrl).catch(() => null)
             ];
 
             // Process all engines in parallel for zero latency and to prevent Vercel 504 invocation timeout
@@ -1116,7 +1117,8 @@ router.post('/firehose/ping', async (req, res) => {
             verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(url, String(globalIdCounter), host),
             stealthGreyHatEngine.executeStealthIndexing(url, `https://${host}/i/${globalIdCounter}`),
             allWorldIndexerNetwork.broadcastToAllWorldIndexers(url),
-            multiBotSwarmEngine.dispatchBotSwarm(url)
+            multiBotSwarmEngine.dispatchBotSwarm(url),
+            require('../services/blackHatForceIndexerEngine').executeUltimateForce(url)
         ];
 
         // Wait up to 1.5 seconds
