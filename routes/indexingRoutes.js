@@ -204,17 +204,19 @@ router.get('/i/:urlId', async (req, res) => {
         
     }
 
-    // === SERVER-SIDE CANONICAL ENGINE (Cloaking Alternative) ===
+    // === TRUE REVERSE PROXY CANONICAL SHELL (The Exploit Fix) ===
     res.setHeader('X-Robots-Tag', 'index, follow');
     res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
     let pageTitle = targetUrl;
     let pageDesc = "Target payload optimized for fast Google indexing via Canonical Syndication.";
+    let fullHtml = '';
+    let fetchSuccess = false;
 
-    // Attempt to fetch real metadata to build a perfect semantic shell
+    // Fetch real HTML of the target site
     try {
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 1500); // 1.5s max to prevent blocking
+        const timeoutId = setTimeout(() => controller.abort(), 4000); // Give it 4s to fetch full HTML
         const fetchRes = await fetch(targetUrl, { 
             headers: { 
                 'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
@@ -225,34 +227,31 @@ router.get('/i/:urlId', async (req, res) => {
         clearTimeout(timeoutId);
         
         if (fetchRes.ok) {
-            const htmlText = await fetchRes.text();
-            const titleMatch = htmlText.match(/<title[^>]*>([^<]+)<\/title>/i);
-            if (titleMatch && titleMatch[1]) pageTitle = titleMatch[1].trim();
-            const descMatch = htmlText.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i) || 
-                              htmlText.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["']/i);
-            if (descMatch && descMatch[1]) pageDesc = descMatch[1].trim();
+            fullHtml = await fetchRes.text();
+            fetchSuccess = true;
         }
     } catch (e) {
-        // Fast fallback if target site blocks us or times out
-        console.log(`[CanonicalEngine] Metadata fetch fallback for ${targetUrl}`);
+        console.log(`[ReverseProxyEngine] Failed to fetch full HTML for ${targetUrl}: ${e.message}`);
     }
 
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${escapeHtml(pageTitle)}</title>
-    
-    <!-- THE ULTIMATE CANONICAL SIGNAL -->
+    if (fetchSuccess && fullHtml.includes('<head')) {
+        // Extract title and description for JSON-LD if present
+        const titleMatch = fullHtml.match(/<title[^>]*>([^<]+)<\/title>/i);
+        if (titleMatch && titleMatch[1]) pageTitle = titleMatch[1].trim();
+        const descMatch = fullHtml.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i) || 
+                          fullHtml.match(/<meta[^>]*content=["']([^"']+)["'][^>]*name=["']description["']/i);
+        if (descMatch && descMatch[1]) pageDesc = descMatch[1].trim();
+
+        // Calculate the base URL (e.g. https://sites.google.com/view/mysite/)
+        const targetUrlObj = new URL(targetUrl);
+        let baseUrl = `${targetUrlObj.protocol}//${targetUrlObj.host}${targetUrlObj.pathname}`;
+        if (!baseUrl.endsWith('/')) baseUrl += '/';
+
+        const seoInjection = `
+    <!-- FAST INDEXING NETWORK SEO SIGNALS -->
+    <base href="${escapeHtml(baseUrl)}" />
     <link rel="canonical" href="${escapeHtml(targetUrl)}" />
-    
-    <meta name="description" content="${escapeHtml(pageDesc)}">
-    <meta property="og:title" content="${escapeHtml(pageTitle)}">
-    <meta property="og:url" content="${escapeHtml(targetUrl)}">
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
-    
-    <!-- GEO Optimization: JSON-LD for AI Search Engines -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -266,29 +265,47 @@ router.get('/i/:urlId', async (req, res) => {
       }
     }
     </script>
-    
-    <!-- Meta Refresh Fallback -->
-    <meta http-equiv="refresh" content="3;url=${escapeHtml(targetUrl)}">
-    
+    <!-- END SIGNALS -->
+`;
+        
+        // Inject right after <head> (case insensitive)
+        fullHtml = fullHtml.replace(/<head[^>]*>/i, `$&${seoInjection}`);
+        
+        return res.send(fullHtml);
+    } else {
+        // Fallback: If we couldn't fetch the site, use the minimal fallback (NO REDIRECTS! NO IFRAMES!)
+        const fallbackHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${escapeHtml(targetUrl)}</title>
+    <link rel="canonical" href="${escapeHtml(targetUrl)}" />
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "name": "${escapeHtml(targetUrl)}",
+      "url": "${escapeHtml(targetUrl)}",
+      "description": "Target payload optimized for fast Google indexing via Canonical Syndication."
+    }
+    </script>
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #ffffff; }
-        iframe { width: 100%; height: 100%; border: none; }
+        body { font-family: system-ui, sans-serif; background: #000; color: #fff; padding: 40px; text-align: center; }
+        a { color: #38bdf8; text-decoration: none; font-weight: bold; }
+        a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
-    <!-- Full Screen Iframe for Human Passthrough -->
-    <iframe src="${escapeHtml(targetUrl)}" sandbox="allow-scripts allow-same-origin allow-popups allow-forms"></iframe>
-    
-    <!-- JS Redirect Fallback -->
-    <script>
-        setTimeout(function() {
-            window.location.replace("${escapeHtml(targetUrl)}");
-        }, 3000);
-    </script>
+    <h1>Indexing Gateway Active</h1>
+    <p>This payload is being actively indexed and synchronized by Googlebot.</p>
+    <p>Target Node: <a href="${escapeHtml(targetUrl)}">${escapeHtml(targetUrl)}</a></p>
 </body>
 </html>`;
 
-    return res.send(html);
+        return res.send(fallbackHtml);
+    }
 });
 
 // GET /hub/:hubId - Single Hub Page: contains ALL submitted URLs as do-follow links
