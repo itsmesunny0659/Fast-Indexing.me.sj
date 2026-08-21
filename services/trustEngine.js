@@ -9,7 +9,7 @@ class TrustEngine {
         this.wpUser = process.env.WP_USERNAME || null;
         this.wpPass = process.env.WP_APP_PASSWORD || null;
         this.bloggerKey = process.env.BLOGGER_API_KEY || null;
-        this.bloggerId = process.env.BLOGGER_BLOG_ID || null;
+        this.bloggerId = process.env.BLOGGER_BLOG_ID || process.env.BLOGGER_BLOG_ID_02 || null;
         
         // Define path for dynamic RSS feed storage
         this.rssPath = path.join(__dirname, '..', 'public', 'trust-feed.xml');
