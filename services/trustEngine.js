@@ -153,8 +153,9 @@ class TrustEngine {
   </item>`;
         
         const updatedXml = existingXml.replace('<channel>', `<channel>${newItem}`);
-        fs.writeFileSync(this.rssPath, updatedXml);
-        
+        if (!process.env.VERCEL) {
+            fs.writeFileSync(this.rssPath, updatedXml);
+        }
         console.log(`[TrustEngine] 📡 Pinging Feed Aggregators (Ping-O-Matic style)`);
         
         // Example Ping to FeedBurner/Google/Weblogs
