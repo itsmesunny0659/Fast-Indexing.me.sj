@@ -789,40 +789,11 @@ router.post('/background-worker', async (req, res) => {
 
             // Compile all remaining engines for this URL
             const urlEngines = [
-                () => googleHeadlessTriggerEngine.triggerGoogleHeadlessRender(u, gatewayUrl).catch(() => null),
-                // NOTE: gatewayIndexingEngine + gscInspectionEngine removed — both use Google Indexing API (quota wasted)
-                // RULE: Exactly 1 Google Indexing API call per URL — only keyPoolManager below
-                () => cloudflareEdgeGatewayEngine.dispatchCloudflareEdgeSignals(gatewayUrl, host).catch(() => null),
-                () => humanEmulationEngine.dispatchHumanEmulationPool(gatewayUrl, 50).catch(() => null),
-                () => verifiedGatewayDelegationEngine.executeVerifiedGatewayIndexing(u, urlId, host).catch(() => null),
-                () => socialSyndicationEngine.syndicateToSocialHubs(gatewayUrl, host).catch(() => null),
-                // RULE: Exactly 1 Google Indexing API call per URL (already handled in /submit)
-                // NOTE: googleIndexing.submitUrl and keyPoolManager removed here to prevent double pinging
-                () => forcedCrawlEngine.triggerFastCrawl(gatewayUrl).catch(() => null),
-                () => stealthGreyHatEngine.executeStealthIndexing(u, gatewayUrl).catch(() => null),
-                () => globalCrawlerNetwork.dispatchGlobalCrawlers(gatewayUrl).catch(() => null),
-                () => allWorldIndexerNetwork.broadcastToAllWorldIndexers(gatewayUrl).catch(() => null),
-                () => googleSyndicationEngine.pushInstantSyndication(gatewayUrl).catch(() => null),
-                () => megaPubSubEngine.dispatchMegaPubSub(gatewayUrl).catch(() => null),
-                () => multiBotSwarmEngine.dispatchBotSwarm(gatewayUrl).catch(() => null),
+                // 1. Bing IndexNow API
                 () => indexNowEngine.submitUrl(gatewayUrl, host).catch(() => null),
-                () => xmlRpcPinger.ping('Fast Indexing Gateway Ping', gatewayUrl).catch(() => null),
-                () => pbnSyndicationEngine.syndicateToPbn(gatewayUrl, host).catch(() => null),
-                () => openSourceCrawlingSuite.executeAllOpenSourceCrawlers(gatewayUrl).catch(() => null),
-                () => principalIndexingEngine.executePrincipalIndexing(gatewayUrl).catch(() => null),
-                () => scrapyEngine.crawlTargetUrl(gatewayUrl).catch(() => null),
-                () => secretBypassEngine.executeAllBypassTricks(gatewayUrl, host).catch(() => null),
-                () => enterpriseCrawlPipeline.executeFullPipeline(gatewayUrl).catch(() => null),
-                () => fastTrackHandshakeEngine.executeFastTrackHandshake(gatewayUrl, host).catch(() => null),
-                () => forcefulIndexerEngine.executeForcefulIndexing(gatewayUrl, host).catch(() => null),
-                () => ultraFast60SecEngine.execute60SecUltraFastTrigger(u, host, gatewayUrl).catch(() => null),
-                () => aggressiveIndexerEngine.executeAggressiveIndexing(gatewayUrl, host).catch(() => null),
-                () => thirdPartyIndexerEngine.indexThirdPartyUrl(gatewayUrl, host).catch(() => null),
-                () => master15StepEngine.execute15StepPipeline(gatewayUrl, host).catch(() => null),
-                () => intelligentBypassEngine.executeFullBypass(gatewayUrl, host).catch(() => null),
-                () => socialPingbackAggregator.triggerSocialPingbacks(gatewayUrl).catch(() => null),
-                () => blackHatForceIndexerEngine.executeUltimateForce(gatewayUrl).catch(() => null),
+                // 2. Trust Engine (GitHub, Blogger, WordPress, RSS)
                 () => trustEngine.syndicateUrl(u).catch(() => null),
+                // 3. Headless Traffic Emulation (Organic CTR Signals)
                 () => trafficEmulationEngine.emulateOrganicTraffic(u).catch(() => null)
             ];
 
