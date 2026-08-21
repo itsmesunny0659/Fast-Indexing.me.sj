@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+// Native fetch is used
 
 class IndexabilityChecker {
     /**
