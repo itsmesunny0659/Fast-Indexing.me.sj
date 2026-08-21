@@ -48,6 +48,13 @@ globalThis.fetch = async function(url, options = {}) {
         urlString.includes('google.com') ||
         urlString.includes('bing.com') ||
         urlString.includes('yandex.com') ||
+        urlString.includes('localhost') ||
+        urlString.includes('127.0.0.1') ||
+        urlString.includes('169.254.169.254') ||
+        urlString.includes('.vercel.app') ||
+        urlString.includes('.internal') ||
+        urlString.includes('unix:') ||
+        urlString.startsWith('/') ||
         (process.env.CF_PROXY_URL && urlString.includes(new URL(process.env.CF_PROXY_URL).hostname));
 
     if (isProxyBypass) {
