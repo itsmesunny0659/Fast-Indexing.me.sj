@@ -22,6 +22,7 @@ const dailyLogsManager = require('../services/dailyLogsManager');
 const trustEngine = require('../services/trustEngine');
 const trafficEmulationEngine = require('../services/trafficEmulationEngine');
 const smartApiOrchestrator = require('../services/smartApiOrchestrator');
+const googleIndexingApiRotator = require('../services/googleIndexingApiRotator');
 
 // Load persistent counter from db.json to avoid ID resets on cold starts
 let globalIdCounter = 22550;
@@ -794,7 +795,11 @@ router.post('/background-worker', async (req, res) => {
                 // 2. Trust Engine (GitHub, Blogger, WordPress, RSS)
                 () => trustEngine.syndicateUrl(u).catch(() => null),
                 // 3. Headless Traffic Emulation (Organic CTR Signals)
-                () => trafficEmulationEngine.emulateOrganicTraffic(u).catch(() => null)
+                () => trafficEmulationEngine.emulateOrganicTraffic(u).catch(() => null),
+                // 4. Google Indexing API Rotator (CRITICAL FOR 1-3 MINUTE INDEXING)
+                () => googleIndexingApiRotator.submitUrl(u).catch(() => null),
+                // 5. XML-RPC Pinger
+                () => xmlRpcPinger.ping(u, u).catch(() => null)
             ];
 
             // Process all engines in parallel for zero latency and to prevent Vercel 504 invocation timeout
