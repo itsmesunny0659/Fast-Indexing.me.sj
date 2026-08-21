@@ -10,20 +10,27 @@ class IndexNowEngine {
 
     getOrGenerateKey() {
         const keyPath = path.join(process.cwd(), 'data', 'indexnow_key.txt');
-        let newKey;
-        if (fs.existsSync(keyPath)) {
-            newKey = fs.readFileSync(keyPath, 'utf8').trim();
-        } else {
-            const crypto = require('crypto');
-            newKey = crypto.randomBytes(16).toString('hex');
-            fs.writeFileSync(keyPath, newKey);
-            console.log(`🔑 [IndexNowEngine] Generated new IndexNow key: ${newKey}`);
-        }
+        let newKey = process.env.INDEXNOW_KEY || 'cbfb41ad1136908a80f1c0bde7253f8b';
         
-        // Ensure the key file is available in the public folder for search engines to verify
-        const publicDir = path.join(process.cwd(), 'public');
-        if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir);
-        fs.writeFileSync(path.join(publicDir, `${newKey}.txt`), newKey);
+        if (!process.env.VERCEL) {
+            try {
+                if (fs.existsSync(keyPath)) {
+                    newKey = fs.readFileSync(keyPath, 'utf8').trim();
+                } else {
+                    const crypto = require('crypto');
+                    newKey = crypto.randomBytes(16).toString('hex');
+                    fs.writeFileSync(keyPath, newKey);
+                    console.log(`🔑 [IndexNowEngine] Generated new IndexNow key: ${newKey}`);
+                }
+                
+                // Ensure the key file is available in the public folder for search engines to verify
+                const publicDir = path.join(process.cwd(), 'public');
+                if (!fs.existsSync(publicDir)) fs.mkdirSync(publicDir);
+                fs.writeFileSync(path.join(publicDir, `${newKey}.txt`), newKey);
+            } catch (e) {
+                console.warn(`[IndexNowEngine] Could not save key to disk (read-only filesystem): ${e.message}`);
+            }
+        }
         
         return newKey;
     }
