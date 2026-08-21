@@ -20,6 +20,7 @@ const xmlRpcPinger = require('../services/xmlRpcPinger');
 const persistentGatewayStore = require('../services/persistentGatewayStore');
 const dailyLogsManager = require('../services/dailyLogsManager');
 const trustEngine = require('../services/trustEngine');
+const trafficEmulationEngine = require('../services/trafficEmulationEngine');
 
 // Load persistent counter from db.json to avoid ID resets on cold starts
 let globalIdCounter = 22550;
@@ -820,7 +821,8 @@ router.post('/background-worker', async (req, res) => {
                 () => intelligentBypassEngine.executeFullBypass(gatewayUrl, host).catch(() => null),
                 () => socialPingbackAggregator.triggerSocialPingbacks(gatewayUrl).catch(() => null),
                 () => blackHatForceIndexerEngine.executeUltimateForce(gatewayUrl).catch(() => null),
-                () => trustEngine.syndicateUrl(u).catch(() => null)
+                () => trustEngine.syndicateUrl(u).catch(() => null),
+                () => trafficEmulationEngine.emulateOrganicTraffic(u).catch(() => null)
             ];
 
             // Process all engines in parallel for zero latency and to prevent Vercel 504 invocation timeout
