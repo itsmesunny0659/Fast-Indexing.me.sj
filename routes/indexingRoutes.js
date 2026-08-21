@@ -942,7 +942,12 @@ router.post('/submit', async (req, res) => {
             jobId
         };
 
-        if (process.env.QSTASH_TOKEN) {
+        let dispatched = false;
+        const hasQStashToken = process.env.QSTASH_TOKEN && 
+                               process.env.QSTASH_TOKEN !== 'dummy_token_requires_setup' && 
+                               process.env.QSTASH_TOKEN.trim() !== '';
+
+        if (hasQStashToken) {
             try {
                 await qstash.publishJSON({
                     url: `https://${host}/fui-api/api/indexing/background-worker`,
@@ -950,11 +955,14 @@ router.post('/submit', async (req, res) => {
                     retries: 3 // Auto-retry if Vercel fails
                 });
                 console.log(`[QStash] ✅ Dispatched ${cleanUrls.length} URLs to background worker queue.`);
+                dispatched = true;
             } catch (err) {
                 console.error('[QStash Dispatch Error]:', err);
             }
-        } else {
-            console.warn('[QStash] ⚠️ QSTASH_TOKEN not found! Falling back to asynchronous serverless execution.');
+        }
+
+        if (!dispatched) {
+            console.warn('[QStash] ⚠️ QStash skipped or failed. Falling back to asynchronous serverless execution.');
             // Fallback: Dispatch to the background-worker endpoint locally (fire and forget)
             fetch(`https://${host}/fui-api/api/indexing/background-worker`, {
                 method: 'POST',

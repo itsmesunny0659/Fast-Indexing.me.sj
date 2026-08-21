@@ -3,7 +3,8 @@ const keyPoolManager = require('./keyPoolManager');
 
 class SmartApiOrchestrator {
     constructor() {
-        this.qstashToken = process.env.QSTASH_TOKEN || null;
+        const token = process.env.QSTASH_TOKEN;
+        this.qstashToken = (token && token !== 'dummy_token_requires_setup' && token.trim() !== '') ? token : null;
         if (this.qstashToken) {
             this.qstash = new Client({ token: this.qstashToken });
         }
