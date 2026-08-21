@@ -1,9 +1,4 @@
-const puppeteer = require('puppeteer-core');
-const { addExtra } = require('puppeteer-extra');
-const StealthPlugin = require('puppeteer-extra-plugin-stealth');
-
-const puppeteerExtra = addExtra(puppeteer);
-puppeteerExtra.use(StealthPlugin());
+const puppeteerExtra = require('puppeteer-core');
 
 class TrafficEmulationEngine {
     constructor() {
