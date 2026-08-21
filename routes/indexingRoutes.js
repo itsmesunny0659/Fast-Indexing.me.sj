@@ -774,12 +774,12 @@ router.post('/background-worker', async (req, res) => {
             indexNowProtocolEngine.submitIndexNowBatch(gatewayUrls, host).catch(() => null),
             // NOTE: cleanUrls direct keyPool removed — handled per-URL in urlPipelines below (1 call per URL)
             // NOTE: googleBatchDelegationEngine disabled — duplicates keyPoolManager below
-            speedyIndexEngine.submitBatch(gatewayUrls).catch(() => null),
-            fastIndexIcuService.submitBatchToBotfarm(cleanUrls).catch(() => null),
-            edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null),
-            githubIndexingSuite.runGithubMasterSuite(gatewayUrls).catch(() => null),
-            newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null),
-            googleSyndicationEngine.pushPubSubHubbub(`https://${host}/feed.xml`).catch(() => null)
+            // speedyIndexEngine.submitBatch(gatewayUrls).catch(() => null),
+            // fastIndexIcuService.submitBatchToBotfarm(cleanUrls).catch(() => null),
+            // edgeFeedAggregatorSuite.submitToRssAggregators(host).catch(() => null),
+            // githubIndexingSuite.runGithubMasterSuite(gatewayUrls).catch(() => null),
+            // newsPublisherEngine.executeNewsPriorityBroadcast(cleanUrls, host).catch(() => null),
+            // googleSyndicationEngine.pushPubSubHubbub(`https://${host}/feed.xml`).catch(() => null)
         ];
         await Promise.allSettled(batchPromises);
 
@@ -892,22 +892,22 @@ router.post('/submit', async (req, res) => {
 
         // 1. Pre-Flight Validation (starts immediately — lightweight, needed for result object)
         let validationReport = { totalValidated: cleanUrls.length, accessibleCount: cleanUrls.length, results: [] };
-        batchValidatorEngine.validateBatch(cleanUrls.slice(0, 10))
-            .then(report => { validationReport = report; })
-            .catch(() => null);
+        // batchValidatorEngine.validateBatch(cleanUrls.slice(0, 10))
+        //     .then(report => { validationReport = report; })
+        //     .catch(() => null);
 
         // 2. Daemon registrations (synchronous internal state, no network calls)
-        realHumanBotDaemon.registerUrls(cleanUrls);
-        residentCrawlerDaemon.startResidentDaemon(host);
-        cleanUrls.forEach(u => residentCrawlerDaemon.broadcastUrlToResidentCrawlers(u));
-        bulkJsonSchemaEngine.processBulkJsonBatch(cleanUrls);
+        // realHumanBotDaemon.registerUrls(cleanUrls);
+        // residentCrawlerDaemon.startResidentDaemon(host);
+        // cleanUrls.forEach(u => residentCrawlerDaemon.broadcastUrlToResidentCrawlers(u));
+        // bulkJsonSchemaEngine.processBulkJsonBatch(cleanUrls);
 
         // Pre-generate Gateway URLs for all inputs and Fetch Semantic Snapshots
         const gatewayMap = new Map();
         const gatewayUrls = [];
                 
         // Concurrently fetch all semantic snapshots for speed
-        const snapshotPromises = cleanUrls.map(u => stealthScraperEngine.fetchSemanticSnapshot(u));
+        const snapshotPromises = cleanUrls.map(u => Promise.resolve(null)); // stealthScraperEngine.fetchSemanticSnapshot(u)
         const snapshots = await Promise.allSettled(snapshotPromises);
 
         for (let i = 0; i < cleanUrls.length; i++) {
