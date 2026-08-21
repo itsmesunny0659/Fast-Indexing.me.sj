@@ -21,6 +21,7 @@ const persistentGatewayStore = require('../services/persistentGatewayStore');
 const dailyLogsManager = require('../services/dailyLogsManager');
 const trustEngine = require('../services/trustEngine');
 const trafficEmulationEngine = require('../services/trafficEmulationEngine');
+const smartApiOrchestrator = require('../services/smartApiOrchestrator');
 
 // Load persistent counter from db.json to avoid ID resets on cold starts
 let globalIdCounter = 22550;
@@ -1019,12 +1020,15 @@ router.post('/submit', async (req, res) => {
         }
 
         // === STEP 1: Google Indexing API — EXACTLY 1 call per URL via keyPoolManager ===
-        // All duplicate calls removed. keyPoolManager handles key rotation + quota tracking.
+        // We now ping the targetSubmitUrl instantly for the gateway
         const poolResponse = await keyPoolManager.publishWithRotatedPool(targetSubmitUrl);
         const gscSubmitResult = poolResponse.success ? 
             { indexingApiSubmitted: true, gscStatus: '📤 Request Indexing submitted to Google ✓' } : 
             { indexingApiSubmitted: false, gscStatus: '⚠️ Google API Skipped (Permission/Quota)' };
         
+        // DRIP FEEDER: Schedule the raw target URLs to the Google API over time (500-1000 per minute)
+        smartApiOrchestrator.scheduleDripFeed(cleanUrls, host, 500).catch(e => console.error('[DripFeeder] Error:', e));
+
         // Also submit individual URLs via all other engines (keep existing behavior)
         for (const url of cleanUrls) {
             globalIdCounter++;
@@ -1146,6 +1150,26 @@ router.get(['/rss.xml', '/feed.xml'], (req, res) => {
 
     res.set('Content-Type', 'text/xml');
     res.send(rssXml);
+});
+
+// POST /fui-api/api/indexing/drip-worker (Upstash QStash Webhook)
+router.post('/drip-worker', async (req, res) => {
+    try {
+        const { urls } = req.body;
+        if (!urls || !Array.isArray(urls)) {
+            return res.status(400).json({ error: 'Missing urls array in payload' });
+        }
+
+        console.log(`[Drip-Worker] 💧 Received batch of ${urls.length} URLs from QStash.`);
+        
+        // Let the orchestrator process the batch
+        const results = await smartApiOrchestrator.processDripBatch(urls);
+
+        res.json({ success: true, processed: urls.length, results });
+    } catch (e) {
+        console.error(`[Drip-Worker] ❌ Worker execution failed:`, e);
+        res.status(500).json({ error: e.message });
+    }
 });
 
 // POST /fui-api/api/indexing/sitemap
