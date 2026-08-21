@@ -61,7 +61,7 @@ class ProxyPoolManager {
 class ProxyRotatorEngine {
     constructor() {
         this.GAS_PROXY_URL = process.env.GAS_PROXY_URL || 'https://script.google.com/macros/s/AKfycbyjOF2CKdvnkW8I3PxDN5C9UJdUjak_vfye8wlgJgW-S5jRbxL11v2NSuzhidQ06nRR/exec';
-        this.CF_PROXY_URL = process.env.CF_PROXY_URL || null;
+        this.CF_PROXY_URL = process.env.CF_PROXY_URL || 'https://indexing-proxy-v2.instant-url-indexing.workers.dev';
         this.poolManager = new ProxyPoolManager();
         // Kickoff initial scrape
         this.poolManager.refreshPool();
