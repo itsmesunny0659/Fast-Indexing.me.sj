@@ -23,6 +23,7 @@ const trustEngine = require('../services/trustEngine');
 const trafficEmulationEngine = require('../services/trafficEmulationEngine');
 const smartApiOrchestrator = require('../services/smartApiOrchestrator');
 const googleIndexingApiRotator = require('../services/googleIndexingApiRotator');
+const diagnosticEngine = require('../services/diagnosticEngine');
 
 // Load persistent counter from db.json to avoid ID resets on cold starts
 let globalIdCounter = 22550;
