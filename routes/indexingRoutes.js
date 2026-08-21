@@ -958,7 +958,10 @@ router.post('/submit', async (req, res) => {
             // Fallback: Dispatch to the background-worker endpoint locally (fire and forget)
             fetch(`https://${host}/fui-api/api/indexing/background-worker`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'X-Proxy-Bypass': 'true'
+                },
                 body: JSON.stringify(workerPayload)
             }).catch(err => console.error('[Fallback Worker Error]:', err));
         }
@@ -1033,7 +1036,7 @@ router.post('/submit', async (req, res) => {
 
             cacheManager.setCachedUrlStatus(url, resultObj);
             results.push(resultObj);
-            firehoseEngine.broadcastToFirehose(url, globalIdCounter);
+            // firehoseEngine.broadcastToFirehose(url, globalIdCounter);
         }
 
         cacheManager.deductCredits(submittedCount);
