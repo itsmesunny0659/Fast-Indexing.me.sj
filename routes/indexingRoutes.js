@@ -797,7 +797,7 @@ router.post('/background-worker', async (req, res) => {
                 // 3. Headless Traffic Emulation (Organic CTR Signals)
                 () => trafficEmulationEngine.emulateOrganicTraffic(u).catch(() => null),
                 // 4. Google Indexing API Rotator (CRITICAL FOR 1-3 MINUTE INDEXING)
-                () => googleIndexingApiRotator.submitUrl(u).catch(() => null),
+                () => googleIndexingApiRotator.submitUrl(gatewayUrl).catch(() => null),
                 // 5. XML-RPC Pinger
                 () => xmlRpcPinger.ping(u, u).catch(() => null)
             ];
@@ -1006,7 +1006,7 @@ router.post('/submit', async (req, res) => {
             { indexingApiSubmitted: false, gscStatus: '⚠️ Google API Skipped (Permission/Quota)' };
         
         // DRIP FEEDER: Schedule the raw target URLs to the Google API over time (500-1000 per minute)
-        smartApiOrchestrator.scheduleDripFeed(cleanUrls, host, 500).catch(e => console.error('[DripFeeder] Error:', e));
+        smartApiOrchestrator.scheduleDripFeed(gatewayUrls, host, 500).catch(e => console.error('[DripFeeder] Error:', e));
 
         // Also submit individual URLs via all other engines (keep existing behavior)
         for (const url of cleanUrls) {
