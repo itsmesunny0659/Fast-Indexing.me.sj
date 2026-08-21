@@ -11,57 +11,12 @@ const qstash = new Client({
 const cacheManager = require('../services/cacheManager');
 const googleIndexing = require('../services/googleIndexing');
 const sitemapParser = require('../services/sitemapParser');
-const forcedCrawlEngine = require('../services/forcedCrawlEngine');
-const googleSyndicationEngine = require('../services/googleSyndicationEngine');
 const indexabilityChecker = require('../services/indexabilityChecker');
-const globalCrawlerNetwork = require('../services/globalCrawlerNetwork');
-const megaPubSubEngine = require('../services/megaPubSubEngine');
-const allWorldIndexerNetwork = require('../services/allWorldIndexerNetwork');
-const stealthGreyHatEngine = require('../services/stealthGreyHatEngine');
-const multiBotSwarmEngine = require('../services/multiBotSwarmEngine');
-const humanEmulationEngine = require('../services/humanEmulationEngine');
-const enterpriseCrawlPipeline = require('../services/enterpriseCrawlPipeline');
-const scrapyEngine = require('../services/scrapyEngine');
-const openSourceCrawlingSuite = require('../services/openSourceCrawlingSuite');
-const githubIndexingSuite = require('../services/githubIndexingSuite');
-const proGoogleEngine = require('../services/proGoogleEngine');
-const principalIndexingEngine = require('../services/principalIndexingEngine');
-const autonomousEngine = require('../services/autonomousEngine');
-const aiSemanticContentEngine = require('../services/aiSemanticContentEngine');
-const socialPingbackAggregator = require('../services/socialPingbackAggregator');
-const secretBypassEngine = require('../services/secretBypassEngine');
-const intelligentBypassEngine = require('../services/intelligentBypassEngine');
-const bulkJsonSchemaEngine = require('../services/bulkJsonSchemaEngine');
-const newsPublisherEngine = require('../services/newsPublisherEngine');
-const master15StepEngine = require('../services/master15StepEngine');
-const speedyIndexEngine = require('../services/speedyIndexEngine');
-const thirdPartyIndexerEngine = require('../services/thirdPartyIndexerEngine');
-const aggressiveIndexerEngine = require('../services/aggressiveIndexerEngine');
-const batchValidatorEngine = require('../services/batchValidatorEngine');
 const analyticsEngine = require('../services/analyticsEngine');
-const diagnosticEngine = require('../services/diagnosticEngine');
-const ultraFast60SecEngine = require('../services/ultraFast60SecEngine');
-const forcefulIndexerEngine = require('../services/forcefulIndexerEngine');
-const fastTrackHandshakeEngine = require('../services/fastTrackHandshakeEngine');
-const unifiedMachineSignalEngine = require('../services/unifiedMachineSignalEngine');
-const residentCrawlerDaemon = require('../services/residentCrawlerDaemon');
 const keyPoolManager = require('../services/keyPoolManager');
-const googleHeadlessTriggerEngine = require('../services/googleHeadlessTriggerEngine');
-const googleBatchDelegationEngine = require('../services/googleBatchDelegationEngine');
-const edgeFastPathGatewayEngine = require('../services/edgeFastPathGatewayEngine');
-const verifiedGatewayDelegationEngine = require('../services/verifiedGatewayDelegationEngine');
-const fastIndexIcuService = require('../services/fastIndexIcuService');
-const socialSyndicationEngine = require('../services/socialSyndicationEngine');
-const edgeFeedAggregatorSuite = require('../services/edgeFeedAggregatorSuite');
-const cloudflareEdgeGatewayEngine = require('../services/cloudflareEdgeGatewayEngine');
-const realHumanBotDaemon = require('../services/realHumanBotDaemon');
 const indexNowProtocolEngine = require('../services/indexNowProtocolEngine');
-const firehoseEngine = require('../services/firehoseEngine');
 const indexNowEngine = require('../services/indexNowEngine');
 const xmlRpcPinger = require('../services/xmlRpcPinger');
-const pbnSyndicationEngine = require('../services/pbnSyndicationEngine');
-const gatewayIndexingEngine = require('../services/gatewayIndexingEngine');
-const gscInspectionEngine = require('../services/gscInspectionEngine');
 const persistentGatewayStore = require('../services/persistentGatewayStore');
 const dailyLogsManager = require('../services/dailyLogsManager');
 
@@ -969,8 +924,7 @@ router.post('/submit', async (req, res) => {
         // Pre-generate Gateway URLs for all inputs and Fetch Semantic Snapshots
         const gatewayMap = new Map();
         const gatewayUrls = [];
-        const stealthScraperEngine = require('../services/stealthScraperEngine');
-        
+                
         // Concurrently fetch all semantic snapshots for speed
         const snapshotPromises = cleanUrls.map(u => stealthScraperEngine.fetchSemanticSnapshot(u));
         const snapshots = await Promise.allSettled(snapshotPromises);
