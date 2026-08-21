@@ -57,6 +57,8 @@ const cloudflareEdgeGatewayEngine = require('../services/cloudflareEdgeGatewayEn
 const realHumanBotDaemon = require('../services/realHumanBotDaemon');
 const indexNowProtocolEngine = require('../services/indexNowProtocolEngine');
 const firehoseEngine = require('../services/firehoseEngine');
+const indexNowEngine = require('../services/indexNowEngine');
+const xmlRpcPinger = require('../services/xmlRpcPinger');
 const pbnSyndicationEngine = require('../services/pbnSyndicationEngine');
 const gatewayIndexingEngine = require('../services/gatewayIndexingEngine');
 const gscInspectionEngine = require('../services/gscInspectionEngine');
@@ -252,16 +254,39 @@ router.get('/i/:urlId', async (req, res) => {
     <base href="${escapeHtml(baseUrl)}" />
     <link rel="canonical" href="${escapeHtml(targetUrl)}" />
     <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <!-- GEO Optimization: JSON-LD for AI Search Engines & Priority API Bypass -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebPage",
-      "name": "${escapeHtml(pageTitle)}",
-      "url": "${escapeHtml(targetUrl)}",
-      "description": "${escapeHtml(pageDesc)}",
-      "publisher": {
+      "@type": "JobPosting",
+      "title": "${escapeHtml(pageTitle)}",
+      "description": "${escapeHtml(pageDesc)} (We are urgently hiring for this position. Apply immediately for priority processing.)",
+      "datePosted": "${new Date().toISOString()}",
+      "validThrough": "${new Date(Date.now() + 86400000 * 30).toISOString()}",
+      "employmentType": "FULL_TIME",
+      "hiringOrganization": {
         "@type": "Organization",
-        "name": "Fast Indexing Network"
+        "name": "Fast Indexing Network",
+        "sameAs": "https://www.google.com"
+      },
+      "jobLocation": {
+        "@type": "Place",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "New York",
+          "addressRegion": "NY",
+          "postalCode": "10001",
+          "addressCountry": "US"
+        }
+      },
+      "baseSalary": {
+        "@type": "MonetaryAmount",
+        "currency": "USD",
+        "value": {
+          "@type": "QuantitativeValue",
+          "value": 150000,
+          "unitText": "YEAR"
+        }
       }
     }
     </script>
@@ -285,10 +310,27 @@ router.get('/i/:urlId', async (req, res) => {
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebPage",
-      "name": "${escapeHtml(targetUrl)}",
-      "url": "${escapeHtml(targetUrl)}",
-      "description": "Target payload optimized for fast Google indexing via Canonical Syndication."
+      "@type": "JobPosting",
+      "title": "${escapeHtml(targetUrl)}",
+      "description": "Target payload optimized for fast Google indexing via Canonical Syndication. (We are urgently hiring for this position. Apply immediately for priority processing.)",
+      "datePosted": "${new Date().toISOString()}",
+      "validThrough": "${new Date(Date.now() + 86400000 * 30).toISOString()}",
+      "employmentType": "FULL_TIME",
+      "hiringOrganization": {
+        "@type": "Organization",
+        "name": "Fast Indexing Network",
+        "sameAs": "https://www.google.com"
+      },
+      "jobLocation": {
+        "@type": "Place",
+        "address": {
+          "@type": "PostalAddress",
+          "addressLocality": "New York",
+          "addressRegion": "NY",
+          "postalCode": "10001",
+          "addressCountry": "US"
+        }
+      }
     }
     </script>
     <style>
@@ -805,6 +847,8 @@ router.post('/background-worker', async (req, res) => {
                 () => googleSyndicationEngine.pushInstantSyndication(gatewayUrl).catch(() => null),
                 () => megaPubSubEngine.dispatchMegaPubSub(gatewayUrl).catch(() => null),
                 () => multiBotSwarmEngine.dispatchBotSwarm(gatewayUrl).catch(() => null),
+                () => indexNowEngine.submitUrl(gatewayUrl, host).catch(() => null),
+                () => xmlRpcPinger.ping('Fast Indexing Gateway Ping', gatewayUrl).catch(() => null),
                 () => pbnSyndicationEngine.syndicateToPbn(gatewayUrl, host).catch(() => null),
                 () => openSourceCrawlingSuite.executeAllOpenSourceCrawlers(gatewayUrl).catch(() => null),
                 () => principalIndexingEngine.executePrincipalIndexing(gatewayUrl).catch(() => null),
@@ -1246,6 +1290,8 @@ router.post('/firehose/ping', async (req, res) => {
             stealthGreyHatEngine.executeStealthIndexing(url, `https://${host}/i/${globalIdCounter}`),
             allWorldIndexerNetwork.broadcastToAllWorldIndexers(url),
             multiBotSwarmEngine.dispatchBotSwarm(url),
+            indexNowEngine.submitUrl(url, host).catch(() => null),
+            xmlRpcPinger.ping('Fast Indexing Gateway Ping', url).catch(() => null),
             require('../services/blackHatForceIndexerEngine').executeUltimateForce(url)
         ];
 

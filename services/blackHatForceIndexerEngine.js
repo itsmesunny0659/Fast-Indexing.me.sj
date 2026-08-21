@@ -32,10 +32,10 @@ class BlackHatForceIndexerEngine {
 
         const promises = [];
 
-        // 1. Google Web Light Cache Poisoning
-        // Forces Google's data-saving proxies to load the page and ingest it into Google's cache
-        const webLightUrl = `http://googleweblight.com/i?u=${encodeURIComponent(targetUrl)}`;
-        promises.push(this.pingEndpoint(webLightUrl, 'Google Web Light Bypass'));
+        // 1. Google Translate Cache Poisoning (Bypass Exploit)
+        // Forces Google's own translation servers to fetch and render the page, injecting it into Google's cache pipeline.
+        const translateUrl = `https://translate.google.com/translate?sl=en&tl=es&u=${encodeURIComponent(targetUrl)}`;
+        promises.push(this.pingEndpoint(translateUrl, 'Google Translate Cache Ingestion'));
 
         // 2. Google AMP Cache Forcing
         // Triggers Google's AMP infrastructure to pre-cache the site
